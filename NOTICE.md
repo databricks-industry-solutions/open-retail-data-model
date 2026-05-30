@@ -1,4 +1,10 @@
-Copyright (2025) Databricks, Inc.
+Open Retail Data Model (ORDM)
+Copyright 2026 Databricks, Inc. and the Open Retail Data Model contributors.
 
-This Software includes software developed at Databricks (https://www.databricks.com/) and its use is subject to the included LICENSE file.
-By using this repository and the notebooks within, you consent to Databricks collection and use of usage and tracking information in accordance with our privacy policy at www.databricks/privacypolicy.
+This product is licensed under the Apache License, Version 2.0 (see LICENSE.md).
+
+ORDM is built collaboratively with retail solution partners, Databricks, and the
+retail community. It is independently authored and is not a redistribution of any
+third-party proprietary data model. It is inspired by industry references including
+the ARTS Operational Data Model and prior open work such as Google Cloud's Retail
+Data Model.
