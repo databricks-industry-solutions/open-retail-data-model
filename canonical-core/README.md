@@ -2,7 +2,7 @@
 
 The conformed, enterprise view of retail business entities (≈ medallion silver). These are the shared primitives every [outcome package](../outcome-packages/) builds on — defined once, reused everywhere.
 
-| Entity | Status |
+| Domain | Status |
 |---|---|
 | [Customer](customer/) | ⚪ Planned |
 | [Product](product/) | ⚪ Planned |
@@ -11,4 +11,4 @@ The conformed, enterprise view of retail business entities (≈ medallion silver
 | [Store](store/) | ⚪ Planned |
 | [Transaction](transaction/) | ⚪ Planned |
 
-See [data model principles](../docs/data-model-principles.md) for the design rules these entities follow.
+See [data model principles](../docs/data-model-principles.md) for the design rules these domains follow.

@@ -2,15 +2,17 @@
 
 > Status: ⚪ Planned
 
-The conformed **Transaction** entity. Part of the ORDM [canonical core](../README.md).
+The conformed **Transaction** domain. Part of the ORDM [canonical core](../README.md).
 
 ## Contents
 
-| File | Purpose |
+This is a **data domain** (→ a Unity Catalog schema). One file per table keeps parallel work conflict-free.
+
+| Path | Purpose |
 |---|---|
-| `tables.sql` | CREATE TABLE DDL (snake_case, column comments) |
-| `relationships.sql` | Intra-entity FK constraints |
-| `glossary.md` | Business terms for this entity |
+| `tables/<table>.sql` | One CREATE TABLE file per entity (e.g. `tables/profile.sql`) |
+| `relationships.sql` | Cross-table foreign keys for this domain |
+| `glossary.md` | Business terms for this domain |
 | `samples/` | Small synthetic sample rows |
 
 ## Design notes

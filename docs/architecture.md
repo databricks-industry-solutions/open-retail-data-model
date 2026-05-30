@@ -8,9 +8,9 @@ ORDM is organized around **two published layers** plus clear boundaries for what
 
 The conformed, deduplicated, enterprise view of retail business entities. Normalized (roughly 3NF), with primary keys, foreign keys, and master-data discipline. These are the shared primitives every outcome package builds on — defined **once**, reused everywhere.
 
-Entities:
+Domains (each maps to a Unity Catalog schema and contains one file per table under `tables/`):
 
-| Entity | Folder | Description |
+| Domain | Folder | Description |
 |---|---|---|
 | Customer | [`canonical-core/customer/`](../canonical-core/customer/) | Identity, contact, address, consent |
 | Product | [`canonical-core/product/`](../canonical-core/product/) | Items, SKUs, hierarchy, brand |
@@ -25,8 +25,8 @@ A Customer entity referenced by *Customer 360* and by *Agentic Commerce* is the 
 
 Consumption-ready, outcome-aligned bundles. Each package targets one retail business outcome, and each becomes a **Databricks Marketplace listing**. A package contains:
 
-- **Extension tables** — outcome-specific entities not in the canonical core
-- **Metric views** (`metric-views.yml`) — measures, dimensions, joins, governed by Unity Catalog Business Semantics
+- **Extension tables** (one file per table in `tables/`) — outcome-specific tables not in the canonical core
+- **Metric views** (one `.yml` per metric in `metric-views/`) — measures, dimensions, joins, governed by Unity Catalog Business Semantics
 - **Agent metadata** (`agent-metadata.yml`) — synonyms, display names, glossary terms so Genie / AI-BI interpret the model in business terms
 - **Sample queries, notebook templates, sample dashboards**
 

@@ -8,10 +8,12 @@ _What this package helps a retailer achieve. (TODO)_
 
 ## Contents
 
-| File | Purpose |
+The layout is the same in every outcome package. One file per table / per metric view keeps parallel work conflict-free.
+
+| Path | Purpose |
 |---|---|
-| `tables.sql` | Outcome-specific extension tables (not canonical-core entities) |
-| `metric-views.yml` | UC Metric Views — measures, dimensions, joins |
+| `tables/<table>.sql` | Outcome-specific extension tables (one file each) |
+| `metric-views/<metric>.yml` | One UC Metric View per file (measures, dimensions, joins) |
 | `agent-metadata.yml` | Synonyms, display names, glossary terms for Genie / AI-BI |
 | `sample-queries.sql` | Example queries |
 | `notebook-templates/` | Reusable notebooks |
