@@ -1,0 +1,726 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_commerce-media-networks { Note: 'outcome unit' }
+
+Table ad_group {
+  ad_group_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  ad_group_id string [not null, note: 'Durable natural/business key for the ad group.']
+  campaign_sk bigint [note: 'FK to campaign.campaign_sk (the campaign this ad group belongs to).']
+  campaign_id string [note: 'Durable business key of the parent campaign (join on current campaign version).']
+  audience_sk bigint [note: 'FK to marketing.audience.audience_sk (the segment this ad group targets), if audience-targeted.']
+  audience_id string [note: 'Durable audience business key (join on current audience version).']
+  ad_group_name string [note: 'Human-readable ad group name.']
+  ad_group_status string [note: 'Lifecycle status. Allowed values: draft, active, paused, completed, archived.']
+  targeting_mode string [note: 'How the ad group targets. Allowed values: keyword, audience, automatic, contextual, manual.']
+  bid_strategy string [note: 'Bidding strategy. Allowed values: manual_cpc, auto, target_cpa, target_roas, max_conversions.']
+  default_bid_amount decimal(18,2) [note: 'Default bid, in the reporting/base currency.']
+  currency_code string [note: 'Bid currency, ISO 4217 alpha-3.']
+  optimization_goal string [note: 'What the ad group optimizes for. Allowed values: clicks, conversions, roas, impressions, reach.']
+  start_date date [note: 'Ad group start date, inclusive (ISO 8601).']
+  end_date date [note: 'Ad group end date, inclusive (ISO 8601); NULL if open-ended.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this ad group.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table advertiser {
+  advertiser_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  advertiser_id string [not null, note: 'Durable natural/business key for the advertiser relationship.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk (the supplier version this advertiser is).']
+  supplier_id string [not null, note: 'Durable business key of the owning supplier (join on current supplier version).']
+  brand_name string [note: 'Brand marketed by the supplier (the advertised brand). One brand per advertiser row (thin-dimension intent, ADR 0021) …']
+  agency_name string [note: 'Media agency acting for the advertiser, if any.']
+  finance_account_code string [note: 'Billing/finance-system account code for this advertiser (external natural code; the billing anchor). Not a modeled …']
+  billing_currency_code string [note: 'Currency the advertiser is billed in, ISO 4217 alpha-3.']
+  relationship_type string [note: 'How the advertiser transacts with the retail-media network. Allowed values: direct, agency, reseller.']
+  advertiser_status string [note: 'Lifecycle status of the advertiser relationship. Allowed values: active, inactive.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this advertiser.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table attributed_outcome {
+  attributed_outcome_sk bigint [pk, note: 'Surrogate key.']
+  attributed_outcome_id string [not null, note: 'Durable natural/business key for the attributed outcome.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk (credited campaign).']
+  campaign_id string [note: 'Durable campaign business key.']
+  ad_group_sk bigint [note: 'FK to cmn.ad_group.ad_group_sk.']
+  ad_group_id string [note: 'Durable ad group business key.']
+  creative_sk bigint [note: 'FK to cmn.creative.creative_sk.']
+  creative_id string [note: 'Durable creative business key.']
+  placement_sk bigint [note: 'FK to cmn.placement.placement_sk.']
+  placement_id string [note: 'Durable placement business key.']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk (the advertiser).']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  keyword_sk bigint [note: 'FK to cmn.keyword.keyword_sk (the credited bid keyword), if search-attributed.']
+  keyword_id string [note: 'Durable keyword business key.']
+  product_sk bigint [note: 'FK to product.product_sk (the sold product).']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk, if applicable.']
+  store_id string [note: 'Durable store business key.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk (the converting customer), if known.']
+  profile_id string [note: 'Durable customer business key (pseudonymous).']
+  promo_sk bigint [note: 'FK to marketing.promotion.promo_sk (promotion active for the attributed conversion), if any.']
+  promo_id string [note: 'Durable promotion business key (NO_PROMO when none).']
+  touch_media_event_sk bigint [note: 'FK to media_event.media_event_sk — the crediting touchpoint.']
+  touch_media_event_id string [note: 'Durable business key of the crediting media event.']
+  conversion_event_sk bigint [note: 'FK to conversion_event.conversion_event_sk — the credited conversion.']
+  conversion_event_id string [note: 'Durable business key of the conversion.']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk if under an experiment.']
+  experiment_id string [note: 'Durable experiment business key.']
+  outcome_date date [not null, note: 'Business date of the attributed conversion (cluster key).']
+  attribution_model string [note: 'Model that credited this outcome. Allowed values: last_touch, first_touch, linear, position_based, data_driven.']
+  click_or_view_basis string [note: 'Whether credit was earned via a click or a view. Allowed values: click, view.']
+  post_click_days int [note: 'Declared post-click attribution window applied (days).']
+  post_view_days int [note: 'Declared post-view attribution window applied (days).']
+  attributed_fraction decimal(9,6) [note: 'Fractional credit assigned to this touchpoint in [0,1] (multi-touch splits).']
+  gross_sales_amount decimal(18,2) [note: 'Attributed gross sales, in the reporting/base currency.']
+  net_sales_amount decimal(18,2) [note: 'Attributed net sales, in the reporting/base currency.']
+  margin_amount decimal(18,2) [note: 'Attributed gross margin, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  units int [note: 'Attributed units.']
+  same_sku_flag boolean [note: 'TRUE if the sold product is the same SKU/parent family as the advertised product.']
+  halo_flag boolean [note: 'TRUE if a halo (same-brand/same-category) outcome per IAB, not same-SKU.']
+  new_to_brand_flag boolean [note: 'TRUE if the customer is new to the brand within the lookback.']
+  new_to_category_flag boolean [note: 'TRUE if the customer is new to the category within the lookback.']
+  extrapolated_flag boolean [note: 'TRUE if the outcome is modeled/extrapolated rather than deterministically observed.']
+  customer_key_hash string [note: 'PII · Hashed/tokenized customer identifier (PII, never raw).']
+  consent_status string [note: 'Consent state for measurement. Allowed values: granted, denied, unknown.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table budget_allocation {
+  budget_allocation_sk bigint [pk, note: 'Surrogate key.']
+  budget_allocation_id string [not null, note: 'Durable natural/business key for the allocation.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk.']
+  campaign_id string [note: 'Durable campaign business key.']
+  ad_group_sk bigint [note: 'FK to cmn.ad_group.ad_group_sk (or NULL at campaign level).']
+  ad_group_id string [note: 'Durable ad group business key.']
+  placement_sk bigint [note: 'FK to cmn.placement.placement_sk (or NULL).']
+  placement_id string [note: 'Durable placement business key.']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk.']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  allocation_level string [note: 'Level of the allocation. Allowed values: campaign, ad_group, placement.']
+  budget_window_start date [note: 'Budget window start date, inclusive (ISO 8601).']
+  budget_window_end date [note: 'Budget window end date, inclusive (ISO 8601).']
+  allocated_budget_amount decimal(18,2) [note: 'Allocated budget, in the reporting/base currency.']
+  booked_budget_amount decimal(18,2) [note: 'Booked/committed budget, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  funding_source string [note: 'Who funds the budget. Allowed values: supplier, retailer, shared, agency.']
+  planned_impressions bigint [note: 'Planned impressions for the window.']
+  planned_clicks bigint [note: 'Planned clicks for the window.']
+  planned_sales_amount decimal(18,2) [note: 'Planned attributed sales, in the reporting/base currency.']
+  pacing_method string [note: 'Intended pacing method. Allowed values: even, asap, front_loaded, custom.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table campaign {
+  campaign_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  campaign_id string [not null, note: 'Durable natural/business key for the campaign.']
+  advertiser_sk bigint [note: 'FK to advertiser.advertiser_sk (the advertiser running the campaign).']
+  advertiser_id string [note: 'Durable business key of the advertiser (join on current advertiser version).']
+  campaign_name string [note: 'Human-readable campaign name.']
+  objective string [note: 'Primary campaign objective. Allowed values: awareness, consideration, conversion, loyalty, other.']
+  campaign_status string [note: 'Lifecycle status. Allowed values: draft, active, paused, completed, archived.']
+  start_date date [note: 'Campaign flight start date, inclusive (ISO 8601).']
+  end_date date [note: 'Campaign flight end date, inclusive (ISO 8601); NULL if open-ended.']
+  budget_amount decimal(18,2) [note: 'Total campaign budget, in the reporting/base currency.']
+  currency_code string [note: 'Budget currency, ISO 4217 alpha-3.']
+  buy_model string [note: 'Pricing/buy model. Allowed values: cpc, cpm, cpa, flat, other.']
+  attribution_model string [note: 'Attribution model applied to conversions. Allowed values: last_touch, first_touch, linear, position_based, data_driven.']
+  default_post_click_days int [note: 'Default post-click attribution window in days (click lookback).']
+  default_post_view_days int [note: 'Default post-view attribution window in days (view lookback).']
+  sales_metric_type string [note: 'Whether attributed sales are measured gross or net. Allowed values: gross, net.']
+  supplier_visible_flag boolean [note: 'TRUE if this campaign is visible to the supplier/advertiser in shared reporting.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this campaign.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table campaign_day {
+  campaign_day_sk bigint [pk, note: 'Surrogate key.']
+  campaign_day_id string [not null, note: 'Durable natural/business key for the aggregate row (grain hash).']
+  metric_date date [not null, note: 'Business date of the aggregate (cluster key).']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk.']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk.']
+  campaign_id string [note: 'Durable campaign business key.']
+  ad_group_sk bigint [note: 'FK to cmn.ad_group.ad_group_sk (or sentinel ALL member).']
+  ad_group_id string [note: 'Durable ad group business key; ALL when not applicable.']
+  creative_sk bigint [note: 'FK to cmn.creative.creative_sk (or sentinel ALL member).']
+  creative_id string [note: 'Durable creative business key; ALL when not applicable.']
+  placement_sk bigint [note: 'FK to cmn.placement.placement_sk (or sentinel ALL member).']
+  placement_id string [note: 'Durable placement business key; ALL when not applicable.']
+  product_sk bigint [note: 'FK to product.product_sk (or sentinel ALL member).']
+  product_id string [note: 'Durable product business key; ALL when not applicable.']
+  store_sk bigint [note: 'FK to store.store_sk (or sentinel ALL member).']
+  store_id string [note: 'Durable store business key; ALL when not applicable.']
+  delivery_channel_sk bigint [note: 'FK to cmn.delivery_channel.delivery_channel_sk (or sentinel ALL member).']
+  delivery_channel_id string [note: 'Durable delivery-channel business key; ALL when not applicable.']
+  audience_sk bigint [note: 'FK to marketing.audience.audience_sk (or sentinel ALL member).']
+  audience_id string [note: 'Durable audience business key; ALL when not applicable.']
+  impressions bigint [note: 'Total impressions.']
+  viewable_impressions bigint [note: 'Viewable impressions (MRC/IAB standard).']
+  gross_impressions bigint [note: 'Gross impressions (pre-filtering / in-store OTS basis).']
+  ots_impressions bigint [note: 'Opportunity-to-see impressions (in-store).']
+  invalid_traffic_impressions bigint [note: 'Impressions filtered as invalid traffic (GIVT+SIVT).']
+  clicks bigint [note: 'Total clicks.']
+  scheduled_plays bigint [note: 'Scheduled in-store ad plays.']
+  actual_plays bigint [note: 'Verified in-store ad plays (proof-of-play).']
+  conversions bigint [note: 'Attributed conversions.']
+  orders bigint [note: 'Attributed orders.']
+  units bigint [note: 'Attributed units.']
+  platform_impressions bigint [note: 'Impressions as reported by the platform.']
+  ad_server_impressions bigint [note: 'Impressions as reported by the ad server.']
+  reconciled_impressions bigint [note: 'Reconciled impression count.']
+  discrepancy_pct decimal(9,4) [note: 'Platform-vs-ad-server discrepancy, percent.']
+  media_spend_gross decimal(18,2) [note: 'Gross media spend, in the reporting/base currency.']
+  media_spend_net decimal(18,2) [note: 'Net media spend, in the reporting/base currency.']
+  attributed_gross_sales decimal(18,2) [note: 'Attributed gross sales, in the reporting/base currency.']
+  attributed_net_sales decimal(18,2) [note: 'Attributed net sales, in the reporting/base currency.']
+  same_sku_sales decimal(18,2) [note: 'Same-SKU attributed sales, in the reporting/base currency.']
+  halo_sales decimal(18,2) [note: 'Halo attributed sales, in the reporting/base currency.']
+  new_to_brand_sales decimal(18,2) [note: 'New-to-brand attributed sales, in the reporting/base currency.']
+  incremental_sales decimal(18,2) [note: 'Incremental sales (joined from experiment when present), reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  attribution_model string [note: 'The SINGLE attribution model the attributed measures are reported under for this campaign×day (per-row disclosure, not …']
+  post_click_days int [note: 'Post-click window applied (days).']
+  post_view_days int [note: 'Post-view window applied (days).']
+  extrapolated_metric_flag boolean [note: 'TRUE if any measure is modeled/extrapolated.']
+  privacy_suppressed_flag boolean [note: 'TRUE if the row is threshold-suppressed for supplier disclosure.']
+  suppression_reason string [note: 'Why suppressed. Allowed values: below_threshold, consent, policy, none.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table conversion_event {
+  conversion_event_sk bigint [pk, note: 'Surrogate key.']
+  conversion_event_id string [not null, note: 'Durable natural/business key for the conversion event.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk (the converting customer), if known.']
+  profile_id string [note: 'Durable customer business key (pseudonymous).']
+  product_sk bigint [note: 'FK to product.product_sk.']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (fulfilling/visited store), if applicable.']
+  store_id string [note: 'Durable store business key.']
+  order_line_sk bigint [note: 'FK to order.customer_order_line.order_line_sk for purchase conversions.']
+  order_line_id string [note: 'Durable order-line business key.']
+  order_id string [note: 'Durable order business key.']
+  promo_sk bigint [note: 'FK to marketing.promotion.promo_sk (promotion active for this conversion), if any.']
+  promo_id string [note: 'Durable promotion business key (NO_PROMO when none).']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk if under an experiment.']
+  experiment_id string [note: 'Durable experiment business key.']
+  experiment_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk (treatment/control), if assigned.']
+  experiment_cell_id string [note: 'Durable experiment cell business key.']
+  conversion_type string [not null, note: 'Kind of conversion. Allowed values: purchase, add_to_cart, pdp_view, store_visit, signup.']
+  outcome_ts timestamp [not null, note: 'When the conversion occurred (UTC, ISO 8601).']
+  outcome_date date [not null, note: 'Business date of the conversion (cluster key).']
+  gross_sales_amount decimal(18,2) [note: 'Gross sales value, in the reporting/base currency (purchase conversions).']
+  net_sales_amount decimal(18,2) [note: 'Net sales value, in the reporting/base currency.']
+  margin_amount decimal(18,2) [note: 'Gross margin, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  units int [note: 'Units for purchase conversions.']
+  customer_key_hash string [note: 'PII · Hashed/tokenized customer identifier (PII, never raw).']
+  consent_status string [note: 'Consent state for measurement. Allowed values: granted, denied, unknown.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table creative {
+  creative_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  creative_id string [not null, note: 'Durable natural/business key for the creative.']
+  campaign_sk bigint [note: 'FK to campaign.campaign_sk (the campaign this creative belongs to).']
+  campaign_id string [note: 'Durable business key of the parent campaign (join on current campaign version).']
+  creative_name string [note: 'Human-readable creative name.']
+  creative_type string [note: 'Asset type. Allowed values: image, video, audio, html, native, text.']
+  mime_type string [note: 'MIME type of the asset (e.g. image/jpeg, video/mp4).']
+  duration_seconds int [note: 'Play duration in seconds for time-based assets (NULL for static).']
+  aspect_ratio string [note: 'Aspect ratio of the asset (e.g. 16:9, 1:1, 9:16).']
+  language_code string [note: 'Creative language, ISO 639-1 alpha-2.']
+  approval_status string [note: 'Review workflow state. Allowed values: draft, submitted, approved, rejected, archived.']
+  brand_safety_class string [note: 'Brand-safety classification. Allowed values: safe, moderate, restricted.']
+  asset_uri string [note: 'Reference/URI to the stored asset (not the asset itself).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this creative.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table delivery_channel {
+  delivery_channel_sk bigint [pk, note: 'Surrogate key.']
+  delivery_channel_id string [not null, note: 'Durable business key / delivery-channel code (e.g., onsite_app, in_store_screen).']
+  delivery_channel_name string [note: 'Human-readable delivery-channel / environment label.']
+  delivery_channel_category string [note: 'Coarse distribution/delivery-channel class. Allowed values: onsite_web, onsite_app, offsite, in_store_screen …']
+  is_in_store_flag boolean [note: 'TRUE for in-store channels (screens, audio); FALSE for online/offsite channels.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table experiment {
+  experiment_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  experiment_id string [not null, note: 'Durable natural/business key for the experiment.']
+  campaign_sk bigint [note: 'FK to campaign.campaign_sk when the experiment evaluates a campaign (NULL for campaign-agnostic experiments).']
+  campaign_id string [note: 'Durable business key of the evaluated campaign, if any (join on current campaign version).']
+  experiment_name string [note: 'Human-readable experiment name.']
+  experiment_type string [note: 'Experiment design. Allowed values: geo_holdout, audience_holdout, ghost_ads, switchback, pre_post, other.']
+  methodology string [note: 'Causal method. Allowed values: randomized_control, matched_market, synthetic_control, difference_in_differences, other.']
+  unit_of_assignment string [note: 'Randomization unit. Allowed values: user, household, geo, store, device.']
+  objective_metric string [note: 'Primary outcome measured. Allowed values: incremental_sales, incremental_units, roas, conversion_rate, reach, other.']
+  experiment_status string [note: 'Lifecycle status. Allowed values: draft, running, completed, analyzed, archived.']
+  start_date date [note: 'Experiment start date, inclusive (ISO 8601).']
+  end_date date [note: 'Experiment end date, inclusive (ISO 8601); NULL if ongoing.']
+  confidence_level decimal(5,4) [note: 'Target statistical confidence level in [0,1] (e.g. 0.9500 for 95%).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this experiment.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table experiment_assignment_bridge {
+  experiment_assignment_sk bigint [pk, note: 'Surrogate key.']
+  experiment_assignment_id string [not null, note: 'Durable natural/business key for the assignment.']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk.']
+  experiment_id string [note: 'Durable experiment business key.']
+  experiment_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk (treatment/control/holdout).']
+  experiment_cell_id string [note: 'Durable experiment cell business key.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk when the assignment unit resolves to a customer.']
+  profile_id string [note: 'Durable customer business key (pseudonymous).']
+  assignment_unit_type string [note: 'Randomization unit. Allowed values: user, household, geo, store, device.']
+  assignment_unit_key_hash string [note: 'PII · Hashed/tokenized assignment-unit identifier (PII, never raw).']
+  assignment_ts timestamp [not null, note: 'When the unit was assigned to the cell (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table experiment_cell {
+  experiment_cell_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  experiment_cell_id string [not null, note: 'Durable natural/business key for the experiment cell.']
+  experiment_sk bigint [note: 'FK to experiment.experiment_sk (the experiment this cell belongs to).']
+  experiment_id string [note: 'Durable business key of the parent experiment (join on current experiment version).']
+  cell_name string [note: 'Human-readable cell name.']
+  cell_role string [note: 'Role of the cell in the design. Allowed values: treatment, control, holdout.']
+  traffic_allocation_pct decimal(5,2) [note: 'Share of assignment units allocated to this cell (0-100).']
+  is_control boolean [note: 'TRUE if this is the control/counterfactual cell.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this cell.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table experiment_daily {
+  experiment_daily_sk bigint [pk, note: 'Surrogate key.']
+  experiment_daily_id string [not null, note: 'Durable natural/business key (grain hash).']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk.']
+  experiment_id string [note: 'Durable experiment business key.']
+  experiment_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk.']
+  experiment_cell_id string [note: 'Durable experiment cell business key.']
+  metric_date date [not null, note: 'Business date of the aggregate (cluster key).']
+  analysis_level string [note: 'Slice level. Allowed values: overall, store, geo, product, category, vendor.']
+  exposed_units bigint [note: 'Count of assignment units exposed to media in the cell.']
+  converted_units bigint [note: 'Count of assignment units that converted in the cell.']
+  sales_amount decimal(18,2) [note: 'Cell sales, in the reporting/base currency.']
+  media_spend_amount decimal(18,2) [note: 'Cell media spend, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table incrementality_result {
+  incrementality_result_sk bigint [pk, note: 'Surrogate key.']
+  incrementality_result_id string [not null, note: 'Durable natural/business key for the result.']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk.']
+  experiment_id string [note: 'Durable experiment business key.']
+  treatment_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk — the treatment cell.']
+  treatment_cell_id string [note: 'Durable treatment-cell business key.']
+  control_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk — the control cell.']
+  control_cell_id string [note: 'Durable control-cell business key.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk (the campaign under test).']
+  campaign_id string [note: 'Durable campaign business key.']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk.']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  product_sk bigint [note: 'FK to product.product_sk (or ALL for overall).']
+  product_id string [note: 'Durable product business key; ALL when not applicable.']
+  snapshot_date date [not null, note: 'Measurement snapshot date (cluster key).']
+  metric_name string [not null, note: 'Metric evaluated. Allowed values: incremental_sales, incremental_units, roas, conversion_rate, reach.']
+  analysis_level string [note: 'Slice level of the result. Allowed values: overall, store, geo, product, category, vendor.']
+  observed_treatment_value decimal(18,4) [note: 'Observed metric value in the treatment cell.']
+  observed_control_value decimal(18,4) [note: 'Observed metric value in the control cell.']
+  counterfactual_value decimal(18,4) [note: 'Estimated counterfactual (what treatment would have been without media).']
+  incremental_sales_amount decimal(18,2) [note: 'Incremental sales, in the reporting/base currency.']
+  incremental_margin_amount decimal(18,2) [note: 'Incremental margin, in the reporting/base currency.']
+  media_spend_amount decimal(18,2) [note: 'Media spend attributed to the treatment, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  lift_pct decimal(9,4) [note: 'Relative lift of treatment over control, percent.']
+  iroas_value decimal(12,4) [note: 'Incremental ROAS = incremental_sales / media_spend.']
+  confidence_level_pct decimal(5,2) [note: 'Confidence level of the interval, percent (e.g. 95.00).']
+  ci_lower_value decimal(18,4) [note: 'Lower bound of the confidence interval for the estimate.']
+  ci_upper_value decimal(18,4) [note: 'Upper bound of the confidence interval for the estimate.']
+  p_value decimal(9,6) [note: 'p-value of the treatment-vs-control test.']
+  statistical_significance_flag boolean [note: 'TRUE if the result is statistically significant at the confidence level.']
+  sample_size_treatment bigint [note: 'Treatment-cell sample size.']
+  sample_size_control bigint [note: 'Control-cell sample size.']
+  methodology string [note: 'Causal method used. Allowed values: randomized_control, matched_market, synthetic_control, difference_in_differences …']
+  suppressed_flag boolean [note: 'TRUE if suppressed for disclosure (below threshold / policy).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table keyword {
+  keyword_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  keyword_id string [not null, note: 'Durable natural/business key for the keyword.']
+  ad_group_sk bigint [note: 'FK to ad_group.ad_group_sk (the ad group this keyword belongs to).']
+  ad_group_id string [note: 'Durable business key of the parent ad group (join on current ad_group version).']
+  keyword_text string [note: 'The bid keyword / targeting term (vendor-neutral; not a shopper PII value).']
+  match_type string [note: 'How the keyword matches queries. Allowed values: exact, phrase, broad, negative.']
+  keyword_status string [note: 'Lifecycle status. Allowed values: active, paused, archived.']
+  is_negative_flag boolean [note: 'TRUE for a negative keyword (excludes matching queries rather than bidding on them).']
+  bid_amount decimal(18,2) [note: 'Keyword-level bid, in the reporting/base currency.']
+  currency_code string [note: 'Bid currency, ISO 4217 alpha-3.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this keyword.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table media_event {
+  media_event_sk bigint [pk, note: 'Surrogate key.']
+  media_event_id string [not null, note: 'Durable natural/business key for the media event.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk.']
+  campaign_id string [note: 'Durable campaign business key.']
+  ad_group_sk bigint [note: 'FK to cmn.ad_group.ad_group_sk.']
+  ad_group_id string [note: 'Durable ad group business key.']
+  creative_sk bigint [note: 'FK to cmn.creative.creative_sk.']
+  creative_id string [note: 'Durable creative business key.']
+  placement_sk bigint [note: 'FK to cmn.placement.placement_sk.']
+  placement_id string [note: 'Durable placement business key.']
+  product_sk bigint [note: 'FK to product.product_sk (the advertised/served product), if applicable.']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (in-store playout location), if applicable.']
+  store_id string [note: 'Durable store business key.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk (the resolved exposed customer), if known.']
+  profile_id string [note: 'Durable customer business key (pseudonymous).']
+  delivery_channel_sk bigint [note: 'FK to cmn.delivery_channel.delivery_channel_sk (coarse channel the exposure occurred in).']
+  delivery_channel_id string [note: 'Durable delivery-channel business key.']
+  audience_sk bigint [note: 'FK to marketing.audience.audience_sk (targeted segment from shared marketing dimension), if audience-targeted.']
+  audience_id string [note: 'Durable audience business key.']
+  keyword_sk bigint [note: 'FK to cmn.keyword.keyword_sk (the bid keyword this search event matched), if a search event.']
+  keyword_id string [note: 'Durable keyword business key.']
+  search_term_text string [note: 'Raw shopper search query for query-level reporting (degenerate attribute; vendor-neutral, no PII).']
+  experiment_sk bigint [note: 'FK to cmn.experiment.experiment_sk if this event is under an experiment.']
+  experiment_id string [note: 'Durable experiment business key.']
+  experiment_cell_sk bigint [note: 'FK to cmn.experiment_cell.experiment_cell_sk (treatment/control), if assigned.']
+  experiment_cell_id string [note: 'Durable experiment cell business key.']
+  parent_media_event_sk bigint [note: 'FK to media_event.media_event_sk — the served impression a click resolved from.']
+  parent_media_event_id string [note: 'Durable business key of the parent served impression.']
+  event_type string [not null, note: 'Event type. Allowed values: impression, viewable_impression, click, ad_play, video_start, video_complete.']
+  event_ts timestamp [not null, note: 'When the event occurred at source (UTC, ISO 8601).']
+  event_date date [not null, note: 'Business date of the event (partition/cluster key).']
+  cost_amount decimal(18,2) [note: 'Media cost of this event, in the reporting/base currency.']
+  currency_code string [note: 'Cost currency, ISO 4217 alpha-3 (single reporting currency).']
+  duration_sec int [note: 'Play/view duration in seconds for time-based events (NULL otherwise).']
+  viewable_flag boolean [note: 'TRUE if the impression met the viewability standard (display 50%/1s, video 50%/2s).']
+  ivt_flag boolean [note: 'TRUE if classified as invalid traffic.']
+  ivt_type string [note: 'Invalid-traffic class. Allowed values: none, givt, sivt.']
+  click_resolved_flag boolean [note: 'For clicks: TRUE if resolved to a valid served impression.']
+  customer_key_hash string [note: 'PII · Hashed/tokenized customer identifier for clean-room matching (PII, never raw).']
+  household_key_hash string [note: 'PII · Hashed/tokenized household identifier (PII, never raw).']
+  consent_status string [note: 'Consent state for measurement at event time. Allowed values: granted, denied, unknown.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table pacing_snapshot {
+  pacing_snapshot_sk bigint [pk, note: 'Surrogate key.']
+  pacing_snapshot_id string [not null, note: 'Durable natural/business key for the snapshot.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk.']
+  campaign_id string [note: 'Durable campaign business key.']
+  ad_group_sk bigint [note: 'FK to cmn.ad_group.ad_group_sk (or NULL at campaign level).']
+  ad_group_id string [note: 'Durable ad group business key.']
+  placement_sk bigint [note: 'FK to cmn.placement.placement_sk (or NULL).']
+  placement_id string [note: 'Durable placement business key.']
+  snapshot_ts timestamp [not null, note: 'When the pacing state was captured (UTC, ISO 8601).']
+  snapshot_date date [not null, note: 'Business date of the snapshot (cluster key).']
+  daily_budget decimal(18,2) [note: 'Daily budget target, in the reporting/base currency.']
+  planned_spend_to_date decimal(18,2) [note: 'Planned cumulative spend to date, in the reporting/base currency.']
+  actual_spend_to_date decimal(18,2) [note: 'Actual cumulative spend to date, in the reporting/base currency.']
+  expected_spend_to_date decimal(18,2) [note: 'Expected cumulative spend to date under the pacing curve.']
+  projected_end_spend decimal(18,2) [note: 'Projected total spend at window end, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  pacing_ratio decimal(9,4) [note: 'actual_spend_to_date / planned_spend_to_date.']
+  pacing_status string [note: 'Pacing state. Allowed values: on_track, under_pacing, over_pacing, exhausted.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table placement {
+  placement_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  placement_id string [not null, note: 'Durable natural/business key for the placement.']
+  placement_name string [note: 'Human-readable placement / inventory-package name.']
+  media_platform string [note: 'Buying platform or ad network — the RMN tech platform such as Criteo or CitrusAd, or an offsite DSP such as DV360 or …']
+  ad_product_line string [note: 'Retailer go-to-market ad-product packaging / inventory line, cf. common retail-media ad-product taxonomies. Distinct …']
+  placement_type string [note: 'Fine on-page ad surface / slot (IAB Ad Placement). Allowed values: search, banner, product_listing, video, audio …']
+  ad_format string [note: 'Accepted ad format. Allowed values: display, video, audio, native, sponsored_product, text.']
+  pricing_model string [note: 'How the surface is priced. Allowed values: cpc, cpm, cpa, flat, other.']
+  device_type string [note: 'Device platform (OS/hardware) the surface targets. Allowed values: desktop, mobile, tablet, ctv, other. DOOH and …']
+  store_scope string [note: 'Store reach of the surface. Allowed values: all_stores, banner, region, single_store, online.']
+  sellable_capacity_qty int [note: 'Sellable capacity for the surface, expressed in capacity_unit.']
+  capacity_unit string [note: 'Unit of sellable_capacity_qty. Allowed values: impressions, slots, seconds, sov_pct.']
+  page_or_zone_code string [note: 'Page location or in-store zone code the surface maps to (external natural code).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this placement.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table product_store_day {
+  product_store_day_sk bigint [pk, note: 'Surrogate key.']
+  product_store_day_id string [not null, note: 'Durable natural/business key (grain hash).']
+  product_sk bigint [note: 'FK to product.product_sk.']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [note: 'Durable store business key.']
+  business_date date [not null, note: 'Business date (cluster key).']
+  in_stock_flag boolean [note: 'TRUE if the product was in stock at the store that day.']
+  on_hand_units int [note: 'End-of-day on-hand units.']
+  pos_units int [note: 'POS units sold that day.']
+  pos_net_sales_amount decimal(18,2) [note: 'POS net sales that day, in the reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table gold_campaign_performance {
+  metric_date string [note: 'Business date of the performance row.']
+  campaign_id string [note: 'Durable campaign business key.']
+  campaign_name string [note: 'Campaign display name.']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  brand_name string [note: 'Advertised brand name.']
+  attribution_model string [note: 'The single attribution model the attributed measures/ROAS are reported under for this campaign×day (one model per …']
+  impressions string [note: 'Total impressions.']
+  viewable_impressions string [note: 'Viewable impressions (MRC/IAB).']
+  clicks string [note: 'Total clicks.']
+  conversions string [note: 'Attributed conversions.']
+  orders string [note: 'Attributed orders.']
+  units string [note: 'Attributed units.']
+  media_spend_net string [note: 'Net media spend, reporting/base currency.']
+  attributed_net_sales string [note: 'Attributed net sales, reporting/base currency.']
+  same_sku_sales string [note: 'Same-SKU attributed sales.']
+  halo_sales string [note: 'Halo (brand/category) attributed sales.']
+  new_to_brand_sales string [note: 'New-to-brand attributed sales.']
+  incremental_sales string [note: 'Incremental sales (from experiment), reporting/base currency.']
+  ctr string [note: 'Click-through rate = clicks / impressions.']
+  viewable_rate string [note: 'Viewable impressions / impressions.']
+  ivt_rate string [note: 'Invalid-traffic impressions / gross impressions.']
+  cvr string [note: 'Conversion rate = conversions / clicks.']
+  roas_net string [note: 'Return on ad spend = attributed_net_sales / media_spend_net.']
+  iroas string [note: 'Incremental ROAS = incremental_sales / media_spend_net.']
+  new_to_brand_rate string [note: 'New-to-brand sales / attributed net sales.']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_incrementality_readout {
+  experiment_id string [note: 'Durable experiment business key.']
+  experiment_name string [note: 'Experiment display name.']
+  methodology string [note: 'Causal method used.']
+  campaign_id string [note: 'Durable campaign business key.']
+  campaign_name string
+  advertiser_id string
+  product_id string
+  snapshot_date string [note: 'Measurement snapshot date.']
+  metric_name string [note: 'Metric evaluated.']
+  analysis_level string [note: 'Slice level of the result.']
+  incremental_sales_amount string [note: 'Incremental sales, reporting/base currency.']
+  incremental_margin_amount string
+  media_spend_amount string [note: 'Media spend attributed to treatment.']
+  lift_pct string [note: 'Relative lift of treatment over control, percent.']
+  iroas_value string [note: 'Incremental ROAS.']
+  confidence_level_pct string [note: 'Confidence level, percent.']
+  ci_lower_value string [note: 'Confidence interval lower bound.']
+  ci_upper_value string [note: 'Confidence interval upper bound.']
+  p_value string [note: 'Test p-value.']
+  statistical_significance_flag string [note: 'TRUE if significant at the confidence level.']
+  sample_size_treatment string
+  sample_size_control string
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_pacing_current {
+  campaign_id string [note: 'Durable campaign business key.']
+  campaign_name string
+  ad_group_id string
+  placement_id string
+  snapshot_ts string [note: 'Latest pacing snapshot timestamp (UTC).']
+  daily_budget string [note: 'Daily budget target, reporting/base currency.']
+  planned_spend_to_date string
+  actual_spend_to_date string [note: 'Actual cumulative spend to date.']
+  expected_spend_to_date string
+  projected_end_spend string
+  pacing_ratio string [note: 'actual_spend_to_date / planned_spend_to_date.']
+  pacing_status string [note: 'on_track / under_pacing / over_pacing / exhausted.']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_supplier_campaign_report {
+  advertiser_id string [note: 'Durable advertiser business key.']
+  brand_name string [note: 'Advertised brand name.']
+  campaign_id string [note: 'Durable campaign business key.']
+  campaign_name string [note: 'Campaign display name.']
+  attribution_model string [note: 'The single attribution model the campaign\'s attributed measures/ROAS are reported under (one model per grain).']
+  first_active_date string
+  last_active_date string
+  impressions string [note: 'Total impressions over the campaign.']
+  viewable_impressions string
+  clicks string
+  conversions string
+  units string
+  media_spend_net string [note: 'Net media spend, reporting/base currency.']
+  attributed_net_sales string [note: 'Attributed net sales, reporting/base currency.']
+  new_to_brand_sales string
+  incremental_sales string
+  roas_net string [note: 'Return on ad spend.']
+  iroas string [note: 'Incremental ROAS.']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table store_zone_interval {
+  store_zone_interval_sk string
+  store_zone_interval_id string [note: 'DEPRECATED EXACT-NAME SHIM. New rows use a stable store-zone-day id; migrate to …']
+  store_sk string
+  store_id string
+  store_zone_code string [note: 'DEPRECATED EXACT-NAME SHIM. Zone code sourced from the CSS zone-day shared projection.']
+  interval_start_ts string
+  interval_date string [note: 'DEPRECATED EXACT-NAME SHIM. CSS trading date for the disclosure-controlled daily row.']
+  interval_minutes string
+  footfall_count string
+  avg_dwell_seconds string
+  opportunity_to_see string [note: 'DEPRECATED EXACT-NAME SHIM. NULL for new rows until CMN approves a versioned placement-level OTS derivation; historical …']
+  aggregated_flag string
+  record_source string
+  load_timestamp string
+  Note: 'gold · gold'
+}
+
+Ref: media_event.campaign_sk > campaign.campaign_sk
+Ref: media_event.ad_group_sk > ad_group.ad_group_sk
+Ref: media_event.creative_sk > creative.creative_sk
+Ref: media_event.placement_sk > placement.placement_sk
+Ref: media_event.product_sk > product.product_sk
+Ref: media_event.store_sk > store.store_sk
+Ref: media_event.profile_sk > profile.profile_sk
+Ref: media_event.experiment_sk > experiment.experiment_sk
+Ref: media_event.experiment_cell_sk > experiment_cell.experiment_cell_sk
+Ref: media_event.parent_media_event_sk > media_event.media_event_sk
+Ref: media_event.delivery_channel_sk > delivery_channel.delivery_channel_sk
+Ref: media_event.audience_sk > audience.audience_sk
+Ref: media_event.keyword_sk > keyword.keyword_sk
+Ref: conversion_event.profile_sk > profile.profile_sk
+Ref: conversion_event.product_sk > product.product_sk
+Ref: conversion_event.store_sk > store.store_sk
+Ref: conversion_event.order_line_sk > customer_order_line.order_line_sk
+Ref: conversion_event.experiment_sk > experiment.experiment_sk
+Ref: conversion_event.experiment_cell_sk > experiment_cell.experiment_cell_sk
+Ref: conversion_event.promo_sk > promotion.promo_sk
+Ref: attributed_outcome.campaign_sk > campaign.campaign_sk
+Ref: attributed_outcome.ad_group_sk > ad_group.ad_group_sk
+Ref: attributed_outcome.creative_sk > creative.creative_sk
+Ref: attributed_outcome.placement_sk > placement.placement_sk
+Ref: attributed_outcome.advertiser_sk > advertiser.advertiser_sk
+Ref: attributed_outcome.product_sk > product.product_sk
+Ref: attributed_outcome.store_sk > store.store_sk
+Ref: attributed_outcome.profile_sk > profile.profile_sk
+Ref: attributed_outcome.touch_media_event_sk > media_event.media_event_sk
+Ref: attributed_outcome.conversion_event_sk > conversion_event.conversion_event_sk
+Ref: attributed_outcome.experiment_sk > experiment.experiment_sk
+Ref: attributed_outcome.promo_sk > promotion.promo_sk
+Ref: attributed_outcome.keyword_sk > keyword.keyword_sk
+Ref: experiment_assignment_bridge.experiment_sk > experiment.experiment_sk
+Ref: experiment_assignment_bridge.experiment_cell_sk > experiment_cell.experiment_cell_sk
+Ref: experiment_assignment_bridge.profile_sk > profile.profile_sk
+Ref: campaign_day.advertiser_sk > advertiser.advertiser_sk
+Ref: campaign_day.campaign_sk > campaign.campaign_sk
+Ref: campaign_day.ad_group_sk > ad_group.ad_group_sk
+Ref: campaign_day.creative_sk > creative.creative_sk
+Ref: campaign_day.placement_sk > placement.placement_sk
+Ref: campaign_day.product_sk > product.product_sk
+Ref: campaign_day.store_sk > store.store_sk
+Ref: campaign_day.delivery_channel_sk > delivery_channel.delivery_channel_sk
+Ref: campaign_day.audience_sk > audience.audience_sk
+Ref: incrementality_result.experiment_sk > experiment.experiment_sk
+Ref: incrementality_result.treatment_cell_sk > experiment_cell.experiment_cell_sk
+Ref: incrementality_result.control_cell_sk > experiment_cell.experiment_cell_sk
+Ref: incrementality_result.campaign_sk > campaign.campaign_sk
+Ref: incrementality_result.advertiser_sk > advertiser.advertiser_sk
+Ref: incrementality_result.product_sk > product.product_sk
+Ref: experiment_daily.experiment_sk > experiment.experiment_sk
+Ref: experiment_daily.experiment_cell_sk > experiment_cell.experiment_cell_sk
+Ref: budget_allocation.campaign_sk > campaign.campaign_sk
+Ref: budget_allocation.ad_group_sk > ad_group.ad_group_sk
+Ref: budget_allocation.placement_sk > placement.placement_sk
+Ref: budget_allocation.advertiser_sk > advertiser.advertiser_sk
+Ref: pacing_snapshot.campaign_sk > campaign.campaign_sk
+Ref: pacing_snapshot.ad_group_sk > ad_group.ad_group_sk
+Ref: pacing_snapshot.placement_sk > placement.placement_sk
+Ref: product_store_day.product_sk > product.product_sk
+Ref: product_store_day.store_sk > store.store_sk
+Ref: advertiser.supplier_sk > supplier.supplier_sk
+Ref: campaign.advertiser_sk > advertiser.advertiser_sk
+Ref: ad_group.campaign_sk > campaign.campaign_sk
+Ref: ad_group.audience_sk > audience.audience_sk
+Ref: keyword.ad_group_sk > ad_group.ad_group_sk
+Ref: creative.campaign_sk > campaign.campaign_sk
+Ref: experiment.campaign_sk > campaign.campaign_sk
+Ref: experiment_cell.experiment_sk > experiment.experiment_sk
+
+TableGroup commerce-media-networks [color: #3b4a59] { ad_group, advertiser, attributed_outcome, budget_allocation, campaign, campaign_day, conversion_event, creative, delivery_channel, experiment, experiment_assignment_bridge, experiment_cell, experiment_daily, incrementality_result, keyword, media_event, pacing_snapshot, placement, product_store_day, gold_campaign_performance, gold_incrementality_readout, gold_pacing_current, gold_supplier_campaign_report, store_zone_interval }

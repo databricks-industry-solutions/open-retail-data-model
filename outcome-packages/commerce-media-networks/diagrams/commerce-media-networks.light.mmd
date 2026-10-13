@@ -1,0 +1,98 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    ad_group["ad_group<br/>ad_group_sk · ad_group_id · campaign_sk · campaign_id"]:::core
+    advertiser["advertiser<br/>advertiser_sk · advertiser_id · supplier_sk · supplier_id"]:::core
+    attributed_outcome["attributed_outcome<br/>attributed_outcome_sk · attributed_outcome_id · campaign_sk · campaign_id"]:::core
+    budget_allocation["budget_allocation<br/>budget_allocation_sk · budget_allocation_id · campaign_sk · campaign_id"]:::core
+    campaign["campaign<br/>campaign_sk · campaign_id · advertiser_sk · advertiser_id"]:::core
+    campaign_day["campaign_day<br/>campaign_day_sk · campaign_day_id · advertiser_sk · advertiser_id"]:::core
+    conversion_event["conversion_event<br/>conversion_event_sk · conversion_event_id · profile_sk · profile_id"]:::core
+    creative["creative<br/>creative_sk · creative_id · campaign_sk · campaign_id"]:::core
+    delivery_channel["delivery_channel<br/>delivery_channel_sk · delivery_channel_id"]:::core
+    experiment["experiment<br/>experiment_sk · experiment_id · campaign_sk · campaign_id"]:::core
+    experiment_assignment_bridge["experiment_assignment_bridge<br/>experiment_assignment_sk · experiment_assignment_id · experiment_sk · experiment_id"]:::core
+    experiment_cell["experiment_cell<br/>experiment_cell_sk · experiment_cell_id · experiment_sk · experiment_id"]:::core
+    experiment_daily["experiment_daily<br/>experiment_daily_sk · experiment_daily_id · experiment_sk · experiment_id"]:::core
+    incrementality_result["incrementality_result<br/>incrementality_result_sk · incrementality_result_id · experiment_sk · experiment_id"]:::core
+    keyword["keyword<br/>keyword_sk · keyword_id · ad_group_sk · ad_group_id"]:::core
+    media_event["media_event<br/>media_event_sk · media_event_id · campaign_sk · campaign_id"]:::core
+    pacing_snapshot["pacing_snapshot<br/>pacing_snapshot_sk · pacing_snapshot_id · campaign_sk · campaign_id"]:::core
+    placement["placement<br/>placement_sk · placement_id"]:::core
+    product_store_day["product_store_day<br/>product_store_day_sk · product_store_day_id · product_sk · product_id"]:::core
+    gold_campaign_performance["gold_campaign_performance<br/>campaign_id · advertiser_id"]:::gold
+    gold_incrementality_readout["gold_incrementality_readout<br/>experiment_id · campaign_id · advertiser_id · product_id"]:::gold
+    gold_pacing_current["gold_pacing_current<br/>campaign_id · ad_group_id · placement_id"]:::gold
+    gold_supplier_campaign_report["gold_supplier_campaign_report<br/>advertiser_id · campaign_id"]:::gold
+    store_zone_interval["store_zone_interval<br/>store_zone_interval_sk · store_zone_interval_id · store_sk · store_id"]:::gold
+    campaign --> media_event
+    ad_group --> media_event
+    creative --> media_event
+    placement --> media_event
+    product --> media_event
+    store --> media_event
+    profile --> media_event
+    experiment --> media_event
+    experiment_cell --> media_event
+    media_event --> media_event
+    delivery_channel --> media_event
+    audience --> media_event
+    keyword --> media_event
+    profile --> conversion_event
+    product --> conversion_event
+    store --> conversion_event
+    customer_order_line --> conversion_event
+    experiment --> conversion_event
+    experiment_cell --> conversion_event
+    promotion --> conversion_event
+    campaign --> attributed_outcome
+    ad_group --> attributed_outcome
+    creative --> attributed_outcome
+    placement --> attributed_outcome
+    advertiser --> attributed_outcome
+    product --> attributed_outcome
+    store --> attributed_outcome
+    profile --> attributed_outcome
+    media_event --> attributed_outcome
+    conversion_event --> attributed_outcome
+    experiment --> attributed_outcome
+    promotion --> attributed_outcome
+    keyword --> attributed_outcome
+    experiment --> experiment_assignment_bridge
+    experiment_cell --> experiment_assignment_bridge
+    profile --> experiment_assignment_bridge
+    advertiser --> campaign_day
+    campaign --> campaign_day
+    ad_group --> campaign_day
+    creative --> campaign_day
+    placement --> campaign_day
+    product --> campaign_day
+    store --> campaign_day
+    delivery_channel --> campaign_day
+    audience --> campaign_day
+    experiment --> incrementality_result
+    experiment_cell --> incrementality_result
+    experiment_cell --> incrementality_result
+    campaign --> incrementality_result
+    advertiser --> incrementality_result
+    product --> incrementality_result
+    experiment --> experiment_daily
+    experiment_cell --> experiment_daily
+    campaign --> budget_allocation
+    ad_group --> budget_allocation
+    placement --> budget_allocation
+    advertiser --> budget_allocation
+    campaign --> pacing_snapshot
+    ad_group --> pacing_snapshot
+    placement --> pacing_snapshot
+    product --> product_store_day
+    store --> product_store_day
+    supplier --> advertiser
+    advertiser --> campaign
+    campaign --> ad_group
+    audience --> ad_group
+    ad_group --> keyword
+    campaign --> creative
+    campaign --> experiment
+    experiment --> experiment_cell
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;
