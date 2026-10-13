@@ -1,0 +1,30 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_order { Note: 'core unit' }
+
+Table customer_order_line {
+  order_line_sk bigint [pk, note: 'Surrogate key.']
+  order_line_id string [not null, note: 'Durable natural/business key for the order line.']
+  order_id string [not null, note: 'Order (purchase occasion) business key; one order has several lines.']
+  profile_sk bigint [note: 'FK to profile.profile_sk (version-specific).']
+  profile_id string [not null, note: 'Durable customer business key (pseudonymous; not direct PII).']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key.']
+  order_date date [note: 'Order date (calendar day). FK to fiscal_calendar.date_key (ISO 8601).']
+  event_timestamp timestamp [note: 'Instant the order line was placed (UTC, ISO 8601) — event-time, distinct from load_timestamp (processing-time).']
+  units int [note: 'Units purchased on this line.']
+  gross_amount decimal(18,2) [note: 'Gross line amount before discount, in the reporting/base currency.']
+  net_amount decimal(18,2) [note: 'Net line amount after discount, in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; the canonical core …']
+  transaction_currency_code string [note: 'Original transaction currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: customer_order_line.profile_sk > profile.profile_sk
+Ref: customer_order_line.product_sk > product.product_sk
+Ref: customer_order_line.store_sk > store.store_sk
+
+TableGroup order [color: #3b4a59] { customer_order_line }
