@@ -1,0 +1,21 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+#
+# SHOULD-tier tracking (DoD): `status: done` here means the MUST tier is built for
+# the use case (per ADR 0013, use-cases.yaml is planning-tier). The UC Metric Views
+# SHOULD tier is COMPLETE for this package: the A2A use case ships its 3 metric views,
+# Intent Product Discovery ships mv_intent_discovery_result_performance (Result CTR,
+# Add-to-Cart Rate, Discovery Conversion Rate) and mv_intent_discovery_intents
+# (Zero-Result Rate), and Conversational Shopping Assistant ships
+# mv_conversational_shopping_session (Assisted Conversion, Handoff and Fallback Rate).
+# SHOULD gates 🟢 -> ✅ Published; the promotion itself is a separate maintainer step.
+use_cases:
+  - name: Intent Product Discovery
+    status: done
+    tables: [gold_product_discovery_candidate_current, gold_intent_product_discovery_performance]
+  - name: Conversational Shopping Assistant
+    status: done
+    tables: [gold_conversational_shopping_session, gold_conversational_shopping_performance]
+  - name: Agent-to-Agent Transactions
+    status: done
+    tables: [gold_a2a_session_summary, gold_a2a_negotiation_funnel, gold_a2a_agent_scorecard]

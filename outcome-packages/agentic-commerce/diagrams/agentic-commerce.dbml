@@ -1,0 +1,428 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_agentic-commerce { Note: 'outcome unit' }
+
+Table a2a_agent {
+  a2a_agent_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  a2a_agent_id string [not null, note: 'Durable natural/business key for the agent. Stable across SCD2 versions.']
+  agent_name string [note: 'Display name of the agent.']
+  agent_role string [not null, note: 'Which side the agent acts for. Allowed values: buyer_agent, seller_agent.']
+  operator_name string [note: 'Organization or platform that operates the agent (vendor-neutral label).']
+  represented_profile_id string [note: 'Durable customer profile business key the agent represents, when agent_role = buyer_agent. NULL for seller agents …']
+  represented_store_id string [note: 'Durable store business key the agent represents, when agent_role = seller_agent. NULL for buyer agents. Logical …']
+  protocol_version string [note: 'A2A protocol version the agent speaks (free STRING; e.g. 1.0, 2.1).']
+  trust_status string [not null, note: 'Verification/trust state. Allowed values: unverified, verified, suspended, revoked.']
+  is_autonomous boolean [note: 'TRUE if the agent can complete a transaction without human approval within its mandate.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date this version stopped being effective; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this agent.']
+  created_timestamp timestamp [note: 'When the agent record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the agent record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the lakehouse (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table a2a_mandate {
+  a2a_mandate_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  a2a_mandate_id string [not null, note: 'Durable natural/business key for the mandate. Stable across SCD2 versions.']
+  buyer_profile_sk bigint [note: 'FK to customer.profile.profile_sk — the customer granting the mandate.']
+  buyer_profile_id string [note: 'Durable business key of the granting customer.']
+  a2a_agent_sk bigint [note: 'FK to a2a_agent.a2a_agent_sk — the buying agent this mandate governs.']
+  a2a_agent_id string [note: 'Durable business key of the governed agent.']
+  consent_id string [note: 'Durable customer.consent business key authorizing automated purchasing. Logical reference (not a UC FK) — consent is …']
+  spend_ceiling_amount decimal(18,2) [note: 'Maximum cumulative spend the agent may commit under this mandate, in the reporting currency.']
+  per_transaction_limit_amount decimal(18,2) [note: 'Maximum value of a single transaction the agent may commit without human approval, in the reporting currency.']
+  currency_code string [note: 'ISO 4217 reporting-currency code for the amount columns. Single reporting currency across the package.']
+  approval_threshold_amount decimal(18,2) [note: 'Transaction value at or above which a human must approve. NULL = no human-approval step.']
+  allowed_categories string [note: 'Comma-separated product categories the agent may transact in. NULL = unrestricted.']
+  mandate_status string [not null, note: 'Lifecycle status. Allowed values: active, suspended, revoked, expired.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date this version stopped being effective; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this mandate.']
+  created_timestamp timestamp [note: 'When the mandate was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the mandate was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the lakehouse (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table a2a_negotiation_event {
+  a2a_negotiation_event_sk bigint [pk, note: 'Surrogate key.']
+  a2a_negotiation_event_id string [not null, note: 'Durable natural/business key for the negotiation event.']
+  a2a_session_sk bigint [not null, note: 'FK to a2a_session.a2a_session_sk — the session this event occurred in.']
+  a2a_session_id string [not null, note: 'Durable business key of the parent session.']
+  a2a_agent_sk bigint [note: 'FK to a2a_agent.a2a_agent_sk — the agent that emitted this event.']
+  a2a_agent_id string [note: 'Durable business key of the emitting agent.']
+  product_sk bigint [note: 'FK to product.product.product_sk — the product this step concerns, if applicable.']
+  product_id string [note: 'Durable product business key.']
+  event_type string [not null, note: 'The negotiation step. Allowed values: price_request, offer, counter_offer, acceptance, rejection, availability_check …']
+  event_sequence int [not null, note: 'Monotonic step number within the session (1 = first event). NOT NULL: it is load-bearing for ordering — …']
+  proposed_price decimal(18,4) [note: 'Proposed unit price for this step, normalized to the reporting currency. NULL for non-price events.']
+  currency_code string [note: 'ISO 4217 reporting-currency code for proposed_price. Single reporting currency across the package.']
+  proposed_quantity int [note: 'Proposed quantity for this step. NULL when not applicable.']
+  event_timestamp timestamp [not null, note: 'When the event occurred at source (UTC, ISO 8601).']
+  ingest_timestamp timestamp [not null, note: 'When this event was ingested into the lakehouse (UTC, ISO 8601).']
+  latency_seconds int [note: 'Ingest latency = ingest_timestamp - event_timestamp, in seconds.']
+  record_source string [note: 'Originating system or orchestration platform that produced this event.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table a2a_session {
+  a2a_session_sk bigint [pk, note: 'Surrogate key. Unique per session.']
+  a2a_session_id string [not null, note: 'Durable natural/business key for the session (e.g. a UUID issued by the orchestrator).']
+  buyer_profile_sk bigint [note: 'FK to customer.profile.profile_sk — the individual the buying agent represents.']
+  buyer_profile_id string [note: 'Durable business key of the buyer profile. Stable across SCD2 versions.']
+  store_sk bigint [note: 'FK to store.store.store_sk — the store or channel the selling agent represents.']
+  store_id string [note: 'Durable business key of the store.']
+  product_sk bigint [note: 'FK to product.product.product_sk — the primary product being negotiated, if applicable.']
+  product_id string [note: 'Durable business key of the product.']
+  initiating_agent_sk bigint [note: 'FK to a2a_agent.a2a_agent_sk — the agent that opened the session.']
+  initiating_agent_id string [note: 'Durable business key of the initiating agent.']
+  responding_agent_sk bigint [note: 'FK to a2a_agent.a2a_agent_sk — the agent that responded.']
+  responding_agent_id string [note: 'Durable business key of the responding agent.']
+  session_status string [not null, note: 'Lifecycle status. Allowed values: initiated, negotiating, agreed, completed, abandoned, failed, expired.']
+  communication_channel string [not null, note: 'Communication channel between agents. Allowed values: api, marketplace, direct, voice.']
+  initiator_type string [not null, note: 'Which side initiated the session. Allowed values: buyer_agent, seller_agent.']
+  session_summary string [note: 'PII · Free-text summary of the session outcome or current state. May contain PII if agents reference customer details.']
+  initiated_timestamp timestamp [not null, note: 'When the session was created (UTC, ISO 8601).']
+  last_activity_timestamp timestamp [note: 'When the most recent interaction occurred (UTC, ISO 8601). Updated on each negotiation event.']
+  completed_timestamp timestamp [note: 'When the session concluded (UTC, ISO 8601). NULL if still active.']
+  record_source string [note: 'Originating system or orchestration platform that produced this session.']
+  source_updated_timestamp timestamp [note: 'When this session row was last modified in the source system (UTC, ISO 8601). Advances on each in-place status/activity …']
+  load_timestamp timestamp [note: 'When this row was loaded into the lakehouse (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table assistant_turn_event {
+  assistant_turn_event_sk bigint [pk, note: 'Surrogate key for the assistant turn event.']
+  assistant_turn_event_id string [not null, note: 'Durable natural/business key for the assistant turn event.']
+  conversation_session_sk bigint [note: 'FK to conversation_session.conversation_session_sk.']
+  conversation_session_id string [not null, note: 'Durable business key for the parent conversational shopping session.']
+  discovery_intent_event_sk bigint [note: 'FK to discovery_intent_event.discovery_intent_event_sk when this turn captured or used a discovery intent.']
+  discovery_intent_event_id string [note: 'Durable business key for the linked discovery intent event.']
+  turn_sequence_number int [not null, note: 'One-based turn order within the conversation session.']
+  actor_type string [not null, note: 'Actor responsible for the turn. Allowed values: shopper, assistant, associate, system.']
+  turn_type string [not null, note: 'Structured turn type. Allowed values: intent_capture, recommendation, product_comparison, availability_check …']
+  assistant_action_type string [note: 'Structured assistant action. Allowed values: none, search_products, recommend_products, compare_products …']
+  intent_category string [note: 'Turn-local normalized shopper intent category when this turn captured or refined intent; not authoritative over the …']
+  intent_confidence_score double [note: 'Turn-local model confidence that the normalized category reflects the shopper intent, from 0.0 to 1.0; scoped to this …']
+  is_fallback_flag boolean [note: 'TRUE when the assistant could not confidently answer or proceed without fallback behavior.']
+  is_handoff_flag boolean [note: 'TRUE when the turn handed the shopper to an associate or other support channel.']
+  event_ts timestamp [not null, note: 'When the turn occurred at source (UTC, ISO 8601).']
+  event_date date [not null, note: 'Business date of the turn event.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table conversation_session {
+  conversation_session_sk bigint [pk, note: 'Surrogate key for the conversational shopping session.']
+  conversation_session_id string [not null, note: 'Durable natural/business key for the conversational shopping session.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk when the shopper is resolved.']
+  profile_id string [note: 'PII · Durable customer business key (pseudonymous). NULL for anonymous sessions.']
+  store_sk bigint [note: 'FK to store.store_sk when the conversation is scoped to a store/location.']
+  store_id string [note: 'Durable store business key when store context is known.']
+  session_id string [note: 'PII · Pseudonymous session identifier from the shopping surface; degenerate, not application state.']
+  conversation_id string [note: 'PII · Pseudonymous conversation identifier; degenerate, not transcript state.']
+  entry_channel string [note: 'Surface where the conversation started. Allowed values: web, mobile_app, kiosk, store_associate, voice, api.']
+  locale_code string [note: 'Locale/language context for the conversation, e.g. en-US.']
+  jurisdiction_code string [note: 'Jurisdiction used for consent/personalization evaluation, ISO 3166-1 alpha-2 when available.']
+  started_ts timestamp [not null, note: 'When the conversation started at source (UTC, ISO 8601).']
+  ended_ts timestamp [note: 'When the conversation ended at source (UTC, ISO 8601). NULL only when still active at the reporting cutoff or unknown.']
+  started_date date [not null, note: 'Business date the conversation started.']
+  session_status string [note: 'Lifecycle status at the immutable reporting point. Allowed values: active, completed, abandoned, escalated.']
+  resolution_type string [note: 'How the session resolved. Allowed values: product_selected, add_to_cart, purchase, handoff, no_resolution, abandoned.']
+  personalization_eligible_flag boolean [note: 'TRUE when the shopper was eligible for personalized assistance at session start.']
+  consent_status string [note: 'Consent state used for personalization at session start. Allowed values: granted, denied, unknown.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table discovery_engagement_event {
+  discovery_engagement_event_sk bigint [pk, note: 'Surrogate key for the discovery engagement event.']
+  discovery_engagement_event_id string [not null, note: 'Durable natural/business key for the engagement event.']
+  discovery_result_event_sk bigint [note: 'FK to discovery_result_event.discovery_result_event_sk.']
+  discovery_result_event_id string [not null, note: 'Durable business key for the engaged result.']
+  discovery_intent_event_sk bigint [note: 'FK to discovery_intent_event.discovery_intent_event_sk.']
+  discovery_intent_event_id string [not null, note: 'Durable business key for the parent discovery intent event.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk when the shopper is resolved.']
+  profile_id string [note: 'PII · Durable customer business key (pseudonymous). NULL for anonymous engagement.']
+  product_sk bigint [note: 'FK to product.product_sk for the engaged product.']
+  product_id string [not null, note: 'Durable product business key for the engaged product.']
+  store_sk bigint [note: 'FK to store.store_sk when engagement is store-scoped.']
+  store_id string [note: 'Durable store business key when engagement is store-scoped.']
+  order_line_sk bigint [note: 'FK to customer_order_line.order_line_sk when engagement converted to a purchase.']
+  order_line_id string [note: 'Durable order-line business key when purchase attribution is known.']
+  order_id string [note: 'Operational order identifier retained as a degenerate attribute.']
+  engagement_type string [not null, note: 'Type of engagement. Allowed values: view, select, add_to_cart, purchase, dismiss.']
+  engagement_ts timestamp [not null, note: 'When the engagement occurred at source (UTC, ISO 8601).']
+  engagement_date date [not null, note: 'Business date of the engagement.']
+  quantity int [note: 'Units associated with the engagement, populated for add-to-cart or purchase events when known.']
+  net_amount decimal(18,2) [note: 'Net purchase amount in the reporting/base currency, populated only for purchase events. Point-of-engagement attribution …']
+  currency_code string [note: 'Reporting/base currency for net_amount, ISO 4217 alpha-3.']
+  attribution_window_minutes int [note: 'Minutes between result production and engagement when known.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table discovery_intent_event {
+  discovery_intent_event_sk bigint [pk, note: 'Surrogate key for the discovery intent event.']
+  discovery_intent_event_id string [not null, note: 'Durable natural/business key for the intent event.']
+  conversation_session_sk bigint [note: 'FK to conversation_session.conversation_session_sk when the intent is part of a guided shopping conversation.']
+  conversation_session_id string [note: 'Durable conversational shopping session business key when the intent is part of a guided conversation.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk when the shopper is resolved.']
+  profile_id string [note: 'PII · Durable customer business key (pseudonymous). NULL for anonymous intent.']
+  store_sk bigint [note: 'FK to store.store_sk when discovery is scoped to a store/location.']
+  store_id string [note: 'Durable store business key when store context is known.']
+  session_id string [note: 'PII · Pseudonymous session identifier from the discovery surface; degenerate, not application state.']
+  conversation_id string [note: 'PII · Pseudonymous conversation identifier when the intent came from an agent/chat turn; degenerate, not transcript …']
+  discovery_channel string [note: 'Surface where intent was captured. Allowed values: web, mobile_app, kiosk, store_associate, voice, api.']
+  locale_code string [note: 'Locale/language context for the intent, e.g. en-US.']
+  jurisdiction_code string [note: 'Jurisdiction used for consent/personalization evaluation, ISO 3166-1 alpha-2 when available.']
+  intent_text_hash string [note: 'PII · Deterministic hash of the redacted normalized intent text. Raw shopper text is not stored in ORDM.']
+  intent_category string [note: 'Normalized intent category. Allowed values: product_search, need_based, occasion, problem_solution, compatibility …']
+  intent_confidence_score double [note: 'Model confidence that the normalized category reflects the shopper intent, from 0.0 to 1.0.']
+  personalization_eligible_flag boolean [note: 'TRUE when the shopper was eligible for personalized ranking at event time.']
+  consent_status string [note: 'Consent state used for personalization at event time. Allowed values: granted, denied, unknown.']
+  event_ts timestamp [not null, note: 'When the intent event occurred at source (UTC, ISO 8601).']
+  event_date date [not null, note: 'Business date of the intent event.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table discovery_result_event {
+  discovery_result_event_sk bigint [pk, note: 'Surrogate key for the returned discovery result.']
+  discovery_result_event_id string [not null, note: 'Durable natural/business key for the returned result.']
+  discovery_intent_event_sk bigint [note: 'FK to discovery_intent_event.discovery_intent_event_sk.']
+  discovery_intent_event_id string [not null, note: 'Durable business key for the parent discovery intent event.']
+  product_sk bigint [note: 'FK to product.product_sk for the returned product.']
+  product_id string [not null, note: 'Durable product business key for the returned product.']
+  store_sk bigint [note: 'FK to store.store_sk when result availability is store-scoped.']
+  store_id string [note: 'Durable store business key when result availability is store-scoped.']
+  result_rank int [not null, note: 'One-based product rank within the returned result set.']
+  retrieval_score double [note: 'Candidate retrieval score, from 0.0 to 1.0 when normalized.']
+  ranking_score double [note: 'Final ranking score, from 0.0 to 1.0 when normalized.']
+  personalization_score double [note: 'Personalization component of the ranking score, from 0.0 to 1.0 when normalized.']
+  availability_score double [note: 'Availability component of the ranking score, from 0.0 to 1.0 when normalized.']
+  reason_code string [note: 'Primary explainability reason. Allowed values: lexical_match, semantic_match, purchase_affinity, substitute …']
+  is_available_flag boolean [note: 'TRUE when the result was considered buyable/available at ranking time.']
+  units_available decimal(12,3) [note: 'Units available at ranking time when known.']
+  list_price_amount decimal(18,4) [note: 'List/shelf price shown or used at ranking time, in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency for price fields, ISO 4217 alpha-3.']
+  event_ts timestamp [not null, note: 'When the result was produced at source (UTC, ISO 8601).']
+  event_date date [not null, note: 'Business date of the result event.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table gold_a2a_agent_scorecard {
+  a2a_agent_id string
+  agent_name string
+  agent_role string
+  operator_name string
+  trust_status string
+  sessions_participated string
+  sessions_completed string
+  success_rate string
+  avg_time_to_completion_seconds string
+  Note: 'gold · gold'
+}
+
+Table gold_a2a_negotiation_funnel {
+  session_date string
+  communication_channel string
+  product_id string
+  sessions_initiated string
+  reached_negotiating string
+  reached_agreed string
+  completed string
+  lost string
+  completion_rate string
+  Note: 'gold · gold'
+}
+
+Table gold_a2a_session_summary {
+  a2a_session_sk string
+  a2a_session_id string
+  session_status string
+  communication_channel string
+  initiator_type string
+  buyer_profile_id string
+  store_id string
+  product_id string
+  initiating_agent_id string
+  responding_agent_id string
+  initiated_timestamp string
+  completed_timestamp string
+  duration_seconds string
+  event_count string
+  counter_offer_count string
+  escalated_to_human string
+  first_offer_price string
+  agreed_price string
+  agreed_quantity string
+  agreed_currency_code string
+  price_concession_pct string
+  Note: 'gold · gold'
+}
+
+Table gold_conversational_shopping_performance {
+  started_date string
+  entry_channel string
+  primary_intent_category string
+  resolution_type string
+  conversation_sessions string [note: 'Count of conversational shopping sessions in the reporting grain.']
+  known_customer_sessions string
+  personalization_eligible_sessions string
+  selected_sessions string
+  add_to_cart_sessions string
+  purchase_sessions string
+  handoff_sessions string
+  fallback_sessions string
+  sessions_reaching_discovery string [note: 'Count of conversational shopping sessions that reached at least one linked discovery intent.']
+  purchased_units string
+  purchase_net_amount string
+  currency_code string [note: 'Reporting/base currency (ISO 4217 alpha-3) for purchase_net_amount; NULL when the grain had no purchases.']
+  avg_total_turns string
+  avg_turns_to_first_discovery string
+  selection_rate string
+  add_to_cart_rate string
+  assisted_conversion_rate string [note: 'Share of conversational shopping sessions that reached a purchase.']
+  handoff_rate string [note: 'Share of conversational shopping sessions with an associate or support handoff.']
+  fallback_rate string [note: 'Share of conversational shopping sessions with at least one fallback turn.']
+  Note: 'gold · gold'
+}
+
+Table gold_conversational_shopping_session {
+  conversation_session_id string [note: 'Durable session business key; raw session and conversation identifiers are not exposed.']
+  started_date string
+  started_ts string
+  ended_ts string
+  entry_channel string [note: 'Surface where the guided shopping conversation started.']
+  locale_code string
+  jurisdiction_code string
+  known_customer_flag string
+  store_id string
+  session_status string
+  resolution_type string
+  personalization_eligible_flag string
+  consent_status string
+  total_turns string [note: 'Total structured turns observed in the conversation session.']
+  shopper_turns string
+  assistant_turns string
+  recommendation_turns string
+  fallback_turns string [note: 'Number of turns where fallback behavior was used.']
+  handoff_flag string [note: 'TRUE when the session included an associate or support handoff.']
+  first_turn_ts string
+  last_turn_ts string
+  first_discovery_turn_number string
+  discovery_intent_count string
+  primary_intent_category string [note: 'Representative intent category for the session based on linked discovery intent events.']
+  selected_flag string
+  added_to_cart_flag string
+  purchased_flag string
+  purchased_units string
+  purchase_net_amount string [note: 'Net purchase amount attributed to the conversation session, in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency (ISO 4217 alpha-3) for purchase_net_amount; NULL when the session had no purchase.']
+  Note: 'gold · gold'
+}
+
+Table gold_intent_product_discovery_performance {
+  discovery_result_event_id string
+  discovery_intent_event_id string
+  intent_date string
+  intent_ts string
+  discovery_channel string
+  locale_code string
+  jurisdiction_code string
+  intent_category string [note: 'Normalized shopper intent category.']
+  intent_confidence_score string
+  known_customer_flag string [note: 'TRUE when the source intent was tied to a resolved customer profile.']
+  personalization_eligible_flag string [note: 'TRUE when personalized ranking was allowed at event time.']
+  consent_status string
+  product_id string
+  product_name string
+  brand string
+  category string
+  subcategory string
+  department string
+  store_id string
+  result_rank string [note: 'One-based product rank within the returned result set.']
+  retrieval_score string
+  ranking_score string
+  personalization_score string
+  availability_score string
+  reason_code string [note: 'Primary explainability reason for why the product was returned.']
+  is_available_flag string
+  units_available string
+  list_price_amount string
+  currency_code string
+  viewed_flag string
+  selected_flag string [note: 'TRUE when the returned product received a select engagement.']
+  added_to_cart_flag string [note: 'TRUE when the returned product received an add-to-cart engagement.']
+  purchased_flag string [note: 'TRUE when this returned product had any purchase engagement (per-result). Uses a different attribution rule than …']
+  engagement_count string
+  purchased_units string
+  purchase_net_amount string [note: 'Net purchase amount in the reporting/base currency, with each order line attributed to a SINGLE result (deduped to …']
+  first_engagement_ts string
+  purchase_ts string
+  Note: 'gold · gold'
+}
+
+Table gold_product_discovery_candidate_current {
+  product_id string [note: 'Durable product business key.']
+  gtin string
+  sku string
+  style_id string
+  product_name string [note: 'Display name of the discoverable product.']
+  brand string
+  category string
+  subcategory string
+  department string
+  color string
+  size string
+  unit_of_measure string
+  current_list_price_amount string [note: 'Current list price amount in the reporting/base currency.']
+  currency_code string
+  store_id string
+  latest_inventory_date string [note: 'Latest inventory snapshot date used to determine availability.']
+  units_available string
+  is_available_flag string [note: 'TRUE when latest inventory indicates the product is buyable for the store context; FALSE when inventory is missing or …']
+  size_availability_pct string
+  product_status string
+  Note: 'gold · gold'
+}
+
+Ref: conversation_session.profile_sk > profile.profile_sk
+Ref: conversation_session.store_sk > store.store_sk
+Ref: assistant_turn_event.conversation_session_sk > conversation_session.conversation_session_sk
+Ref: assistant_turn_event.discovery_intent_event_sk > discovery_intent_event.discovery_intent_event_sk
+Ref: discovery_intent_event.conversation_session_sk > conversation_session.conversation_session_sk
+Ref: discovery_intent_event.profile_sk > profile.profile_sk
+Ref: discovery_intent_event.store_sk > store.store_sk
+Ref: discovery_result_event.discovery_intent_event_sk > discovery_intent_event.discovery_intent_event_sk
+Ref: discovery_result_event.product_sk > product.product_sk
+Ref: discovery_result_event.store_sk > store.store_sk
+Ref: discovery_engagement_event.discovery_result_event_sk > discovery_result_event.discovery_result_event_sk
+Ref: discovery_engagement_event.discovery_intent_event_sk > discovery_intent_event.discovery_intent_event_sk
+Ref: discovery_engagement_event.profile_sk > profile.profile_sk
+Ref: discovery_engagement_event.product_sk > product.product_sk
+Ref: discovery_engagement_event.store_sk > store.store_sk
+Ref: discovery_engagement_event.order_line_sk > customer_order_line.order_line_sk
+Ref: a2a_session.buyer_profile_sk > profile.profile_sk
+Ref: a2a_session.store_sk > store.store_sk
+Ref: a2a_session.product_sk > product.product_sk
+Ref: a2a_session.initiating_agent_sk > a2a_agent.a2a_agent_sk
+Ref: a2a_session.responding_agent_sk > a2a_agent.a2a_agent_sk
+Ref: a2a_negotiation_event.a2a_session_sk > a2a_session.a2a_session_sk
+Ref: a2a_negotiation_event.a2a_agent_sk > a2a_agent.a2a_agent_sk
+Ref: a2a_negotiation_event.product_sk > product.product_sk
+Ref: a2a_mandate.buyer_profile_sk > profile.profile_sk
+Ref: a2a_mandate.a2a_agent_sk > a2a_agent.a2a_agent_sk
+
+TableGroup agentic-commerce [color: #3b4a59] { a2a_agent, a2a_mandate, a2a_negotiation_event, a2a_session, assistant_turn_event, conversation_session, discovery_engagement_event, discovery_intent_event, discovery_result_event, gold_a2a_agent_scorecard, gold_a2a_negotiation_funnel, gold_a2a_session_summary, gold_conversational_shopping_performance, gold_conversational_shopping_session, gold_intent_product_discovery_performance, gold_product_discovery_candidate_current }

@@ -1,0 +1,46 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    a2a_agent["a2a_agent<br/>a2a_agent_sk · a2a_agent_id · represented_profile_id · represented_store_id"]:::core
+    a2a_mandate["a2a_mandate<br/>a2a_mandate_sk · a2a_mandate_id · buyer_profile_sk · buyer_profile_id"]:::core
+    a2a_negotiation_event["a2a_negotiation_event<br/>a2a_negotiation_event_sk · a2a_negotiation_event_id · a2a_session_sk · a2a_session_id"]:::core
+    a2a_session["a2a_session<br/>a2a_session_sk · a2a_session_id · buyer_profile_sk · buyer_profile_id"]:::core
+    assistant_turn_event["assistant_turn_event<br/>assistant_turn_event_sk · assistant_turn_event_id · conversation_session_sk · conversation_session_id"]:::core
+    conversation_session["conversation_session<br/>conversation_session_sk · conversation_session_id · profile_sk · profile_id"]:::core
+    discovery_engagement_event["discovery_engagement_event<br/>discovery_engagement_event_sk · discovery_engagement_event_id · discovery_result_event_sk · discovery_result_event_id"]:::core
+    discovery_intent_event["discovery_intent_event<br/>discovery_intent_event_sk · discovery_intent_event_id · conversation_session_sk · conversation_session_id"]:::core
+    discovery_result_event["discovery_result_event<br/>discovery_result_event_sk · discovery_result_event_id · discovery_intent_event_sk · discovery_intent_event_id"]:::core
+    gold_a2a_agent_scorecard["gold_a2a_agent_scorecard<br/>a2a_agent_id"]:::gold
+    gold_a2a_negotiation_funnel["gold_a2a_negotiation_funnel<br/>product_id"]:::gold
+    gold_a2a_session_summary["gold_a2a_session_summary<br/>a2a_session_sk · a2a_session_id · buyer_profile_id · store_id"]:::gold
+    gold_conversational_shopping_performance["gold_conversational_shopping_performance"]:::gold
+    gold_conversational_shopping_session["gold_conversational_shopping_session<br/>conversation_session_id · store_id"]:::gold
+    gold_intent_product_discovery_performance["gold_intent_product_discovery_performance<br/>discovery_result_event_id · discovery_intent_event_id · product_id · store_id"]:::gold
+    gold_product_discovery_candidate_current["gold_product_discovery_candidate_current<br/>product_id · style_id · store_id"]:::gold
+    profile --> conversation_session
+    store --> conversation_session
+    conversation_session --> assistant_turn_event
+    discovery_intent_event --> assistant_turn_event
+    conversation_session --> discovery_intent_event
+    profile --> discovery_intent_event
+    store --> discovery_intent_event
+    discovery_intent_event --> discovery_result_event
+    product --> discovery_result_event
+    store --> discovery_result_event
+    discovery_result_event --> discovery_engagement_event
+    discovery_intent_event --> discovery_engagement_event
+    profile --> discovery_engagement_event
+    product --> discovery_engagement_event
+    store --> discovery_engagement_event
+    customer_order_line --> discovery_engagement_event
+    profile --> a2a_session
+    store --> a2a_session
+    product --> a2a_session
+    a2a_agent --> a2a_session
+    a2a_agent --> a2a_session
+    a2a_session --> a2a_negotiation_event
+    a2a_agent --> a2a_negotiation_event
+    product --> a2a_negotiation_event
+    profile --> a2a_mandate
+    a2a_agent --> a2a_mandate
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;
