@@ -1,0 +1,10 @@
+%%{init: {"theme":"dark"}}%%
+flowchart LR
+    CORE["Canonical core · silver<br/>15 conformed domains<br/>the shared primitives every outcome builds on"]:::core
+    GOLD["Outcome packages · gold<br/>12 outcomes across 4 themes<br/>metric views + semantics, consumption-ready"]:::gold
+    YOU["Your data and extensions"]:::you
+    CORE ==>|conformed entities| GOLD
+    GOLD ==>|consumption-ready semantics| YOU
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;
+    classDef you fill:#26313b,stroke:#8aa4bd,color:#eef4fa;
