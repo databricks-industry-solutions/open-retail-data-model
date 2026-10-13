@@ -1,0 +1,55 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_marketing { Note: 'core unit' }
+
+Table audience {
+  audience_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  audience_id string [not null, note: 'Durable natural/business key for the audience/segment. The stable key consumers reference and reverse-ETL diffs on.']
+  audience_name string [note: 'Human-readable audience/segment name.']
+  audience_type string [note: 'How the segment is defined. Allowed values: first_party, modeled, lookalike, demographic, behavioral, contextual …']
+  audience_origin string [note: 'Where the segment originates. Allowed values: crm, loyalty, modeled, third_party, platform, survey.']
+  definition_description string [note: 'Vendor-neutral description of the membership criteria (no PII, no member lists).']
+  size_estimate bigint [note: 'Approximate member count as of this SCD2 version — a point-in-time snapshot attribute (>= 0), not a refreshed rollup of …']
+  is_addressable_flag boolean [note: 'TRUE if the audience can be targeted/activated for delivery.']
+  segmentation_basis string [note: 'The axis the definition is built on. Allowed values: behavioral, value_rfm, lifecycle, demographic, geographic …']
+  definition_origin string [note: 'How the definition was authored. Allowed values: canned, custom, agent_generated.']
+  definition_method string [note: 'How membership is computed. Allowed values: rule, ml_score, imported.']
+  criteria_expression string [note: 'Portable, vendor-neutral predicate/SQL text describing the membership rule. No PII, no member lists.']
+  evaluation_mode string [note: 'Refresh latency of the definition (an attribute, not a schema fork). Allowed values: batch, streaming, edge.']
+  iab_taxonomy_code string [note: 'Optional IAB Audience Taxonomy tier code for cross-platform interoperability (NULL if unmapped). Kept on the shared …']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this audience.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table promotion {
+  promo_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  promo_id string [not null, note: 'Durable natural/business key for the promotion. The reserved value NO_PROMO marks the no-promotion member.']
+  promo_name string [note: 'Human-readable promotion name.']
+  promo_type string [note: 'Promotion mechanic. Allowed values: TPR, FEATURE, DISPLAY, FEATURE_AND_DISPLAY, BOGO, COUPON, BUNDLE. NULL only for the …']
+  funding_type string [note: 'How the promotion is funded. Allowed values: OFF_INVOICE, BILL_BACK, SCAN_DOWN, LUMP_SUM. NULL only for the NO_PROMO …']
+  funded_by string [note: 'Who funds the promotion. Allowed values: SUPPLIER, RETAILER, SHARED. NULL only for the NO_PROMO member.']
+  supplier_share_pct decimal(5,2) [note: 'Percent of trade spend funded by the supplier (0-100). Required when funded_by <> RETAILER.']
+  start_date date [note: 'Promotion start date, inclusive (ISO 8601).']
+  end_date date [note: 'Promotion end date, inclusive (ISO 8601).']
+  fiscal_week_start int [note: 'Fiscal week id (fiscal_calendar.fiscal_week_id) containing start_date.']
+  fiscal_week_end int [note: 'Fiscal week id (fiscal_calendar.fiscal_week_id) containing end_date.']
+  planned_discount_pct decimal(5,2) [note: 'Planned price discount percent (0-100).']
+  planned_lift_pct decimal(6,2) [note: 'Planned incremental unit lift percent over baseline.']
+  planned_trade_spend decimal(18,2) [note: 'Planned total trade spend for the promotion, in the reporting/base currency (single-currency by construction).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+
+TableGroup marketing [color: #3b4a59] { audience, promotion }

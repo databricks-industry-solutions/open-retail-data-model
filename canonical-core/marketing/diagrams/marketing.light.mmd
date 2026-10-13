@@ -1,0 +1,26 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    audience {
+        bigint audience_sk PK
+        string audience_id
+        string audience_name
+        string audience_type  "enum"
+        string audience_origin  "enum"
+        string definition_description
+        bigint size_estimate
+        boolean is_addressable_flag
+        string segmentation_basis  "enum"
+        string definition_origin  "enum"
+    }
+    promotion {
+        bigint promo_sk PK
+        string promo_id
+        string promo_name
+        string promo_type  "enum"
+        string funding_type  "enum"
+        string funded_by  "enum"
+        decimal supplier_share_pct
+        date start_date
+        date end_date
+        int fiscal_week_start
+    }
