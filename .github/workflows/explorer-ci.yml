@@ -1,0 +1,37 @@
+name: Explorer CI
+
+# Type-check, test, and build the explorer SPA on any PR/push that touches it.
+# Before this the explorer was ONLY built by the push-to-main Pages deploy
+# (explorer-deploy.yml), so a TypeScript error or a broken test in explorer/
+# slipped past PR CI entirely and the `typecheck` script gated nothing (#54
+# review M1). Native path filtering keeps this inert for non-explorer changes.
+on:
+  pull_request:
+    branches: [main]
+    paths: ['explorer/**']
+  push:
+    branches: [main]
+    paths: ['explorer/**']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Install from the public registry, never the internal Databricks npm proxy
+      # baked into some environments (see explorer-deploy.yml / the committed lock).
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Type-check, test, and build the SPA
+        run: |
+          cd explorer
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm run test
+          npm run build

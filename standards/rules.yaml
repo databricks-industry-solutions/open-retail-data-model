@@ -1,0 +1,322 @@
+# ORDM machine-enforceable rules registry.
+#
+# This file is the single source of truth for the rules CI enforces. It binds
+# three things together so they cannot drift:
+#   1. the prose standard  docs/data-model-standards.md  (each rule cites a section)
+#   2. the CI checks        tests/standards/test_standards_conformance.py (each enforced rule names its test)
+#   3. the conformance matrix in the standard, generated from this file by tools/gen_conformance_matrix.py
+# tests/standards/test_standards_meta.py asserts all three agree on every run, so
+# adding a rule to the prose without a check, or a check without a rule, or
+# letting the matrix go stale, is itself a test failure.
+#
+# status:
+#   enforced  - a check exists and runs in CI; the meta-test requires a `test`.
+#   planned   - in the standard, not yet mechanically checked; tracked here so it is visible.
+# severity: error blocks; warn and metric are advisory.
+# layer: static (cluster-free), spark, deploy, precommit, human.
+
+version: 1
+
+# Cross-surface policy registries live beside the conformance rules because this
+# file binds standards, deployed checks and static CI. Schema tokens resolve from
+# databricks.yml at deploy time; paths let static tests verify every registered
+# owner while repository-wide globs provide the auto-extending backstop.
+policy_registries:
+  market_analysis_no_pricing_lineage:
+    sql_expression_token: market_analysis_price_producing_schema_literals
+    protected_objects_sql_expression_token: market_analysis_protected_object_values
+    price_producing_name_pattern_sql_expression_token: market_analysis_price_producing_name_pattern
+    price_producing_name_pattern: price|margin|offer|elasticity|cost|promo
+    protected_objects:
+      - competitor_promotion
+      - competitor_assortment
+      - competitor_product_match
+      - market_benchmark
+      - gold_competitive_position
+      - mv_competitive_position
+      - gold_market_share
+      - mv_market_share
+    price_producing_scopes:
+      - path: outcome-packages/balancing-margin-and-volume
+        schema_token: bmv_schema
+      - path: canonical-core/product
+        schema_token: product_schema
+      - path: outcome-packages/smarter-demand-and-inventory-decisions
+        schema_token: sdi_schema
+      - path: outcome-packages/promote-with-purpose
+        schema_token: promo_schema
+      - path: outcome-packages/connected-store-signals
+        schema_token: css_schema
+      # The associate price/promotion lookup is a price-shaped serving view, so it
+      # falls inside the guard: nothing in this schema may pull Market Analysis
+      # competitor or benchmark objects into what an associate is shown.
+      - path: outcome-packages/ai-assisted-store-associates
+        schema_token: aasa_schema
+  market_benchmark_no_redistribution:
+    sql_expression_token: market_benchmark_sharing_schema_literals
+    protected_objects_sql_expression_token: market_benchmark_licensed_object_values
+    schema_scopes_key: sharing_scopes
+    protected_objects:
+      - market_benchmark
+      - gold_market_share
+      - mv_market_share
+    # DSWS owns the repository's supplier-sharing, clean-room and Delta-Sharing
+    # publication surfaces. Other packages remain internal analytical consumers.
+    sharing_scopes:
+      - path: outcome-packages/data-sharing-with-suppliers
+        schema_token: dss_schema
+
+rules:
+  - id: ARTIFACT-ONE-CREATE
+    title: One CREATE statement per file
+    statement: >-
+      Every .sql under a tables/ directory contains exactly one CREATE TABLE or
+      CREATE VIEW statement.
+    standard_section: "A.1"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_one_create_per_file
+
+  - id: ARTIFACT-NO-MD-UNDER-TABLES
+    title: No markdown under a tables/ directory
+    statement: >-
+      Narrative and research never live under tables/; only executable .sql does.
+    standard_section: "A.1"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_no_markdown_under_tables
+
+  - id: LAYER-INTEGRITY
+    title: Canonical core never FKs into a gold or outcome schema
+    statement: >-
+      No foreign key declared in a canonical-core relationships.sql may target a
+      schema that belongs to an outcome package. The tree self-FK case is exempt.
+    standard_section: "A.3"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_layer_integrity
+
+  - id: PK-CONTRACT
+    title: Surrogate primary key is a named BIGINT identity
+    statement: >-
+      Every canonical-core table declares a primary key constraint pk_<table>
+      on a surrogate column that ends with _sk and is BIGINT GENERATED ALWAYS AS
+      IDENTITY.
+    standard_section: "A.4"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_pk_contract
+
+  - id: TYPING-MONEY
+    title: Strict typing, money is DECIMAL not FLOAT or DOUBLE
+    statement: >-
+      No STRING on numeric-named columns, and no FLOAT or DOUBLE on monetary
+      columns (amount, price, cost, revenue, fee, balance). DOUBLE is allowed on
+      non-monetary continuous columns.
+    standard_section: "A.6"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_typing_money
+
+  - id: NO-INLINE-CHECK
+    title: CHECK constraints via ALTER, never inline in CREATE TABLE
+    statement: >-
+      No table CREATE declares an inline CONSTRAINT ... CHECK. Databricks supports
+      only PRIMARY KEY and FOREIGN KEY inline, so an inline CHECK fails to parse at
+      deploy time; CHECK constraints must be added via ALTER TABLE ADD CONSTRAINT.
+    standard_section: "A.7"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_no_inline_check
+
+  # ---- planned: in the standard, mechanical check not yet implemented ----
+  - id: PROVENANCE-HEADER
+    title: Provenance header present, no license body in DDL
+    statement: Every .sql carries the provenance header and no license/copyright body.
+    standard_section: "A.14"
+    severity: error
+    layer: static
+    status: planned
+
+  - id: TAGS-DATA-TYPE
+    title: dbx_data_type tag required on every table
+    statement: Every table sets the dbx_data_type tag (master|transactional|reference|association).
+    standard_section: "A.11"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_tags_data_type
+
+  - id: SCD2-JOIN-CONTRACT
+    title: Gold and metric views resolve SCD2 history correctly
+    statement: >-
+      A consuming view (gold/*.sql, metric-views/*.sql) must resolve SCD2 masters
+      as-of at ingest and equi-join on the dimension's primary-key _sk (which is
+      already version-specific), never (a) join an SCD2 table on one of its NON-PK
+      _sk columns with no is_current/effective-date predicate (history fan-out),
+      (b) equate two _sk AND filter is_current=TRUE in the same join (drops
+      historical-version fact rows), (c) GROUP BY / window PARTITION BY a
+      version-specific SCD2 _sk with no date/period key (fragments a re-versioned
+      entity), or (d) COUNT(DISTINCT _sk) / approx_count_distinct over an SCD2 _sk
+      (double-counts a re-versioned entity). Metric views must not expose a bare
+      SCD2 _sk as a groupable dimension. See §A.16. Tracked debt (the visible
+      remediation ledger, shrunk as fixes land) is in known_exceptions, keyed on a
+      `<relpath>::<kind>` signature.
+    standard_section: "A.16"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_scd2_join_contract
+
+  - id: FK-COMPLETENESS
+    title: Reference completeness — cross-entity references are FKs on a surrogate
+    statement: >-
+      Every canonical-core table that references another core entity (masters
+      included) carries a <stem>_sk foreign surrogate and declares the informational
+      foreign key fk_<child>_<parent> on it (single-column, on the parent _sk primary
+      key, NORELY default). A cross-entity reference modeled only on a business key
+      <stem>_id with no <stem>_sk is a defect (add the surrogate), not an exemption.
+      Named exceptions: self-FK hierarchies; natural-code reference/lookups
+      (currency, country, unit_of_measure, channel); and header-grain/degenerate or
+      polymorphic references whose parent is not a single modeled entity (e.g.
+      payment.order_id, shipment.po_id, lane origin/destination location), which
+      carry no single surrogate to FK on and sit outside the deterministic gate.
+    standard_section: "A.5"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_fk_completeness
+
+  - id: CLUSTER-KEY-TYPE
+    title: Clustering keys are filter/join columns, not continuous measures
+    statement: >-
+      A CLUSTER BY key must be a plausible filter/join/MERGE predicate — a
+      surrogate/business key, a date, or another column the table is queried by.
+      A continuous MEASURE column — one whose type is FLOAT/DOUBLE/DECIMAL AND
+      whose name is a percentage/rate/ratio/score or money word (amount/price/cost/
+      revenue/fee/balance/spend/margin) — is never a predicate, so clustering on it
+      yields no data-skipping and wastes one of the four key slots. Type and name
+      must both match, so a legitimately range-filtered FLOAT/DOUBLE (latitude/
+      longitude) is not flagged; a _sk/_id key is always exempt (a join key, never
+      a measure). On a gold view, whose cluster keys are SELECT-output aliases with
+      no parseable type, the name alone decides. No clause may exceed four keys, and
+      every key must be a column declared in the same CREATE TABLE. Low-cardinality
+      and enum keys ARE allowed and combine well (unlike partitioning, Liquid
+      Clustering is multi-dimensional and order-independent), so this rule does not
+      constrain key cardinality or ordering — see the design principle "Clustering
+      key selection". The general "column is only selected, never filtered" case is
+      not statically provable and is left to review.
+    standard_section: "B"
+    severity: error
+    layer: static
+    status: enforced
+    test: tests/standards/test_standards_conformance.py::test_cluster_key_type
+
+  - id: NO-DERIVED-ON-MASTER
+    title: No derived metrics on master or dimension tables
+    statement: Derived-metric column-name patterns are forbidden on dbx_data_type=master tables.
+    standard_section: "A.9"
+    severity: warn
+    layer: static
+    status: planned
+
+  - id: VENDOR-NEUTRAL
+    title: Vendor-neutral comments and names
+    statement: No vendor, partner, or brand names anywhere - comments, identifiers, tags/TBLPROPERTIES, schema/table/column names, or file paths (deny-list).
+    standard_section: "A.14"
+    severity: error
+    layer: static
+    status: planned
+
+  - id: NAMING-CONSTRAINTS
+    title: Constraint and identifier naming
+    statement: snake_case, fk_<child>_<parent>, chk_<table>_<rule>, is_* booleans, bare FK column names.
+    standard_section: "D"
+    severity: warn
+    layer: static
+    status: planned
+
+  - id: THIN-ROOT-FK-CEILING
+    title: Thin customer root, inbound-only FKs
+    statement: An outbound foreign-key ceiling on the customer root.
+    standard_section: "A.10"
+    severity: warn
+    layer: static
+    status: planned
+
+  - id: DQ-FACT-COVERAGE
+    title: Every fact has an orphan and single-currency check
+    statement: FK-orphan on every fact, single-reporting-currency on every monetary fact.
+    standard_section: "A.12"
+    severity: error
+    layer: spark
+    status: planned
+
+# Tracked debt: violations that are known and scheduled for removal. A check
+# excuses a violation only if it matches an entry here, so the suite stays green
+# while the debt stays visible. Empty this list as the fixes land.
+#
+# FK-COMPLETENESS `match` forms (for future tracked debt): a bare PK stem (a
+# natural-code lookup or a self-FK stem, suppressed globally) or a precise
+# `<table>.<column>` signature (one known `_id`-only reference tracked until its
+# surrogate lands). The two initial FK-COMPLETENESS gaps
+# (account.primary_contact_profile_id, shipment_line.po_line_id) were fixed with
+# real surrogate FKs, so no FK-COMPLETENESS exception remains and the rule runs
+# at severity: error with zero exceptions.
+#
+# SCD2-JOIN-CONTRACT `match` form: `<repo-relative gold/metric-view path>::<kind>`
+# where kind is one of history-fanout | reverse-bug | frag-groupby |
+# frag-partition | distinct-count-sk | sk-dimension. This is the SCD2 remediation
+# ledger seeded by the prevention-scaffold PR: the lint runs at severity: error
+# and every currently-known defect is listed here so the required suite stays
+# green while the defects are visible and enumerated. Each entry is removed as its
+# view is corrected (the fix-the-views PR), so the list only shrinks; when it is
+# empty no view trips any detector (a strong regex-based guard over the known SCD2
+# defect shapes — not a formal proof of SCD2-correctness). `tools/gen_status.py`-style tooling and
+# the PR body report the count. (Rationale in the maintainer's local design notes;
+# the enforced rule + prose live at standard §A.16.)
+known_exceptions:
+  # -- history fan-out: join on a non-PK _sk of an SCD2 table, no as-of (1) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_price_actuals.sql::history-fanout"}
+  # -- reverse-drop: join fact _sk = dim _sk AND filter is_current=TRUE (drops
+  #    historical-version fact rows; the version-specific _sk already pins it). The
+  #    last two are FROM-anchored on the SCD2 promotion (WHERE p.is_current) (4) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/aggregation_features.sql::reverse-bug"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/trend_features.sql::reverse-bug"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_trade_promotion.sql::reverse-bug"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_promo_roi_by_category.sql::reverse-bug"}
+  # -- fragmentation: GROUP BY a version-specific SCD2 _sk; day-grain exempt,
+  #    period/week grain NOT (a fiscal period spans a re-version) (6) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/actionable-customer-understanding/gold/gold_customer_ltv.sql::frag-groupby"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/early-risk-detection/gold/gold_procurement_risk.sql::frag-groupby"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/early-risk-detection/gold/gold_supplier_scorecard.sql::frag-groupby"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_promo_roi_by_category.sql::frag-groupby"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_trade_promotion.sql::frag-groupby"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_weekly_baseline.sql::frag-groupby"}
+  # -- fragmentation: window PARTITION BY a version-specific SCD2 _sk (6) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_assortment_optimization.sql::frag-partition"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_bucket_features.sql::frag-partition"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_price_actuals.sql::frag-partition"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_promotional_features.sql::frag-partition"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_trade_promotion.sql::frag-partition"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/promote-with-purpose/gold/gold_weekly_baseline.sql::frag-partition"}
+  # -- distinct-count over an SCD2 _sk (2) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/gold/gold_promotional_features.sql::distinct-count-sk"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/data-sharing-with-suppliers/gold/gold_category_growth.sql::distinct-count-sk"}
+  # -- metric views exposing a bare SCD2 _sk as a groupable dimension (10) --
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/aggregation_features.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/assortment_performance.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/assortment_recommendations.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/competitor_analysis.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/lagging_features.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/outcome_variables.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/price_actuals.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/rolling_features.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/sales_actuals.sql::sk-dimension"}
+  - {rule: SCD2-JOIN-CONTRACT, match: "outcome-packages/balancing-margin-and-volume/metric-views/trend_features.sql::sk-dimension"}

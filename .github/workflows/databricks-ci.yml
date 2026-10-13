@@ -1,4 +1,4 @@
-name: Databricks Asset Bundles CI
+name: ORDM CI
 
 on:
   pull_request:
@@ -9,8 +9,290 @@ on:
       - main
 
 jobs:
+  # Static gate: DDL/generator/DQ contract tests + the Spark gold-SQL tests.
+  # The gold SQL is executed on Spark -- the same engine Databricks runs -- so
+  # there is no non-Databricks query engine anywhere. No workspace needed, so
+  # this runs on every PR and blocks the bundle deploy below if anything regresses.
+  #
+  # Sharded: the suite runs as 4 parallel jobs (whole test files per shard, balanced on the
+  # measured CI time per file in tests/ci_test_durations.json; see
+  # pytest_collection_modifyitems in tests/conftest.py), each using every runner core via
+  # pytest-xdist. The `test-summary` job below reports one stable "unit + spark tests" check,
+  # and the bundle deploy's `needs: test` waits for all 4 shards.
+  test:
+    name: unit + spark tests (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Set up Java (JVM for Spark)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Databricks-native dependency guardrail
+        run: |
+          # Fail the build if any non-Databricks query/execution engine is (re)introduced.
+          if grep -rinE '\b(duckdb|sqlite3?|psycopg|pymysql|cx_oracle|snowflake|bigquery|redshift|polars|dask|trino|presto|clickhouse)\b' \
+               --include='*.py' --include='*.txt' --include='*.toml' \
+               runtime tools tests requirements.txt requirements-dev.txt; then
+            echo "::error::Non-Databricks engine detected — only Spark / Delta / Databricks SQL are allowed."
+            exit 1
+          fi
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run test suite (this shard)
+        # --dist loadgroup: conftest groups each file onto one xdist worker, so module fixtures
+        # are built once per file. Each worker owns one local Spark session.
+        # Tests marked writes_repo rewrite files in the checkout, so they run serially in shard 1
+        # (next step), never alongside a test that reads those files.
+        env:
+          ORDM_TEST_SHARD: ${{ matrix.shard }}/4
+        run: >-
+          pytest -q --strict-markers -n auto --dist loadgroup --ignore=tests/standards -m "not writes_repo"
+          --junitxml=junit-shard-${{ matrix.shard }}.xml
+      - name: Derived artifacts in sync with the source (drift guard)
+        # Runs BEFORE the repo-writing round-trip tests, which rewrite model.json and the ER
+        # diagram sources: checking after them would compare the generators with their own
+        # fresh output and pass a stale commit.
+        # Skipped on same-repo PRs (the regen-artifacts job auto-commits there); runs on
+        # push-to-main and fork PRs as the gate. `make check-*` is the SINGLE source of
+        # the generator list (see the Makefile), so a new derived artifact is gated here
+        # automatically once it is added there. This diffs the ODCS contracts, the ER
+        # diagram sources (.mmd/.dbml + README <picture>), model.json (schema + FK +
+        # use-case -> core lineage), and the committed .svg SNAPSHOTS. The SVGs are checked
+        # for FRESHNESS, not re-rendered: mermaid's layout is host-dependent so a CI render
+        # would not byte-match a local one, so check-svg compares the .mmd sha stamped into
+        # each SVG (deterministic, pure-python, no mermaid-cli). A stale .svg FAILS here, so
+        # forks/push are gated on every derived type - matching the Makefile/CONTRIBUTING
+        # claim. The conformance matrix has its own check in the standards-conformance job.
+        if: ${{ matrix.shard == 1 && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository) }}
+        run: make check-odcs check-er check-model check-svg
+      - name: Repo-writing round-trip tests (serial)
+        # !cancelled(): still runs (and reports) when an earlier step failed; the job fails anyway.
+        if: ${{ matrix.shard == 1 && !cancelled() }}
+        run: pytest -q --strict-markers -p no:xdist -m writes_repo --ignore=tests/standards --junitxml=junit-writes-repo.xml
+      - name: DDL-correctness conformance gate
+        if: ${{ matrix.shard == 1 && !cancelled() }}
+        # The DDL-correctness conformance test (tests/standards/test_standards_conformance.py)
+        # is a GATING check here: it enforces machine-checkable authoring mandates (one-CREATE-
+        # per-file, PK contract, money typing, the required dbx_data_type tag, FK-completeness,
+        # no inline CHECK), so a contribution that breaks a mandate fails the `test` job (the
+        # intended hard gate) rather than only the advisory job. The rest of tests/standards
+        # (the conformance-matrix + README-status SYNC meta-tests) stays in the advisory
+        # standards-conformance job below, because that drift is auto-fixable
+        # by `make regen` and should not hard-block on a stale generated surface.
+        #
+        # Two invocations, NOT one: `pytest --ignore=tests/standards tests/standards/<file>` mixes an
+        # ignore of a directory with an explicit file INSIDE it — the resolution order is version-
+        # dependent and can silently collect 0 tests (turning this hard gate into a no-op with no
+        # signal). Splitting keeps each invocation unambiguous. `--no-header -p no:cacheprovider` and
+        # an explicit collected-count guard make a 0-collect fail loudly instead of passing green.
+        run: |
+          # Gate the DDL-correctness conformance suite explicitly; fail if it somehow collects nothing.
+          collected=$(pytest tests/standards/test_standards_conformance.py --co -q 2>/dev/null | grep -c '::') || true
+          if [ "${collected:-0}" -lt 1 ]; then
+            echo "::error::gating conformance suite collected 0 tests — the hard gate would be a no-op"; exit 1
+          fi
+          echo "conformance gate: ${collected} tests collected"
+          pytest -q tests/standards/test_standards_conformance.py --junitxml=junit-conformance-serial.xml
+
+      - name: Upload per-test timings (JUnit)
+        # tools/ci_test_durations.py turns these into tests/ci_test_durations.json, which
+        # balances the shards.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ matrix.shard }}
+          path: junit-*.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # One stable check name for the sharded suite: passes only when every shard passed, so a
+  # required check (if branch protection is ever enabled) does not depend on the shard count.
+  test-summary:
+    name: unit + spark tests
+    needs: test
+    # always(): a cancelled or skipped run must not leave a skipped (= passing) summary check
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All test shards passed
+        run: |
+          echo "test shards: ${{ needs.test.result }}"
+          [ "${{ needs.test.result }}" = "success" ]
+
+  # On same-repo PRs, regenerate the derived artifacts (ODCS contracts, ER diagram
+  # sources, model.json; the rendered SVGs are excluded from regen-ci, see the body
+  # comment) from the DDL and commit them back; contributors only
+  # edit DDL. Fork PRs get a read-only token and can't be pushed to, so they fall back
+  # to the drift-guard steps above (which run only for forks / push-to-main). This also
+  # makes CI the sole SVG renderer (consistent fonts/Chromium). Commits made with
+  # GITHUB_TOKEN do not trigger new workflow runs, so there is no loop. The [skip ci] regen
+  # commit that ultimately merges is a DETERMINISTIC function of the DDL that the required
+  # checks already validated on the pre-regen head, so it is intentionally not re-checked (#53 minor).
+  regen-artifacts:
+    name: generated artifacts in sync
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Regenerate the DETERMINISTIC artifacts from the DDL
+        # ODCS contracts, Mermaid/DBML sources + README <picture> blocks, and model.json
+        # are pure-python and deterministic, so CI regenerates + commits them (below) and
+        # contributors only edit DDL. `make regen-ci` is the single generator list (shared
+        # with local `make regen`), so a new auto-committed artifact is added in the
+        # Makefile once, never here. The conformance matrix is deliberately excluded: it is
+        # gated by the standards-conformance job, not auto-committed from this one. See
+        # docs/er-diagrams.md.
+        run: make regen-ci
+      - name: Set up Node (for the mermaid-cli SVG renderer)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Render diagram SVGs (incremental)
+        # The rendered .svg IMAGES are refreshed here now. render_diagrams.sh is INCREMENTAL
+        # (skips any .svg already stamped with its .mmd's sha), so it re-renders ONLY the
+        # diagrams whose .mmd just changed - removing the "would churn every run" reason they
+        # were previously excluded, and keeping SVGs in lockstep with the .mmd that check-svg
+        # gates. mermaid's render is non-byte-reproducible, but the freshness gate is a
+        # sha-stamp compare (not a byte compare), so a CI render is authoritative.
+        run: |
+          npm install -g @mermaid-js/mermaid-cli
+          make regen-svg
+      - name: Guard - every auto-commit file_pattern token matches a path
+        # git-auto-commit-action passes each file_pattern token literally to a single
+        # atomic `git add`; a token that matches ZERO files aborts the whole commit with
+        # exit 128 (git status tolerates it, so it only bites PRs where regen dirtied
+        # something). That silently failed regen on model PRs when `diagrams/**/*.svg`
+        # matched nothing (the overview SVGs are flat at `docs/diagrams/*.svg`; a git pathspec
+        # `**/` needs an intermediate dir). This preflight runs AFTER regen+render, on the
+        # SAME working tree the add sees, reads the ONE file_pattern out of this file (no
+        # second source of truth), and checks each token with the SAME pathspec engine
+        # (`git add --dry-run`), failing loud and naming any dead token so a future
+        # file_pattern edit cannot reintroduce the cryptic 128.
+        run: |
+          set -uo pipefail
+          # Disable shell globbing so each token stays LITERAL in the loop, exactly as
+          # git-auto-commit-action passes them to `git add` (git's pathspec engine is then
+          # the sole oracle, not bash pathname expansion).
+          set -f
+          # Read the ONE double-quoted file_pattern from this workflow. Assert exactly one
+          # match (the guard's own single-quoted regex above does not self-match), so a
+          # future second double-quoted file_pattern cannot make us silently guard the wrong
+          # one (review m1). Fail loud on 0 or 2+ rather than head -1'ing the wrong pattern.
+          count=$(grep -cE 'file_pattern:[[:space:]]*"[^"]+"' .github/workflows/databricks-ci.yml || true)
+          if [ "${count:-0}" -ne 1 ]; then
+            echo "::error::expected exactly 1 double-quoted file_pattern in databricks-ci.yml, found ${count}; cannot guard reliably"
+            exit 1
+          fi
+          pattern=$(grep -oE 'file_pattern:[[:space:]]*"[^"]+"' .github/workflows/databricks-ci.yml \
+                    | sed -E 's/^file_pattern:[[:space:]]*"//; s/"$//')
+          bad=0
+          for tok in $pattern; do
+            if ! git add --dry-run -- "$tok" >/dev/null 2>&1; then
+              echo "::error::regen-artifacts file_pattern token did not resolve (usually a zero-match glob; git add would then abort with exit 128): '$tok'"
+              bad=1
+            fi
+          done
+          if [ "$bad" -ne 0 ]; then
+            echo "A file_pattern token matches zero files, so git-auto-commit's git add would abort with exit 128."
+            echo "Fix the file_pattern in .github/workflows/databricks-ci.yml (e.g. a nested '**' glob that should be flat)."
+            exit 1
+          fi
+          echo "file_pattern guard OK: every token matches at least one path."
+      - name: Commit regenerated artifacts (if any changed)
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403  # v5
+        with:
+          commit_message: "chore: regenerate contracts/diagram-sources/model from DDL [skip ci]"
+          # Text artifacts + the rendered *.svg snapshots (now produced incrementally
+          # above). The glossary glob is RECURSIVE (explorer/public/**/glossary.md) to match
+          # gen_model_json's **/glossary.md staging/orphan sweep: a git-pathspec '*' is a
+          # single path component, so the old <layer>/*/glossary.md coincided today but would
+          # silently skip a glossary nested a level deeper (which make check-model would still
+          # stage). Contracts stay '*.yaml'-globbed on purpose: they are flat by design, and
+          # '*.yaml' also correctly excludes the hand-authored contracts/odcs/README.md that a
+          # bare-dir or **/* add would wrongly sweep in (round-12 M1).
+          file_pattern: "contracts/odcs/*.yaml canonical-core/**/diagrams/*.mmd canonical-core/**/diagrams/*.dbml canonical-core/**/diagrams/*.svg canonical-core/**/README.md outcome-packages/**/diagrams/*.mmd outcome-packages/**/diagrams/*.dbml outcome-packages/**/diagrams/*.svg outcome-packages/**/README.md docs/diagrams/*.svg explorer/public/model.json explorer/public/contracts/odcs/*.yaml explorer/public/**/glossary.md"
+
+  # Standards conformance: the machine-enforceable mandates from the rules
+  # registry (standards/rules.yaml), plus the meta-test that keeps the registry,
+  # the checks, and the conformance matrix in the standard from drifting.
+  # Cluster-free, no workspace. Advisory for now: it is not in `needs` below and
+  # is not a required check until the team flips it on in branch protection.
+  standards-conformance:
+    name: standards conformance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Conformance matrix is in sync with the rules registry
+        run: python tools/gen_conformance_matrix.py --check
+      - name: README status surfaces are in sync with STATUS.md
+        # The count badge + core/outcome status tables in the README are generated
+        # from STATUS.md (tools/gen_status.py). Gated here alongside the matrix, not
+        # auto-committed, because the README is human-edited prose. Run
+        # `make regen` (or `python tools/gen_status.py --write`) and commit.
+        run: python tools/gen_status.py --check
+      - name: Version stamps agree with VERSION
+        # Every "-- Version:" / "# Version:" header, notebook title and "> Status:" line
+        # must carry the version in the VERSION file. A release changes them all at once
+        # with `make release NEW_VERSION=...` (tools/release.py, docs/releasing.md).
+        run: python tools/release.py check
+      - name: Run standards conformance + meta tests
+        run: pytest -q tests/standards
+
   validate-and-test:
-    runs-on: html_publisher
+    name: bundle deploy smoke (workspace)
+    runs-on: ubuntu-latest
+    needs: test          # do not deploy unless the test gate passes
+    # Deploy/destroy hits a real workspace, so only run when one is actually
+    # configured (the DATABRICKS_HOST repo variable is set) AND on same-repo
+    # events (push to main, or a PR from a branch in this repo). Fork PRs lack
+    # the secrets and must never target an internal workspace. When no
+    # workspace is configured the job is skipped, not failed, so the test +
+    # standards gates stay the source of truth until a workspace is wired up.
+    if: >-
+      vars.DATABRICKS_HOST != '' &&
+      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    timeout-minutes: 30
+
+    # Workspace host comes from a repository variable (Settings > Variables >
+    # Actions), never hardcoded in the workflow (guardrail #1). The token
+    # stays a secret. Both are exposed to every step via the CLI's standard
+    # DATABRICKS_HOST / DATABRICKS_TOKEN environment variables.
+    # NOTE: the repository variable DATABRICKS_HOST must be set (Settings >
+    # Variables > Actions) or the "Configure Databricks CLI" step fails fast.
+    env:
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DEPLOY_NOTEBOOK_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -22,21 +304,19 @@ jobs:
           python-version: '3.11'
 
       - name: Set up Databricks CLI
-        uses: databricks/setup-cli@main
-        env:
-          DATABRICKS_HOST: 'https://e2-demo-field-eng.cloud.databricks.com'
-          DATABRICKS_TOKEN: ${{ secrets.DEPLOY_NOTEBOOK_TOKEN }}
+        uses: databricks/setup-cli@8821c27b1fe57472264eeb6e50c1f31d69552f28  # v1.10.0
 
       - name: Configure Databricks CLI authentication
         run: |
+          if [ -z "$DATABRICKS_HOST" ]; then
+            echo "::error::Repository variable DATABRICKS_HOST is not set. Define it under Settings > Variables > Actions."
+            exit 1
+          fi
           echo "[DEFAULT]" > ~/.databrickscfg
-          echo "host = https://e2-demo-field-eng.cloud.databricks.com" >> ~/.databrickscfg
-          echo "token = ${{ secrets.DEPLOY_NOTEBOOK_TOKEN }}" >> ~/.databrickscfg
+          echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
+          echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
 
       - name: Get or Create serverless SQL warehouse
-        env:
-          DATABRICKS_HOST: 'https://e2-demo-field-eng.cloud.databricks.com'
-          DATABRICKS_TOKEN: ${{ secrets.DEPLOY_NOTEBOOK_TOKEN }}
         run: |
           WAREHOUSE_NAME="Shared Unity Catalog Serverless"
           echo "Looking for warehouse named: $WAREHOUSE_NAME"
@@ -101,17 +381,30 @@ jobs:
           # Set default environment to dev
           echo "DEPLOY_ENV=dev" >> $GITHUB_ENV
 
+      # Pass warehouse_id to EVERY bundle command: the daily deploy job's tasks render
+      # ["--warehouse", "${var.warehouse_id}", ...], and an unset warehouse_id renders an empty
+      # string mid-array that Terraform rejects as `parameters[<nil>] is not a string`, failing
+      # the whole bundle deploy. This job already derived $WAREHOUSE_ID above; thread it through.
       - name: Validate bundle
-        run: databricks bundle validate --var="environment=${{ env.DEPLOY_ENV }}"
+        run: databricks bundle validate --var="environment=${{ env.DEPLOY_ENV }}" --var="warehouse_id=$WAREHOUSE_ID"
 
       - name: Deploy workflow
-        run: databricks bundle deploy --var="environment=${{ env.DEPLOY_ENV }}"        
+        run: databricks bundle deploy --var="environment=${{ env.DEPLOY_ENV }}" --var="warehouse_id=$WAREHOUSE_ID"
 
       - name: Run and monitor workflow
         run: |
-          echo "Starting workflow execution..."
-          databricks bundle run demo_workflow --target dev --var="environment=${{ env.DEPLOY_ENV }}"
+          # The bundle may not define any runnable jobs yet (resources are added
+          # per outcome package as they mature). Run demo_workflow only when it is
+          # actually defined, so CI stays green in the meantime and starts running
+          # it automatically once the resource is added.
+          if databricks bundle validate --var="environment=${{ env.DEPLOY_ENV }}" --var="warehouse_id=$WAREHOUSE_ID" -o json \
+               | python3 -c "import sys, json; d = json.load(sys.stdin); sys.exit(0 if 'demo_workflow' in ((d.get('resources') or {}).get('jobs') or {}) else 1)"; then
+            echo "Starting workflow execution..."
+            databricks bundle run demo_workflow --target dev --var="environment=${{ env.DEPLOY_ENV }}" --var="warehouse_id=$WAREHOUSE_ID"
+          else
+            echo "No demo_workflow resource defined in the bundle yet; skipping run."
+          fi
 
       - name: Cleanup PR deployment
         run: |
-          databricks bundle destroy --target dev --var="environment=${{ env.DEPLOY_ENV }}" || true
+          databricks bundle destroy --target dev --var="environment=${{ env.DEPLOY_ENV }}" --var="warehouse_id=$WAREHOUSE_ID" || true

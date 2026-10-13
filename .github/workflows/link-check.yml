@@ -1,0 +1,48 @@
+name: Link check (advisory)
+
+# Broken-link surfacing for the Markdown docs. ADVISORY: every job runs lychee with
+# fail:false, so it reports into the job summary and never blocks a merge (external
+# links are rate-limited/flaky and the repo/site is still private, so gating a PR on
+# them would be noise). Promote the offline job to a required check once the repo is
+# public and the baseline is clean.
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays — full external sweep
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Fast + deterministic: relative/local Markdown links resolve. Runs on PRs.
+  internal-links:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lychee (offline — local links only)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline checks only on-disk targets of relative links (no network),
+          # so it is deterministic and never flakes on external hosts.
+          args: --offline --no-progress --exclude-path node_modules "./**/*.md"
+          fail: false          # advisory — report, never block
+          jobSummary: true
+
+  # Full sweep incl external URLs. Scheduled + on demand only, never on PRs.
+  external-links:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lychee (full — includes external URLs)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --exclude-path node_modules "./**/*.md"
+          fail: false
+          jobSummary: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

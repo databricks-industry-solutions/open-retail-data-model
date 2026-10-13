@@ -1,0 +1,246 @@
+# ============================================================
+# ORDM · Synthetic data · deterministic seeds
+# ============================================================
+# Same seed + same row counts => identical generated data, so committed
+# samples are reproducible. Job parameters (widgets) override anything here.
+# ============================================================
+
+base_seed: 42
+
+domains:
+  customer:
+    seed: 1001
+    volumes:
+      # Default row counts. Override via job parameters for scale tests.
+      profiles: 1000
+      accounts: 120
+    fanout:
+      # Max child rows generated per profile (actual count varies 1..max,
+      # deterministically per profile).
+      addresses_per_profile_max: 3
+      contacts_per_profile_max: 3
+      consents_per_profile_max: 4
+
+  inventory:
+    seed: 5005
+    volumes:
+      # history rows = products * stores * days, sampled across the sales calendar
+      products: 100
+      stores: 20
+      days: 30
+      # plus a dense position for EVERY product x store over the calendar's last N days,
+      # so the latest sales day has a same-day position (assortment days-on-hand)
+      trailing_days: 30
+
+  trade_promotion:
+    seed: 2002
+    volumes:
+      products: 120
+      stores: 30
+      promotions: 60
+      # NRF 4-5-4 fiscal calendar: first day must be a Sunday (week start).
+      calendar_start_date: "2024-01-07"
+      calendar_weeks: 110
+      # Probability that a given product x store x day has a sales row.
+      daily_sales_density: 0.06
+      # Location-Based Offers. These live under trade_promotion because the
+      # generator registry allows one provider per schema key and this generator
+      # already provides `promo` — there is no separate offer generator to key off.
+      # Defined location zones (one SCD2-current row each), anchored to stores.
+      zones: 40
+      # Configured location-triggered offers, spread across the zones.
+      location_offers: 25
+      # Upper bound on triggers per offer; each trigger fans out to 2-4 funnel rows.
+      offer_events_per_offer_max: 400
+    fanout:
+      scope_products_per_promo_max: 15
+      scope_stores_per_promo_max: 12
+      promo_duration_weeks_max: 4
+    seasonality:
+      # Relative promo-density weight per fiscal quarter (Q1..Q4); peak in Q4.
+      quarter_weights: [2, 1, 1, 4]
+    post_promo:
+      # The two value-killers, engineered into the synthetic sales so the
+      # Post-Promotion ROI views have a real signal to detect.
+      # forward_buy_weeks must match the N used by gold_promo_roi.
+      forward_buy_weeks: 2
+      forward_buy_dip_factor: 0.55        # promoted SKUs dip to 55% of baseline after the promo
+      cannibalization_dip_factor: 0.70    # substitute SKUs dip to 70% of baseline during the promo
+
+  supplier_monitoring:
+    seed: 3003
+    volumes:
+      suppliers: 40
+      lines_per_supplier: 200
+      # A few SKUs sourced by ONE supplier only, so the risk register has a
+      # genuine single-source signal to flag.
+      exclusive_skus: 6
+      exclusive_lines_per_pair: 30
+    # Behaviour mix (relative weights) so supplier scores spread out:
+    #   reliable      - short, low-variance lead times; high OTIF/fill; low defect
+    #   volatile      - high lead-time variance
+    #   deteriorating - lead time and defects worsen over the calendar
+    #   poor          - consistently late, short-shipped, defective
+    profile_weights:
+      reliable: 4
+      volatile: 2
+      deteriorating: 2
+      poor: 2
+
+  logistics:
+    seed: 6006
+    volumes:
+      lanes: 20
+      shipments: 200
+      lines_per_shipment: 3
+      tracking_per_shipment: 5
+
+  early_risk_detection:
+    seed: 7007
+    volumes:
+      events: 50
+      alerts: 20
+
+  customer_ltv:
+    seed: 4004
+    volumes:
+      # Skewed value distribution: most customers buy little (long low-value
+      # tail), a few buy a lot (high-value head). orders ~ max * u^value_skew.
+      max_orders_per_customer: 40
+      value_skew: 4.0
+      lines_per_order_max: 4
+      # Product Affinity co-purchase seeding (OPT-IN, shipped OFF). When
+      # affinity_copurchase_denom > 0, the first two lines of ~1/denom multi-line baskets are
+      # forced to a fixed product pair so gold_product_affinity_pairwise ("frequently bought
+      # together") populates. Shipped as 0 to keep customer_order_line a STRICTLY NEUTRAL uniform
+      # draw — CLV / Behavioral Segmentation / Market Analysis read an unshaped core, and no one
+      # package's demo need reshapes the shared fact. The pairwise surface is then intentionally
+      # sparse in the demo (its severity:error checks pass vacuously; the algebra is proven by the
+      # Spark tests, which enable seeding explicitly). Set to e.g. 4 to seed it — that populates
+      # the surface but lightly shapes the shared order fact. affinity_pair_count = distinct pairs
+      # when enabled.
+      affinity_copurchase_denom: 0
+      affinity_pair_count: 8
+      # Payment-event rates (share of orders, base rates before adjustment).
+      refund_rate: 0.12
+      declined_rate: 0.04
+      voided_rate: 0.02
+      adjustment_rate: 0.03
+      chargeback_rate: 0.015
+
+  equipment:
+    seed: 9009
+    volumes:
+      assets: 80
+      readings_per_asset: 20
+
+  balancing_margin_and_volume:
+    seed: 8008
+    volumes:
+      competitors: 5
+      relationships_per_product: 3
+      price_observations_density: 0.05
+      # share of product x store pairs with a planogram allocation (feeds the space-elasticity fit)
+      planogram_density: 0.5
+    fanout:
+      affinity_min: 0.1
+      affinity_max: 1.0
+
+  connected_store_signals:
+    seed: 12012
+    volumes:
+      # Row count is stores x (1 site + zones) x days x intervals_per_day, so these
+      # multiply fast. 30 stores x 7 zones x 14 days x 12 intervals ~ 35k rows.
+      days: 14
+      intervals_per_day: 12
+      # Interval length. Must be >= 15: ADR 0029 floors published count intervals at
+      # 15 minutes, because a 5-minute interval in a quiet zone suppresses most cells
+      # and then leaks through the suppression PATTERN.
+      interval_minutes: 60
+      # Environmental (gs1:Temperature) rows off equipment-linked probes. Small, but
+      # non-zero on purpose: they are what actually exercises sri_group_exclusivity,
+      # the check that makes ADR 0032's one-wide-table decision safe rather than
+      # merely tolerated.
+      env_devices: 20
+      env_intervals_per_device: 24
+      # Compact RFID story: a tagged subset of the catalog, three bounded session
+      # types per store, and a short item journey per serialized unit.
+      rfid_products: 20
+      rfid_items_per_product_store: 4
+      rfid_events_per_item: 6
+      rfid_sessions_per_store: 3
+      # Smart Shelf: the high-volume fact is positions × products × days × two
+      # platforms × captures. Defaults stay compact while preserving every story arc.
+      positions_per_store: 24
+      products_per_position: 1
+      captures_per_day_per_platform: 6
+      price_change_observations: 5
+
+  smarter_demand_and_inventory_decisions:
+    seed: 11011
+    volumes:
+      planning_units: 200
+      forecasts: 500
+      oos_events: 30
+
+  labor:
+    seed: 14014
+    volumes:
+      # Pseudonymous associates, availability horizon, and published schedules.
+      employees: 60
+      schedules_per_employee: 4
+      availability_days: 14
+
+  predictive_operations:
+    seed: 12012
+    volumes:
+      # In-Store Equipment Maintenance
+      work_orders: 120
+      lines_per_wo: 2
+      schedules_per_equipment: 1
+      # Store Performance — store_risk_score: one row per store per snapshot, over
+      # `snapshots` daily-ish snapshots spaced `snapshot_stride_days` apart (newest = today).
+      snapshots: 5
+      snapshot_stride_days: 7
+      # Workforce Optimization (ADR 0043)
+      forecast_lines: 48
+      recommendations: 20
+      exceptions: 5
+
+  interaction:
+    seed: 13013
+    volumes:
+      # Anonymous-first digital sessions + a slice of offline touches. Each session
+      # explodes into a short sessionized sequence (page_view -> product_view -> ...).
+      sessions: 400
+      events_per_session_max: 11
+      offline_touches: 120
+    fanout:
+      # Fraction of sessions stitched to a known customer.profile (the rest stay
+      # anonymous, profile_id NULL) — exercises the anonymous->known path end-to-end.
+      resolved_session_pct: 0.6
+
+  agentic_commerce:
+    seed: 13013
+    volumes:
+      agents: 40
+      mandates: 30
+      sessions: 200
+      events_per_session_max: 6
+
+  ai_assisted_store_associates:
+    seed: 15015
+    volumes:
+      events: 40
+      orders: 12
+      audits: 20
+      action_history_days: 14
+      actions_per_store_day: 4
+      open_actions_per_associate_max: 5
+
+  unified_customer_view:
+    seed: 17017
+    volumes:
+      destinations: 5
+      jobs_per_destination: 4
+      touches_per_job: 10

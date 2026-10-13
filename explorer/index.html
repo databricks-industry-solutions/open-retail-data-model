@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORDM Model Explorer</title>
+    <!-- Inline SVG favicon (gold outcome band over silver core band, mirroring the
+         layered model) so the page ships no favicon.ico 404 and stays self-contained. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='7' rx='1.5' fill='%23c4830a'/%3E%3Crect y='9' width='16' height='7' rx='1.5' fill='%23556070'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <!-- Toolbar: title, breadcrumbs, back, view toggle, search + filters, theme.
+         Built up by main.ts. No hard-coded background here — the theme CSS vars
+         drive it (an inline #toolbar background used to override the theme). -->
+    <header id="toolbar"></header>
+    <div id="hint" hidden></div>
+    <div id="main">
+      <!-- #stage hosts the active view: the DOM overview / matrix, or #cy for
+           the cytoscape graph & per-unit ER. -->
+      <div id="stage">
+        <div id="overview-root"></div>
+        <div id="cy" hidden></div>
+        <div id="loading">Loading model…</div>
+      </div>
+      <aside id="panel"></aside>
+    </div>
+    <footer id="legend"></footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

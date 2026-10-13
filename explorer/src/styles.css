@@ -1,0 +1,1636 @@
+/* ============================================================
+   ORDM Explorer — Databricks-adjacent palette
+   slate = silver/core (foundational); ember = gold/outcome (derived).
+   ============================================================ */
+
+:root {
+  /* Core unit: slate-blue */
+  --core-fill: #e9eef3;
+  --core-stroke: #3b4a59;
+  --core-text: #101d29;
+  --core-tint: #eef2f6;
+  --core-line: #b7c4d2;
+
+  /* Gold / outcome: ember */
+  --gold-fill: #fce3d6;
+  --gold-stroke: #c4320a;
+  --gold-text: #4a1b0a;
+  --gold-deep: #6d2c07;
+  --gold-tint: #fdefe3;
+  --gold-line: #e9b489;
+
+  /* PII accent */
+  --pii-color: #a5285a;
+  --pii-bg: #fde8f0;
+
+  /* Status */
+  --ok: #2f7d55;
+  --wip: #b6811b;
+  --plan: #7c8794;
+  --block: #b23b3b;
+
+  /* Edges */
+  --edge-color: #55606b;
+
+  /* Page */
+  --page-bg: #f6f8fa;
+  --page-text: #101d29;
+  --muted: #66737f;
+  --line: #d9dfe6;
+  --line-soft: #e8ecf1;
+  --card-bg: #ffffff;
+  --toolbar-bg: #ffffff;
+  --toolbar-text: #16202b;
+  --panel-bg: #ffffff;
+  --panel-border: #d0d9e2;
+  --card-border-radius: 8px;
+  --card-shadow: 0 1px 2px rgba(22, 32, 43, 0.05), 0 8px 28px rgba(22, 32, 43, 0.07);
+
+  --chip-radius: 4px;
+  --chip-font-size: 10px;
+  --chip-padding: 1px 5px;
+
+  --font-ui: ui-sans-serif, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+html.theme-dark {
+  --core-fill: #243441;
+  --core-stroke: #8aa4bd;
+  --core-text: #eef4fa;
+  --core-tint: #182430;
+  --core-line: #35485a;
+
+  --gold-fill: #5a2e1e;
+  --gold-stroke: #f0996a;
+  --gold-text: #ffe8db;
+  --gold-deep: #f0996a;
+  --gold-tint: #2a1810;
+  --gold-line: #6d3b22;
+
+  --pii-color: #e0879f;
+  --pii-bg: #3d1828;
+
+  --edge-color: #8a94a3;
+
+  --page-bg: #0d1117;
+  --page-text: #eef4fa;
+  --muted: #8a94a3;
+  --line: #2a3443;
+  --line-soft: #232c39;
+  --card-bg: #161c24;
+  --toolbar-bg: #11161d;
+  --toolbar-text: #eef4fa;
+  --panel-bg: #161c24;
+  --panel-border: #2a3443;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ---- FIX (bug 2): bind the page + canvas background to the theme var.
+   --page-bg used to be defined but applied to nothing, so the canvas stayed
+   white in both light and dark. Now body and #cy both track it. ---- */
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--page-bg);
+  color: var(--page-text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+#cy {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  position: relative; /* anchor for the absolutely-centered .cy-empty state */
+  /* Clip the canvas so a zoomed-in diagram never spills past the container and
+     spawns a document scrollbar. That scrollbar used to fire window.resize ->
+     relayout -> applyDefaultZoom, snapping the user's zoom straight back (the
+     "blink and reset" bug, design/38 §4 zoom-durability). Off-screen content is
+     reached by pan / minimap, not page scroll. */
+  overflow: hidden;
+  background: var(--page-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   Toolbar
+   ============================================================ */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  min-height: 52px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  background: var(--toolbar-bg);
+  color: var(--toolbar-text);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  z-index: 100;
+}
+
+.toolbar-title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+/* Back affordance (bug 1: previously unstyled + non-functional) */
+#back-btn {
+  background: var(--core-tint);
+  border: 1px solid var(--line);
+  color: var(--toolbar-text);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#back-btn:hover {
+  border-color: var(--core-stroke);
+}
+#back-btn[hidden] {
+  display: none;
+}
+
+/* Breadcrumb */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.crumbs .crumb-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.crumbs .crumb-link:hover {
+  color: var(--gold-deep);
+}
+.crumbs b {
+  color: var(--toolbar-text);
+  font-weight: 600;
+}
+.crumbs .crumb-sep {
+  color: var(--line);
+}
+
+#toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+#toolbar select,
+#toolbar input[type="search"],
+#toolbar input[type="text"] {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  color: var(--toolbar-text);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  outline: none;
+}
+.tb-search {
+  min-width: 200px;
+}
+#toolbar select:focus,
+#toolbar input:focus-visible,
+#toolbar button:focus-visible,
+.pkg:focus-visible,
+.dom:focus-visible,
+.crumb-link:focus-visible,
+.theme-title:focus-visible,
+#panel .panel-links a:focus-visible {
+  outline: 2px solid var(--gold-stroke);
+  outline-offset: 1px;
+}
+#toolbar input:disabled,
+#toolbar select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#toolbar input[type="checkbox"] {
+  accent-color: var(--pii-color);
+  cursor: pointer;
+}
+
+.tb-readout {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+#toolbar button {
+  background: var(--core-tint);
+  border: 1px solid var(--line);
+  color: var(--toolbar-text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+#toolbar button:hover {
+  border-color: var(--core-stroke);
+}
+#theme-toggle {
+  white-space: nowrap;
+}
+
+/* segmented view toggle */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.segmented .seg-btn {
+  border: none;
+  border-radius: 0;
+  background: var(--card-bg);
+  color: var(--muted);
+  padding: 5px 12px;
+}
+.segmented .seg-btn:hover {
+  background: var(--core-tint);
+}
+.segmented .seg-btn.on {
+  background: var(--core-stroke);
+  color: #fff;
+}
+
+/* ============================================================
+   Onboarding hint
+   ============================================================ */
+#hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--gold-tint);
+  border-bottom: 1px solid var(--gold-line);
+  color: var(--gold-deep);
+  font-size: 13px;
+}
+#hint[hidden] {
+  display: none;
+}
+#hint .hint-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--gold-deep);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ============================================================
+   Main + stage
+   ============================================================ */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+#stage {
+  flex: 1;
+  position: relative;
+  /* Vertical scroll only. The page body must NEVER scroll horizontally at any
+     viewport width (Piece 3): overflow-x:hidden clips any incidental spill (e.g.
+     the vertical tier label) instead of adding a horizontal scrollbar. */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+#overview-root {
+  min-height: 100%;
+}
+#overview-root[hidden],
+#cy[hidden] {
+  display: none;
+}
+#loading {
+  padding: 40px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* Canvas empty-state for a planned unit with no tables (the ER pane would
+   otherwise be a blank void). Mirrors #loading; rendered into the #cy pane. */
+.cy-empty {
+  /* Centered in the #cy pane and anchored to it (inset:0), so it reads as an
+     intentional state and cannot drift off the left edge if any prior cytoscape
+     pan/zoom leaves state on the container. */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+  max-width: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   L0 layered value-chain overview
+   ============================================================ */
+.ov-canvas {
+  position: relative;
+  /* Left padding hosts the vertical tier label in a gutter INSIDE the canvas,
+     so the label never spills past the left viewport edge. Width is capped and
+     bounded to 100% so the canvas can't exceed the stage at any width. */
+  padding: 26px 26px 40px 44px;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.tier {
+  position: relative;
+  margin: 0 0 18px;
+}
+.tier-label {
+  position: absolute;
+  /* Sit in the .ov-canvas left gutter (no negative transform that could push it
+     off-screen and force horizontal overflow — Piece 3). */
+  left: -32px;
+  top: 0;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.lane {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.lane.gold {
+  background: linear-gradient(180deg, var(--gold-tint), var(--card-bg));
+  border-color: var(--gold-line);
+}
+.lane.core {
+  background: linear-gradient(180deg, var(--core-tint), var(--card-bg));
+  border-color: var(--core-line);
+}
+.lane-empty {
+  display: none;
+}
+.lane-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.lane-head h3 {
+  font-size: 16px;
+  color: var(--page-text);
+}
+.lane-head .tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+.tag.gold {
+  background: var(--gold-stroke);
+  color: #fff;
+}
+.tag.core {
+  background: var(--core-stroke);
+  color: #fff;
+}
+.lane-head .sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.themes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.theme.theme-empty {
+  display: none;
+}
+.theme-title {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  margin-bottom: 9px;
+  padding: 0 0 7px;
+  border: none;
+  border-bottom: 1.5px solid var(--gold-line);
+  background: none;
+  cursor: pointer;
+  min-height: 2.6em;
+}
+.theme-active .theme-title {
+  color: var(--gold-stroke);
+  border-bottom-width: 3px;
+}
+.pkgs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* package + domain cards (buttons) */
+.pkg,
+.dom {
+  display: flex;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--page-text);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.pkg {
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--gold-line);
+  padding: 9px 10px;
+}
+.pkg:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(196, 83, 10, 0.14);
+}
+.pkg .pname {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.28;
+}
+.pkg .pmeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+.pkg .pmeta .cnt {
+  margin-left: auto;
+}
+
+.domains {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+.dom {
+  flex-direction: column;
+  gap: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--core-line);
+  padding: 11px 10px;
+}
+.dom:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(55, 80, 107, 0.14);
+}
+.dom .dname {
+  font-size: 13px;
+  font-weight: 600;
+}
+.dom .dkind {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--core-stroke);
+  opacity: 0.8;
+}
+.dom .dmeta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.pkg.hidden,
+.dom.hidden {
+  display: none;
+}
+
+/* status dots */
+.stat {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+/* Two distinct status axes intentionally share this dot palette:
+   package status (built | in-progress | planned, derived in data.ts) and
+   use-case status (blocked | in-progress | planned | done, from use-cases.yaml).
+   'built' (package has relationships) and 'done' (use case delivered) mean
+   different things but share the ok/green swatch by design. */
+.stat.built,
+.stat.done {
+  background: var(--ok);
+}
+.stat.in-progress {
+  background: var(--wip);
+}
+.stat.planned {
+  background: var(--plan);
+}
+.stat.blocked {
+  background: var(--block);
+}
+
+/* ---- use-case planning sub-list (package card) ----
+   A calm, constrained list: names wrap, the row never pushes the card wider
+   (no horizontal overflow — see Piece 3). Uses the shared .stat dot styling. */
+.uc-list {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.uc {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+}
+.uc .stat {
+  width: 6px;
+  height: 6px;
+  position: relative;
+  top: 1px;
+}
+.uc-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+/* PII inline tag */
+.pii-dot {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--pii-color);
+  background: var(--pii-bg);
+  border: 1px solid var(--pii-color);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+/* flow hint between lanes */
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.flow .arrows {
+  letter-spacing: 0.35em;
+  color: var(--gold-stroke);
+  font-weight: 700;
+}
+
+/* consumption edge overlay */
+.edge-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+}
+.edge-path {
+  fill: none;
+  stroke: var(--gold-stroke);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+.edges-active .pkg.edge-dim,
+.edges-active .dom.edge-dim {
+  opacity: 0.28;
+}
+.edges-active .edge-src {
+  box-shadow: 0 0 0 2px var(--gold-stroke);
+}
+.edges-active .edge-dst {
+  box-shadow: 0 0 0 2px var(--core-stroke);
+}
+
+/* Hover-expanded card: floats over its neighbours (no layout reflow). The
+   node-html-label plugin gives each card an absolutely-positioned per-node wrapper
+   (an unclassed div that is the card's direct parent); raising that wrapper's
+   z-index floats the expanded card above the sibling cards. */
+.card.expanded {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+div:has(> .card.expanded) {
+  z-index: 40;
+}
+/* When the fully expanded card would run past the usable viewport bottom, graph.ts caps
+   the list to --ordm-expand-max (published on #cy) and flags the card `capped`. The list
+   is CLIPPED (not scrolled - scrolling a transient hover is an anti-pattern) and its bottom
+   edge is faded to signal "more below"; the `.col-expand-all` footer names the total and
+   invites a click (which opens the side panel with every column, scrollable). When the card
+   fits, it is not `capped` and shows every column outright. */
+.card.expanded .col-list.capped {
+  max-height: var(--ordm-expand-max, none);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+}
+.col-expand-all {
+  padding: 5px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--gold-stroke);
+  letter-spacing: 0.02em;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.card.core .col-expand-all {
+  color: var(--core-stroke);
+}
+
+/* L1 "consumes silver" rail: bottom list of the core tables a gold mview reads,
+   with hover arcs from the gold card (mirrors the L0 consumption tier). */
+.consumes-rail {
+  position: absolute;
+  left: 248px; /* clear the bottom-left minimap */
+  right: 14px; /* zoom widget moved to the top-right, so the rail owns the bottom */
+  bottom: 10px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  /* Theme-adaptive surface (was a hard-coded white fallback for an undefined --surface,
+     which rendered white-on-white in dark mode); matches the zoom widget's control tokens
+     so both read correctly in light and dark. */
+  background: var(--toolbar-bg);
+  color: var(--toolbar-text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.consumes-rail .cr-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.55;
+  margin-right: 2px;
+}
+.cr-chip {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.15;
+  padding: 3px 8px;
+  border: 1px dashed var(--core-stroke);
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: opacity 0.12s, box-shadow 0.12s;
+}
+.consumes-rail.active .cr-chip {
+  opacity: 0.32;
+}
+.consumes-rail.active .cr-chip.lit {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--core-stroke);
+}
+.cr-chip .cr-tbl {
+  font-weight: 600;
+  font-size: 12px;
+}
+.cr-chip .cr-dom {
+  font-size: 10px;
+  opacity: 0.6;
+}
+.consumes-arcs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.cr-arc {
+  fill: none;
+  stroke: var(--core-stroke);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+
+/* empty / no-results */
+.ov-empty {
+  padding: 60px 26px;
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+.ov-empty[hidden] {
+  display: none;
+}
+
+/* ============================================================
+   Matrix view
+   ============================================================ */
+.matrix-wrap {
+  padding: 24px 26px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.matrix {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.matrix th,
+.matrix td {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  text-align: center;
+}
+.matrix th.corner {
+  text-align: left;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.matrix th.mx-dom {
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.matrix th.mx-dom button,
+.matrix th.mx-pkg button {
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--page-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.matrix th.mx-pkg {
+  text-align: left;
+  white-space: nowrap;
+}
+.matrix td.mx-cell.on {
+  background: var(--gold-tint);
+}
+.matrix .mx-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold-stroke);
+}
+
+/* ============================================================
+   Detail Panel (reused ER detail — relocated to L1/L2 drill)
+   ============================================================ */
+#panel {
+  width: 340px;
+  min-width: 260px;
+  height: 100%;
+  overflow-y: auto;
+  border-left: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--page-text);
+  padding: 16px;
+  font-size: 13px;
+  display: none;
+}
+#panel.open {
+  display: block;
+}
+#panel .panel-kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+#panel .panel-kind.core {
+  color: var(--core-stroke);
+}
+#panel .panel-kind.outcome {
+  color: var(--gold-stroke);
+}
+#panel .panel-facts {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+#panel .panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--core-text);
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+#panel .panel-table-comment {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  margin: -2px 0 12px;
+}
+#panel .panel-empty {
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+#panel .panel-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+#panel .panel-links a {
+  color: var(--gold-deep);
+  font-size: 12px;
+  text-decoration: underline;
+}
+html.theme-dark #panel .panel-links a {
+  color: #64b5f6;
+}
+#panel .panel-close {
+  float: right;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  line-height: 1;
+}
+#panel .panel-close:hover {
+  color: var(--gold-stroke);
+}
+#panel .panel-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 6px 0 6px;
+}
+#panel .panel-uc-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+#panel .panel-uc {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  /* Interactive: hovering / clicking a use case drives the L1 graph highlight. */
+  cursor: pointer;
+  padding: 3px 6px;
+  margin: 0 -6px;
+  border-radius: 5px;
+  border-left: 2px solid transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+#panel .panel-uc:hover {
+  background: var(--gold-tint);
+}
+/* A use case with no gold tables mapped has no band to highlight, so its row is
+   non-interactive (no hover/click wired): read it as a plain list item, not a
+   clickable control that would pin-but-light-nothing. */
+#panel .panel-uc.unmapped {
+  cursor: default;
+  opacity: 0.62;
+}
+#panel .panel-uc.unmapped:hover {
+  background: transparent;
+}
+/* The clicked (pinned) use case keeps a persistent tint + accent rule, so the
+   reader can tell which highlight is latched even after the pointer leaves. */
+#panel .panel-uc.pinned {
+  background: var(--gold-tint);
+  border-left-color: var(--gold-stroke);
+}
+#panel .panel-uc .stat {
+  position: relative;
+  top: 1px;
+}
+#panel .panel-uc-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.35;
+}
+#panel .panel-uc-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+#panel .panel-cols {
+  margin-top: 8px;
+}
+#panel .panel-col-row,
+#panel .panel-table-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--panel-border);
+  flex-wrap: wrap;
+  width: 100%;
+}
+#panel .panel-table-link {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--panel-border);
+  cursor: pointer;
+  color: var(--page-text);
+  text-align: left;
+}
+#panel .panel-table-link:hover {
+  background: var(--core-tint);
+}
+#panel .panel-col-type {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 52px;
+}
+#panel .panel-col-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Cards (cytoscape node labels — reused by graph/unit ER)
+   ============================================================ */
+.card {
+  background: var(--core-fill);
+  border: 2px solid var(--core-stroke);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  min-width: 200px;
+  max-width: 280px;
+  font-size: 12px;
+  color: var(--core-text);
+  overflow: hidden;
+  pointer-events: none;
+}
+.card.gold {
+  background: var(--gold-fill);
+  border: 2px dashed var(--gold-stroke);
+  color: var(--gold-text);
+}
+.card-hd {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 7px 10px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.04);
+}
+.card-title {
+  font-weight: 700;
+  font-size: 12px;
+  word-break: break-all;
+  flex: 1;
+}
+.col-list {
+  padding: 3px 0;
+}
+.col-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  overflow: hidden;
+  /* The card itself is pointer-events:none so a drag over the card body still
+     pans the canvas. Column ROWS re-enable pointer events (a child may opt back
+     in) so hovering one fires the delegated relationship-highlight listener on
+     the #cy container (design/39: hover the COLUMN, not the thin edge). */
+  pointer-events: auto;
+}
+.col-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+/* FK/PK column highlight when the connecting edge is hovered. */
+.col-row.col-hl {
+  background: var(--gold-tint);
+  box-shadow: inset 2px 0 0 var(--gold-stroke);
+}
+.col-type {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--edge-color);
+  min-width: 44px;
+  flex-shrink: 0;
+}
+.col-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.col-more {
+  color: var(--edge-color);
+  font-style: italic;
+  font-size: 10px;
+  padding: 4px 10px;
+}
+
+/* Use-case hover reveal on the L1 ER cards: fade non-members, lift members.
+   Mirrors the cytoscape node .faded treatment but toggled on the html-label
+   card DOM directly (the nodes' opacity does not carry to the overlay labels). */
+.card.uc-faded {
+  opacity: 0.22;
+  transition: opacity 0.12s ease;
+}
+.card.uc-hl {
+  outline: 2px solid var(--gold-stroke);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   Use-case swimlane bands (L1 ER overlay)
+   ============================================================ */
+/* The overlay layer is transformed in lock-step with cytoscape's pan/zoom
+   (see graph.ts createBandOverlay), so band headers track their cards. It must
+   not eat pointer events except on the headers themselves. */
+.band-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.band-head {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 10px;
+  border-bottom: 2px solid var(--gold-line);
+  color: var(--gold-deep);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: default;
+}
+/* The catch-all "Not mapped to a use case" band: a subtle, muted, DASHED
+   treatment so it reads as a bucket, not a real (solid-underlined) use-case
+   swimlane. Lighter weight + muted colour reinforce it is provisional. */
+.band-head.unassigned {
+  border-bottom: 2px dashed var(--core-line);
+  color: var(--muted);
+  font-weight: 600;
+}
+.band-caption {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.band-head.active {
+  background: var(--gold-tint);
+}
+.band-head.unassigned.active {
+  background: var(--core-tint);
+}
+.band-label {
+  flex: none;
+}
+.band-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0 5px;
+  border-radius: 3px;
+  color: var(--muted);
+  border: 1px solid var(--line-soft);
+}
+.band-status[data-uc-status="done"] {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.band-status[data-uc-status="in-progress"] {
+  color: var(--wip);
+  border-color: var(--wip);
+}
+.band-status[data-uc-status="planned"] {
+  color: var(--plan);
+  border-color: var(--plan);
+}
+.band-status[data-uc-status="blocked"] {
+  color: var(--block);
+  border-color: var(--block);
+}
+/* Chip strip: the core/silver domains a use case consumes. Revealed only for the
+   hovered band (mirrors the L0 landing's consumes reveal). */
+.band-chips {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.band-head.active .band-chips {
+  display: inline-flex;
+}
+.band-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--core-fill);
+  border: 1px solid var(--core-line);
+  color: var(--core-text);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ============================================================
+   Zoom / pan widget (bottom-right overlay on #cy)
+   ============================================================ */
+/* Absolutely positioned inside #cy (position:relative), the same anchor as
+   .cy-empty and .band-layer. Reuses theme vars so it tracks light/dark. */
+.cy-zoom {
+  position: absolute;
+  right: 12px;
+  /* Top-right, not bottom-right: the bottom-right corner is taken by the L1 "consumes
+     silver" rail, which the zoom widget used to overlap. */
+  top: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--toolbar-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--card-shadow);
+  font-family: var(--font-ui);
+}
+.cy-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--toolbar-text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cy-zoom-btn:hover {
+  background: var(--line-soft);
+  border-color: var(--line);
+}
+.cy-zoom-btn:focus-visible {
+  outline: 2px solid var(--gold-stroke);
+  outline-offset: 1px;
+}
+.cy-zoom-pct {
+  min-width: 42px;
+  padding: 0 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  user-select: none;
+}
+
+/* ============================================================
+   Navigator (minimap) + directional overflow indicators (L1 ER)
+   ============================================================ */
+/* design/38's earlier "no minimap" is superseded by the 2026-07-11 navigator
+   item (§4). Absolutely positioned inside #cy (position:relative), reusing theme
+   vars so they track light/dark. */
+
+/* Directional edge-shadow vignettes: a "there is more content this way" cue at
+   rest. pointer-events:none so they never eat pan/hover. Off by default; the
+   sync() in createEdgeIndicators toggles `.on` per edge from cy.extent(). */
+.cy-overflow {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cy-overflow.on {
+  opacity: 1;
+}
+.cy-overflow.top,
+.cy-overflow.bottom {
+  left: 0;
+  right: 0;
+  height: 36px;
+}
+.cy-overflow.left,
+.cy-overflow.right {
+  top: 0;
+  bottom: 0;
+  width: 28px;
+}
+.cy-overflow.top {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(16, 29, 41, 0.16), rgba(16, 29, 41, 0));
+}
+.cy-overflow.bottom {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(16, 29, 41, 0.16), rgba(16, 29, 41, 0));
+}
+.cy-overflow.left {
+  left: 0;
+  background: linear-gradient(to right, rgba(16, 29, 41, 0.14), rgba(16, 29, 41, 0));
+}
+.cy-overflow.right {
+  right: 0;
+  background: linear-gradient(to left, rgba(16, 29, 41, 0.14), rgba(16, 29, 41, 0));
+}
+/* A subtle centered chevron on the bottom band reinforces "pan down". */
+.cy-overflow.bottom::after {
+  content: "\2304"; /* ⌄ */
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  transform: translateX(-50%);
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(16, 29, 41, 0.5);
+}
+html.theme-dark .cy-overflow.top {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+}
+html.theme-dark .cy-overflow.bottom {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+}
+html.theme-dark .cy-overflow.left {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+}
+html.theme-dark .cy-overflow.right {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+}
+html.theme-dark .cy-overflow.bottom::after {
+  color: rgba(238, 244, 250, 0.5);
+}
+
+/* The navigator thumbnail: bottom-LEFT, clear of the bottom-right zoom widget.
+   Reads as a distinct panel (solid theme background, clear border, strong
+   shadow) rather than floating unanchored over the diagram. */
+.cy-minimap {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 4;
+  border-radius: 8px;
+  overflow: hidden;
+  /* Solid backdrop so the thumbnail never bleeds into the diagram behind it. */
+  background: var(--panel-bg);
+  border: 1.5px solid var(--line);
+  /* Stronger, layered shadow + a hairline ring so it lifts off the canvas. */
+  box-shadow: 0 1px 2px rgba(16, 29, 41, 0.12), 0 10px 28px rgba(16, 29, 41, 0.22),
+    0 0 0 1px rgba(16, 29, 41, 0.04);
+  cursor: pointer;
+  touch-action: none; /* pointer events drive panning, not scrolling */
+}
+html.theme-dark .cy-minimap {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.cy-minimap-canvas {
+  display: block;
+}
+.cy-minimap-frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid var(--gold-stroke);
+  background: rgba(196, 50, 10, 0.1);
+  pointer-events: none;
+}
+/* Caption over the canvas top: an "Overview" label + gold/core legend dots so it
+   is obvious what the thumbnail is and what its colours mean. Floats with a soft
+   scrim; pointer-events:none so it never eats the frame drag. */
+.cy-minimap-caption {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 16px;
+  padding: 0 5px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--panel-bg) 88%, transparent),
+    color-mix(in srgb, var(--panel-bg) 0%, transparent)
+  );
+}
+.cy-minimap-title {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  line-height: 1;
+}
+.cy-minimap-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cy-minimap-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.cy-minimap-dot.gold {
+  background: var(--gold-stroke);
+}
+.cy-minimap-dot.core {
+  background: var(--core-stroke);
+}
+/* Hidden under the mobile breakpoint (matches the toolbar/panel breakpoint). */
+@media (max-width: 560px) {
+  .cy-minimap {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Chips
+   ============================================================ */
+.chip {
+  display: inline-block;
+  border-radius: var(--chip-radius);
+  padding: var(--chip-padding);
+  font-size: var(--chip-font-size);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.chip.role {
+  background: rgba(59, 74, 89, 0.14);
+  color: var(--core-stroke);
+  border: 1px solid rgba(59, 74, 89, 0.25);
+}
+.chip.scd2 {
+  background: rgba(196, 50, 10, 0.1);
+  color: var(--gold-stroke);
+  border: 1px solid rgba(196, 50, 10, 0.25);
+}
+.chip.key {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.chip.key.pk {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+html.theme-dark .chip.key.pk {
+  background: #1e3a5f;
+  color: #93c5fd;
+  border-color: #3b6cb7;
+}
+.chip.key.fk {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+html.theme-dark .chip.key.fk {
+  background: #14532d;
+  color: #86efac;
+  border-color: #166534;
+}
+.chip.pii {
+  background: var(--pii-bg);
+  color: var(--pii-color);
+  border: 1px solid var(--pii-color);
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.chip.enum {
+  background: rgba(130, 80, 200, 0.1);
+  color: #6b21a8;
+  border: 1px solid rgba(130, 80, 200, 0.3);
+  font-size: 9px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html.theme-dark .chip.enum {
+  color: #d8b4fe;
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+/* Shared-table affordance: a table serving >1 use case. Distinct VIOLET tint,
+   apart from the PK (blue) / FK (green) / role / scd2 chips, so "shared" reads as
+   its own kind of signal. Lives in the card's fixed-height header (no height change). */
+.chip.shared {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  font-size: 9px;
+  padding: 0 5px;
+  border-radius: 3px;
+  cursor: help;
+}
+html.theme-dark .chip.shared {
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, 0.22);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* ============================================================
+   Legend (persistent footer)
+   ============================================================ */
+#legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: var(--toolbar-bg);
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+#legend .lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#legend .lg-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+#legend .lg-swatch.core {
+  background: var(--core-fill);
+  border: 1.5px solid var(--core-stroke);
+}
+#legend .lg-swatch.gold {
+  background: var(--gold-fill);
+  border: 1.5px dashed var(--gold-stroke);
+}
+
+/* ============================================================
+   Responsive: stack theme columns below ~900px (the layered value-chain design concept B reflow)
+   ============================================================ */
+@media (max-width: 900px) {
+  .themes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .domains {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .tier-label {
+    position: static;
+    writing-mode: horizontal-tb;
+    rotate: none;
+    transform: none;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .tb-search {
+    min-width: 140px;
+  }
+}
+@media (max-width: 560px) {
+  .themes {
+    grid-template-columns: 1fr;
+  }
+  .domains {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  #panel {
+    width: 100%;
+    min-width: 0;
+  }
+}
+/* A use case served by another package's gold view: a quiet deep link to that view
+   in its home package (where it is banded under this use case). Sits on its own line
+   inside the otherwise non-interactive row. */
+#panel .panel-uc:has(.panel-uc-foreign) {
+  flex-wrap: wrap;
+}
+#panel .panel-uc-foreign {
+  display: block;
+  flex-basis: 100%;
+  margin: 2px 0 0 18px;
+  font-size: 12px;
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+html.theme-dark #panel .panel-uc-foreign {
+  color: #64b5f6;
+}
+#panel .panel-uc-foreign:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+#panel .panel-uc-foreign-unit {
+  opacity: 0.75;
+}

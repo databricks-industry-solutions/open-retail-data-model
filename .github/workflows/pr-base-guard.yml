@@ -1,0 +1,38 @@
+name: PR base guard
+
+# Fails any pull request whose base is not `main`.
+#
+# Why: this repo is merged via the GitHub UI, and STACKED PRs (a PR based on
+# another PR's branch instead of main) have repeatedly lost content. When the
+# base branch merges to main and the stacked PR is later merged, GitHub merges
+# it into the now-stale base branch, marks it MERGED, and the change never
+# reaches main. It hit #4/#5 and again #9/#10, each needing a recovery PR.
+#
+# Rule: every PR targets `main`. No stacked PRs. If your work depends on an
+# unmerged PR, branch from main and resolve conflicts at merge time instead of
+# stacking. To fix a flagged PR: `gh pr edit <n> --base main` (and rebase).
+#
+# Note: a `pull_request` workflow runs from the PR's BASE branch. Since every
+# branch is cut from main (which carries this file), a PR stacked on a feature
+# branch still runs this guard and fails — which is exactly the catch we want.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  base-must-be-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require base = main (no stacked PRs)
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$BASE" != "main" ]; then
+            echo "::error::This PR targets '$BASE', not 'main'. ORDM does not allow stacked PRs — branch from main and retarget with: gh pr edit <n> --base main"
+            exit 1
+          fi
+          echo "OK: base is 'main'."
