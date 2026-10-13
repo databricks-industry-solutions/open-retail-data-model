@@ -1,0 +1,18 @@
+%%{init: {"theme":"dark"}}%%
+flowchart TB
+    competitor_assortment["competitor_assortment<br/>competitor_assortment_sk · competitor_assortment_id · source_observation_id · competitor_sk"]:::core
+    competitor_product_match["competitor_product_match<br/>competitor_product_match_sk · competitor_product_match_id · competitor_sk · competitor_id"]:::core
+    competitor_promotion["competitor_promotion<br/>competitor_promotion_sk · competitor_promotion_id · source_observation_id · competitor_sk"]:::core
+    market_benchmark["market_benchmark<br/>market_benchmark_sk · market_benchmark_id · source_observation_id · benchmark_cell_id"]:::core
+    segment_membership["segment_membership<br/>segment_membership_sk · segment_membership_id · profile_id · audience_id"]:::core
+    gold_competitive_position["gold_competitive_position<br/>competitor_id"]:::gold
+    gold_customer_behavioral_attributes["gold_customer_behavioral_attributes<br/>profile_id · account_id · parent_account_id"]:::gold
+    gold_customer_ltv["gold_customer_ltv<br/>profile_sk · profile_id"]:::gold
+    gold_customer_product_affinity["gold_customer_product_affinity<br/>customer_product_affinity_id · profile_id · product_id"]:::gold
+    gold_market_share["gold_market_share<br/>benchmark_cell_id · market_benchmark_id · source_observation_id · subject_id"]:::gold
+    gold_product_affinity_pairwise["gold_product_affinity_pairwise<br/>product_affinity_id"]:::gold
+    product --> competitor_promotion
+    product --> competitor_assortment
+    product --> competitor_product_match
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;
