@@ -1,0 +1,20 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    product ||--o{ inventory_position : "product_sk"
+    store ||--o{ inventory_position : "store_sk"
+    inventory_position {
+        bigint inventory_position_sk PK
+        string inventory_position_id
+        date date_key
+        bigint product_sk FK
+        string product_id
+        bigint store_sk FK
+        string store_id
+        decimal units_on_hand_sod
+        decimal units_on_hand_eod
+        decimal units_in_transit
+        decimal units_on_order
+        decimal units_received_today
+        boolean is_stockout
+        decimal stockout_pct_day
+    }

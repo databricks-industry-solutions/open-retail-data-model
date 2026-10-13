@@ -1,0 +1,29 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_inventory { Note: 'core unit' }
+
+Table inventory_position {
+  inventory_position_sk bigint [pk, note: 'Surrogate key for the daily position record.']
+  inventory_position_id string [not null, note: 'Durable natural/business key (date|store|product).']
+  date_key date [not null, note: 'Snapshot date. Logical reference to fiscal_calendar.date_key (ISO 8601).']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key.']
+  units_on_hand_sod decimal(12,3) [note: 'Units on hand at start of day.']
+  units_on_hand_eod decimal(12,3) [note: 'Units on hand at end of day.']
+  units_in_transit decimal(12,3) [note: 'Units in transit from DC or supplier.']
+  units_on_order decimal(12,3) [note: 'Units ordered but not yet received.']
+  units_received_today decimal(12,3) [note: 'Units received today.']
+  is_stockout boolean [note: 'Flag indicating if the product was out of stock.']
+  stockout_pct_day decimal(5,4) [note: 'Percentage of day the product was out of stock.']
+  size_availability_pct decimal(5,4) [note: 'Availability of sizes for this style.']
+  replenishment_flag boolean [note: 'Flag indicating a replenishment order was triggered.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: inventory_position.product_sk > product.product_sk
+Ref: inventory_position.store_sk > store.store_sk
+
+TableGroup inventory [color: #3b4a59] { inventory_position }
