@@ -1,0 +1,100 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    store ||--o{ employee : "home_store_sk"
+    employee ||--o{ employee_skill : "employee_sk"
+    employee ||--o{ employee_availability : "employee_sk"
+    employee ||--o{ employee_store_eligibility : "employee_sk"
+    store ||--o{ employee_store_eligibility : "store_sk"
+    employee ||--o{ labor_schedule : "employee_sk"
+    store ||--o{ labor_schedule : "store_sk"
+    employee ||--o{ labor_actuals : "employee_sk"
+    store ||--o{ labor_actuals : "store_sk"
+    labor_schedule ||--o{ labor_actuals : "labor_schedule_sk"
+    employee {
+        bigint employee_sk PK
+        string employee_id  "PII"
+        bigint home_store_sk FK
+        string home_store_id
+        string primary_role_code
+        string employment_status
+        string employment_type
+        decimal hourly_labor_cost  "PII"
+        string currency_code
+        decimal max_daily_hours
+        decimal max_weekly_hours
+        decimal min_rest_hours
+    }
+    employee_availability {
+        bigint employee_availability_sk PK
+        string employee_availability_id
+        bigint employee_sk FK
+        string employee_id  "PII"
+        date availability_date
+        timestamp available_start_ts
+        timestamp available_end_ts
+        boolean is_available
+        string availability_type
+        string record_source
+        timestamp load_timestamp
+    }
+    employee_skill {
+        bigint employee_skill_sk PK
+        string employee_skill_id
+        bigint employee_sk FK
+        string employee_id  "PII"
+        string skill_code
+        string proficiency_level
+        boolean is_active
+        date effective_from_date
+        date effective_to_date
+        string record_source
+        timestamp load_timestamp
+    }
+    employee_store_eligibility {
+        bigint employee_store_eligibility_sk PK
+        string employee_store_eligibility_id
+        bigint employee_sk FK
+        string employee_id  "PII"
+        bigint store_sk FK
+        string store_id
+        boolean is_primary
+        boolean is_active
+        date effective_from_date
+        date effective_to_date
+        string record_source
+        timestamp load_timestamp
+    }
+    labor_actuals {
+        bigint labor_actuals_sk PK
+        string labor_actuals_id
+        bigint employee_sk FK
+        string employee_id  "PII"
+        bigint store_sk FK
+        string store_id
+        bigint labor_schedule_sk FK
+        string labor_schedule_id
+        string role_code
+        string department_or_zone
+        date business_date
+        timestamp clock_in_ts
+        timestamp clock_out_ts
+        decimal worked_hours
+        string actuals_status
+        string record_source
+    }
+    labor_schedule {
+        bigint labor_schedule_sk PK
+        string labor_schedule_id
+        bigint employee_sk FK
+        string employee_id  "PII"
+        bigint store_sk FK
+        string store_id
+        string role_code
+        string department_or_zone
+        date business_date
+        timestamp shift_start_ts
+        timestamp shift_end_ts
+        decimal scheduled_hours
+        string schedule_status
+        string schedule_source
+    }
