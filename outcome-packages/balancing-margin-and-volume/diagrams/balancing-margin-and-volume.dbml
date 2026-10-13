@@ -1,0 +1,321 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_balancing-margin-and-volume { Note: 'outcome unit' }
+
+Table competitor {
+  competitor_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  competitor_id string [not null, note: 'Durable natural/business key for the competitor.']
+  competitor_name string [note: 'Display name of the competitor.']
+  competitor_type string [note: 'Type of competitor. Allowed values: online, brick_and_mortar, discount, premium.']
+  website_url string [note: 'Competitor primary URL.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table competitor_price {
+  competitor_price_sk bigint [pk, note: 'Surrogate key for the price observation.']
+  competitor_price_id string [not null, note: 'Durable natural key (competitor_id|product_id|date_key).']
+  competitor_sk bigint [note: 'FK to competitor.competitor_sk.']
+  competitor_id string [not null, note: 'Durable competitor business key.']
+  product_sk bigint [note: 'FK to canonical product.product_sk (mapped).']
+  product_id string [not null, note: 'Durable product business key (mapped to our catalog).']
+  date_key date [not null, note: 'Date of the price observation. FK to fiscal_calendar.date_key.']
+  competitor_price decimal(18,4) [note: 'Observed unit price, in base currency.']
+  competitor_mrp decimal(18,4) [note: 'Observed Maximum Retail Price (MRP).']
+  currency_code string [not null, note: 'Reporting/base currency, ISO 4217 alpha-3.']
+  is_on_comp_promo boolean [note: 'True if the competitor was running a promotion.']
+  is_out_of_stock boolean [note: 'True if the competitor was out of stock.']
+  data_source string [note: 'Source of the observation data.']
+  record_source string [note: 'Originating system (e.g. scraping vendor).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC).']
+  Note: 'transactional · silver'
+}
+
+Table planogram {
+  planogram_sk bigint [pk, note: 'Surrogate key for the planogram observation.']
+  planogram_id string [not null, note: 'Durable natural key (store_id|product_id).']
+  store_sk bigint [note: 'FK to canonical store.store_sk.']
+  store_id string [not null, note: 'Store business key.']
+  product_sk bigint [note: 'FK to canonical product.product_sk.']
+  product_id string [not null, note: 'Product business key.']
+  space_planning_category string [note: 'Merchandising category for the planogram allocation.']
+  allocated_facings int [note: 'Number of facings allocated']
+  allocated_sqft decimal(10,2) [note: 'Square footage allocated']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table product_relationship {
+  product_relationship_sk bigint [pk, note: 'Surrogate key. Unique per relationship record.']
+  product_relationship_id string [not null, note: 'Durable natural key (product_id|related_product_id|relationship_type).']
+  product_sk bigint [note: 'FK to canonical product.product_sk.']
+  product_id string [not null, note: 'Durable business key of the primary product.']
+  related_product_sk bigint [note: 'FK to canonical product.product_sk.']
+  related_product_id string [not null, note: 'Durable business key of the related product.']
+  relationship_type string [note: 'Type of relationship. Allowed values: substitute, complement.']
+  affinity_coefficient decimal(5,4) [note: 'Strength of relationship (0.0 to 1.0). NULL if not calculated.']
+  record_source string [note: 'Originating system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC).']
+  Note: 'association · silver'
+}
+
+Table gold_affinity_features {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  substitute_price_ratio string [note: 'Own price divided by average substitute price.']
+  complement_price_ratio string [note: 'Own price divided by average complement price.']
+  substitute_markdown_depth_pct string [note: 'Average markdown depth of substitute products.']
+  complement_markdown_depth_pct string [note: 'Average markdown depth of complement products.']
+  substitute_demand_transfer_pct string [note: 'Share of this SKU demand assumed to move to its mapped substitutes if it is removed or out of stock: 1 - product of (1 …']
+  Note: 'gold · gold'
+}
+
+Table gold_assortment_optimization {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  snapshot_date string
+  allocated_facings string [note: 'Number of facings on the planogram.']
+  allocated_sqft string [note: 'Square footage on the planogram.']
+  substitute_demand_transfer_pct string [note: 'Share of this SKU demand assumed to move to its mapped substitutes if it is removed (0 to 1; 0 when no substitute is …']
+  rolling_sales_velocity_14d string [note: '14-day rolling average of daily units sold.']
+  rolling_revenue_14d string [note: '14-day rolling sum of daily net revenue.']
+  units_on_hand_eod string [note: 'Units on hand at end of day.']
+  rolling_margin_14d string [note: '14-day rolling sum of daily gross-margin dollars (numerator for margin_contribution_pct).']
+  rolling_margin_base_rev_14d string [note: '14-day rolling sum of net revenue on days that carry a gross-margin rate; the denominator base for …']
+  baseline_units_28d string [note: '28-day non-promo unit sum (numerator for baseline_velocity).']
+  baseline_nonpromo_days_28d string [note: '28-day count of non-promo days (denominator for baseline_velocity).']
+  baseline_velocity string [note: '28-day non-promo observed mean units/day (heuristic baseline proxy; ratio of baseline_units_28d / …']
+  margin_contribution_pct string [note: '14-day realized gross-margin rate = rolling_margin_14d / rolling_margin_base_rev_14d (rate-bearing revenue only).']
+  recommendation string [note: 'Rule-based assortment action (KEEP / DROP / EXPAND) over velocity + margin buckets and days-on-hand; deterministic, not …']
+  space_elasticity string [note: 'Heuristic space elasticity: percent change in units per 1 percent change in facings, per space-planning category …']
+  space_elasticity_se string [note: 'Standard error of space_elasticity after shrinkage toward the prior (0.10 when only the prior is used).']
+  space_elasticity_n_obs string [note: 'Number of product x store x planogram-allocation observations behind the category space_elasticity fit (0 = prior only).']
+  projected_volume_lift string [note: 'Scenario: change in this SKU own units per selling day at the baseline rate if the recommendation is applied. EXPAND …']
+  projected_margin_lift_lc string [note: 'Scenario: net gross-margin change per selling day in local currency if the recommendation is applied = …']
+  cannibalization_drag_lc string [note: 'Scenario: gross margin per selling day in local currency that the action takes from mapped substitutes = …']
+  Note: 'gold · gold'
+}
+
+Table gold_bucket_features {
+  product_sk string
+  store_sk string
+  product_id string
+  store_id string
+  date_key string
+  margin_health_bucket string [note: 'Categorical indicator of gross margin performance (e.g., \'High\', \'Healthy\', \'Bleeding\').']
+  competitive_pressure_bucket string [note: 'Categorical indicator of competitor price aggression (e.g., \'Severe\', \'Moderate\', \'Low\').']
+  discount_depth_bucket string [note: 'Categorical depth of the current markdown (e.g., \'Clearance >50%\', \'Shallow <10%\').']
+  demand_bucket_7d string [note: 'Categorical volume tier based on the last 7 days of sales.']
+  weeks_of_cover_bucket string [note: 'Inventory health indicator categorizing stock life (e.g., \'<1 Week\', \'Overstock\').']
+  article_age_bucket string [note: 'Lifecycle stage of the product (e.g., \'New Arrival\', \'Mature\', \'End of Life\').']
+  demand_velocity_bucket string [note: 'Categorical speed of sales (e.g., \'Fast Mover\', \'Slow Mover\').']
+  promo_frequency_bucket string [note: 'Categorical classification of how often the item is discounted.']
+  Note: 'gold · gold'
+}
+
+Table gold_competitor_analysis {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  competitor_sk string
+  competitor_id string
+  units_sold string
+  effective_price_lc string
+  competitor_regular_price_lc string [note: 'The tracked shelf price of the matched competitor.']
+  is_comp_on_promo string
+  price_gap_lc string [note: 'The absolute difference: effective_price_lc - competitor_regular_price_lc.']
+  is_comp_price_below_own string [note: 'True if the competitor is pricing lower than our effective price.']
+  price_index_vs_comp string [note: '(effective_price_lc / competitor_regular_price_lc) * 100.']
+  price_gap_trend_flag string
+  is_kvi string
+  kvi_own_revenue_lc string
+  kvi_comp_revenue_lc string
+  competitor_assortment_overlap_pct string
+  Note: 'gold · gold'
+}
+
+Table gold_external_signals {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  local_footfall_index string [note: 'Index representing overall traffic volume in the specific store/location.']
+  temp_max_celsius string [note: 'Maximum recorded temperature for the day at the store location.']
+  rainfall_mm string [note: 'Total rainfall in millimeters for the day.']
+  is_heatwave string [note: 'Boolean flag triggered when temperatures exceed specific regional thresholds.']
+  cpi_category_monthly_index string [note: 'The macroeconomic Consumer Price Index specific to the subcategory.']
+  fuel_price_index string [note: 'Macroeconomic tracking of fuel prices, influencing discretionary spending.']
+  is_state_election_day string [note: 'Boolean flag for local/state election events impacting shopping behavior.']
+  is_major_sporting_event_local string [note: 'Boolean flag for local major sporting events driving specific traffic patterns.']
+  Note: 'gold · gold'
+}
+
+Table gold_payment_actuals {
+  product_sk string [note: 'Surrogate key for the product (from the order line the payment allocated to).']
+  store_sk string [note: 'Surrogate key for the store (from the order line).']
+  product_id string [note: 'Durable product business key.']
+  store_id string [note: 'Durable store business key.']
+  date_key string [note: 'Payment event date (when money moved), not the original sale date.']
+  currency_code string [note: 'Reporting/base currency of all monetary columns (ISO 4217 alpha-3); single-currency by construction.']
+  settled_sale_amount_lc string [note: 'Allocated magnitude of settled/captured sale payments; the base for payment-side leakage rates.']
+  refund_amount_lc string [note: 'Allocated magnitude of merchant-initiated refunds (contra-revenue). Distinct from chargebacks.']
+  chargeback_amount_lc string [note: 'Allocated magnitude of bank-initiated payment reversals (disputes); involuntary, typically irrecoverable, never touches …']
+  adjustment_amount_lc string [note: 'Allocated magnitude of post-sale payment adjustments (goodwill / corrections); treated as contra-revenue.']
+  Note: 'gold · gold'
+}
+
+Table gold_price_actuals {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  units_sold string
+  net_sales_lc string
+  effective_price_lc string [note: 'The actual price paid after promotional discounts.']
+  base_price_lc string [note: 'The regular, undiscounted shelf price in local currency.']
+  cost_price_lc string [note: 'The unit cost of goods sold.']
+  mrp_lc string [note: 'Manufacturer suggested retail price in local currency.']
+  realized_discount_pct string
+  price_vs_mrp_pct string
+  gross_margin_pct string [note: '(effective_price_lc - cost_price_lc) / effective_price_lc.']
+  log_effective_price string
+  is_price_anomaly string
+  price_change_direction string [note: 'Indicator of whether the price increased, decreased, or remained flat.']
+  price_change_magnitude_pct string [note: 'The percentage change in price compared to the previous period.']
+  days_since_last_price_change string [note: 'Tracks the decay of consumer shock as they adapt to new prices.']
+  price_barrier_proximity string [note: 'effective_price_lc % 1.00, measuring proximity to psychological boundaries like .99.']
+  Note: 'gold · gold'
+}
+
+Table gold_pricing_constraints {
+  product_sk string
+  store_sk string
+  product_id string
+  store_id string
+  date_key string
+  mrp_lc string [note: 'Maximum Retail Price ceiling.']
+  min_margin_pct string [note: 'Minimum acceptable profit margin percentage.']
+  max_discount_pct string [note: 'Maximum allowed discount depth percentage.']
+  max_price_lc string [note: 'Derived maximum price bounded by MRP.']
+  min_price_lc string [note: 'Derived minimum price bounded by cost and min margin.']
+  max_competitor_index string [note: 'Maximum allowable price index against the primary competitor.']
+  price_rounding_rule_code string [note: 'Rule applied to round recommended prices.']
+  Note: 'gold · gold'
+}
+
+Table gold_promotional_features {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  promo_sk string
+  promo_id string
+  is_on_promo string [note: 'Boolean indicating if any promotion is currently active.']
+  markdown_event_flag string [note: 'Boolean indicating if a specific markdown event is active.']
+  markdown_depth_pct string [note: 'The percentage depth of the markdown relative to base price.']
+  planned_discount_pct string [note: 'The planned percentage depth of the markdown.']
+  promo_type string [note: 'Promotion mechanic type (e.g., TPR, DISPLAY).']
+  funding_type string [note: 'How the promotion is funded.']
+  is_promo_start_day string [note: 'Boolean indicating if a new promotion started exactly on this date.']
+  days_into_promo string [note: 'The number of days elapsed since the current promotion started.']
+  days_to_promo_end string [note: 'The number of days remaining until the current promotion expires.']
+  is_promo_last_day string [note: 'Boolean indicating if this is the final day of the promotion.']
+  days_post_promo_end string [note: 'The number of days elapsed since the last promotion ended.']
+  is_post_promo_decay_window string [note: 'Boolean indicating if the product is in the immediate post-promo "hangover" period.']
+  promo_frequency_30d string [note: 'The number of distinct promotional days in the last 30 days.']
+  days_since_last_promo string [note: 'The number of days since the product was last on promotion.']
+  concurrent_promo_count string [note: 'The number of overlapping promotional mechanics currently active.']
+  Note: 'gold · gold'
+}
+
+Table gold_realized_margin {
+  product_sk string [note: 'Surrogate key for the product (resolved by SCD2 product version at ingest).']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string [note: 'Durable product business key.']
+  store_id string [note: 'Durable store business key.']
+  date_key string [note: 'Sale cohort date: POS transaction date or order date (not payment event date). Recent cohorts are immature; reversals …']
+  currency_code string [note: 'Reporting/base currency of all monetary columns (ISO 4217 alpha-3); single-currency by construction.']
+  pos_units string [note: 'SUM of net units from POS sales (sales.units), accounting for returns as negative units.']
+  pos_net_sales_lc string [note: 'SUM of net revenue from POS transactions (sales.net_revenue).']
+  pos_cogs_lc string [note: 'SUM(units * product.unit_cost) for POS sales by product version (SCD2 as-of the ingest date).']
+  order_units string [note: 'SUM of units from customer order lines (net of internal payment allocations).']
+  order_booked_sales_lc string [note: 'SUM of booked net amount from customer order lines (customer_order_line.net_amount).']
+  order_settled_sales_lc string [note: 'SUM of order-line allocated amount from settled/captured payments (net-share allocation, same predicates as …']
+  order_unsettled_sales_lc string [note: 'order_booked_sales_lc - order_settled_sales_lc; booked revenue not yet received as payment (authorized/declined/voided …']
+  order_refund_lc string [note: 'SUM of order-line allocated amount from merchant-initiated refunds; contra-revenue (not recovered from COGS).']
+  order_chargeback_lc string [note: 'SUM of order-line allocated amount from bank-initiated chargebacks (payment disputes); contra-revenue.']
+  order_adjustment_lc string [note: 'SUM of order-line allocated amount from post-sale adjustments (goodwill, corrections); contra-revenue (NULL order_id …']
+  order_cogs_lc string [note: 'SUM(units * product.unit_cost) for order lines by product version (SCD2 as-of); no recovery on refunded merchandise.']
+  booked_revenue_lc string [note: 'pos_net_sales_lc + order_booked_sales_lc; total booked revenue from both channels on sale cohort date.']
+  realized_revenue_lc string [note: 'pos_net_sales_lc + order_settled_sales_lc - order_refund_lc - order_chargeback_lc - order_adjustment_lc; cash-basis …']
+  leakage_lc string [note: 'booked_revenue_lc - realized_revenue_lc; equals order_unsettled_sales_lc + order_refund_lc + order_chargeback_lc + …']
+  cogs_lc string [note: 'pos_cogs_lc + order_cogs_lc; total cost of goods sold (COGS not recovered on refunded merchandise).']
+  booked_margin_lc string [note: 'booked_revenue_lc - cogs_lc; gross margin on booked revenue (pre-payment collection).']
+  realized_margin_lc string [note: 'realized_revenue_lc - cogs_lc; gross margin on realized (cash-basis) revenue after payment reversals.']
+  Note: 'gold · gold'
+}
+
+Table gold_sales_actuals {
+  product_sk string [note: 'Surrogate key for the product.']
+  store_sk string [note: 'Surrogate key for the store.']
+  product_id string
+  store_id string
+  date_key string
+  units_sold string [note: 'Raw units sold at the till.']
+  gross_sales_lc string [note: 'Total sales value before discounts.']
+  net_sales_lc string [note: 'Total sales value after discounts.']
+  discount_value_lc string
+  returns_units string [note: 'Units returned by customers.']
+  net_units_sold string [note: 'units_sold - returns_units.']
+  log_units_sold string
+  log_net_sales_lc string
+  baseline_units_sold string [note: 'De-seasonalized and de-promoted normal demand.']
+  incremental_lift_units string [note: 'Extra units sold attributable specifically to a promotion.']
+  stockout_pct_day string [note: 'Percentage of the day the product was out of stock on shelf.']
+  units_received_today string [note: 'Units received today for sell-through calculation.']
+  Note: 'gold · gold'
+}
+
+Table gold_seasonality_features {
+  date_key string
+  month_sin string
+  month_cos string
+  day_of_year_sin string
+  day_of_year_cos string
+  is_weekend_flag string [note: 'Boolean indicating if the date falls on a weekend.']
+  is_public_holiday string [note: 'Boolean indicating if the date is a public holiday.']
+  is_peak_shopping_season string [note: 'Boolean indicating if the date falls in a high-demand retail period.']
+  days_to_next_holiday string [note: 'Days remaining until the next public holiday.']
+  days_since_last_holiday string [note: 'Days elapsed since the previous public holiday.']
+  Note: 'gold · gold'
+}
+
+Ref: competitor_price.competitor_sk > competitor.competitor_sk
+Ref: competitor_price.product_sk > product.product_sk
+Ref: product_relationship.product_sk > product.product_sk
+Ref: product_relationship.related_product_sk > product.product_sk
+Ref: planogram.store_sk > store.store_sk
+Ref: planogram.product_sk > product.product_sk
+
+TableGroup balancing-margin-and-volume [color: #3b4a59] { competitor, competitor_price, planogram, product_relationship, gold_affinity_features, gold_assortment_optimization, gold_bucket_features, gold_competitor_analysis, gold_external_signals, gold_payment_actuals, gold_price_actuals, gold_pricing_constraints, gold_promotional_features, gold_realized_margin, gold_sales_actuals, gold_seasonality_features }

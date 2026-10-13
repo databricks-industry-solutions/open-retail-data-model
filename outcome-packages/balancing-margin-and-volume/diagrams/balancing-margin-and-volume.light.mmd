@@ -1,0 +1,26 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    competitor["competitor<br/>competitor_sk · competitor_id"]:::core
+    competitor_price["competitor_price<br/>competitor_price_sk · competitor_price_id · competitor_sk · competitor_id"]:::core
+    planogram["planogram<br/>planogram_sk · planogram_id · store_sk · store_id"]:::core
+    product_relationship["product_relationship<br/>product_relationship_sk · product_relationship_id · product_sk · product_id"]:::core
+    gold_affinity_features["gold_affinity_features<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_assortment_optimization["gold_assortment_optimization<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_bucket_features["gold_bucket_features<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_competitor_analysis["gold_competitor_analysis<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_external_signals["gold_external_signals<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_payment_actuals["gold_payment_actuals<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_price_actuals["gold_price_actuals<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_pricing_constraints["gold_pricing_constraints<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_promotional_features["gold_promotional_features<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_realized_margin["gold_realized_margin<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_sales_actuals["gold_sales_actuals<br/>product_sk · store_sk · product_id · store_id"]:::gold
+    gold_seasonality_features["gold_seasonality_features"]:::gold
+    competitor --> competitor_price
+    product --> competitor_price
+    product --> product_relationship
+    product --> product_relationship
+    store --> planogram
+    product --> planogram
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;
