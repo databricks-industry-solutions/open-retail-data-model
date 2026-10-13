@@ -1,0 +1,34 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    consensus_forecast_snapshot["consensus_forecast_snapshot<br/>consensus_forecast_snapshot_sk · consensus_forecast_snapshot_id · plan_cycle_id · supplier_sk"]:::core
+    data_product["data_product<br/>data_product_sk · data_product_id"]:::core
+    data_product_subscription["data_product_subscription<br/>data_product_subscription_sk · data_product_subscription_id · principal_id · data_product_sk"]:::core
+    data_share_consumption["data_share_consumption<br/>data_share_consumption_sk · data_share_consumption_id · data_product_subscription_sk · data_product_subscription_id"]:::core
+    demand_collaboration["demand_collaboration<br/>demand_collaboration_sk · demand_collaboration_id · principal_id · supplier_sk"]:::core
+    demand_plan_submission["demand_plan_submission<br/>demand_plan_submission_sk · demand_plan_submission_id · plan_cycle_id · supplier_sk"]:::core
+    reporting_entitlement["reporting_entitlement<br/>reporting_entitlement_sk · reporting_entitlement_id · principal_id · advertiser_sk"]:::core
+    supplier_media_report_snapshot["supplier_media_report_snapshot<br/>supplier_media_report_snapshot_sk · supplier_media_report_snapshot_id · advertiser_sk · advertiser_id"]:::core
+    gold_category_growth["gold_category_growth<br/>top_supplier_id"]:::gold
+    gold_data_monetization_exceptions["gold_data_monetization_exceptions<br/>principal_id · data_product_id · supplier_scope_id"]:::gold
+    gold_data_product_revenue["gold_data_product_revenue<br/>principal_id · data_product_id · supplier_scope_id · advertiser_id"]:::gold
+    gold_demand_plan_exceptions["gold_demand_plan_exceptions<br/>principal_id · supplier_id · product_id · fiscal_week_id"]:::gold
+    gold_joint_demand_plan["gold_joint_demand_plan<br/>principal_id · supplier_id · product_id · fiscal_week_id"]:::gold
+    gold_supplier_media_report["gold_supplier_media_report<br/>principal_id · advertiser_id · campaign_id"]:::gold
+    advertiser --> reporting_entitlement
+    campaign --> reporting_entitlement
+    advertiser --> supplier_media_report_snapshot
+    campaign --> supplier_media_report_snapshot
+    supplier --> demand_collaboration
+    product --> demand_collaboration
+    supplier --> demand_plan_submission
+    product --> demand_plan_submission
+    supplier --> consensus_forecast_snapshot
+    product --> consensus_forecast_snapshot
+    data_product --> data_product_subscription
+    supplier --> data_product_subscription
+    advertiser --> data_product_subscription
+    data_product_subscription --> data_share_consumption
+    data_product --> data_share_consumption
+    supplier --> data_share_consumption
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;
