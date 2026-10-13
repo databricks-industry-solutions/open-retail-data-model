@@ -1,0 +1,20 @@
+%%{init: {"theme":"dark"}}%%
+flowchart TB
+    location_offer["location_offer<br/>location_offer_sk · location_offer_id · promotion_id · zone_sk"]:::core
+    offer_event["offer_event<br/>offer_event_sk · offer_event_id · location_offer_sk · customer_id"]:::core
+    offer_zone["offer_zone<br/>zone_sk · zone_id · store_id"]:::core
+    promotion_scope["promotion_scope<br/>scope_sk · scope_id · promo_sk · promo_id"]:::core
+    gold_location_offer_performance["gold_location_offer_performance<br/>location_offer_sk · store_id · fiscal_week_id"]:::gold
+    gold_promo_performance["gold_promo_performance<br/>promo_id"]:::gold
+    gold_promo_roi["gold_promo_roi<br/>promo_id"]:::gold
+    gold_promo_roi_by_category["gold_promo_roi_by_category<br/>promo_id"]:::gold
+    gold_trade_promotion["gold_trade_promotion<br/>promo_id · product_id · store_id · fiscal_week_id"]:::gold
+    gold_weekly_baseline["gold_weekly_baseline<br/>product_sk · store_sk"]:::gold
+    gold_zone_engagement_weekly["gold_zone_engagement_weekly<br/>zone_id · fiscal_week_id"]:::gold
+    promotion --> promotion_scope
+    product --> promotion_scope
+    store --> promotion_scope
+    offer_zone --> location_offer
+    location_offer --> offer_event
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;

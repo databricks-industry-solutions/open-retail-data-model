@@ -1,0 +1,66 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    demand_forecast["demand_forecast<br/>demand_forecast_sk · demand_forecast_id · model_run_sk · model_run_id"]:::core
+    demand_sensing_signal["demand_sensing_signal<br/>demand_sensing_signal_sk · demand_sensing_signal_id · planning_unit_sk · planning_unit_id"]:::core
+    forecast_accuracy["forecast_accuracy<br/>forecast_accuracy_sk · forecast_accuracy_id · planning_unit_sk · planning_unit_id"]:::core
+    forecast_adjustment["forecast_adjustment<br/>forecast_adjustment_sk · forecast_adjustment_id · planning_unit_sk · planning_unit_id"]:::core
+    forecast_component["forecast_component<br/>forecast_component_sk · forecast_component_id · demand_forecast_sk · demand_forecast_id"]:::core
+    forecast_model_run["forecast_model_run<br/>model_run_sk · model_run_id"]:::core
+    inventory_policy["inventory_policy<br/>inventory_policy_sk · inventory_policy_id · planning_unit_sk · planning_unit_id"]:::core
+    inventory_policy_calculation["inventory_policy_calculation<br/>policy_calculation_sk · policy_calculation_id · inventory_policy_sk · inventory_policy_id"]:::core
+    inventory_recommendation["inventory_recommendation<br/>inventory_recommendation_sk · inventory_recommendation_id · planning_unit_sk · planning_unit_id"]:::core
+    lost_sales_estimate["lost_sales_estimate<br/>lost_sales_estimate_sk · lost_sales_estimate_id · oos_event_sk · oos_event_id"]:::core
+    oos_event["oos_event<br/>oos_event_sk · oos_event_id · product_sk · product_id"]:::core
+    oos_recovery_action["oos_recovery_action<br/>oos_recovery_action_sk · oos_recovery_action_id · oos_event_sk · oos_event_id"]:::core
+    order_forecast["order_forecast<br/>order_forecast_sk · order_forecast_id · planning_unit_sk · planning_unit_id"]:::core
+    planning_unit["planning_unit<br/>planning_unit_sk · planning_unit_id · product_sk · product_id"]:::core
+    planning_unit_segment["planning_unit_segment<br/>segment_sk · segment_id · planning_unit_sk · planning_unit_id"]:::core
+    service_level_target["service_level_target<br/>service_level_target_sk · service_level_target_id"]:::core
+    service_level_z["service_level_z<br/>service_level_z_sk · service_level_z_id"]:::core
+    gold_demand_forecast_weekly["gold_demand_forecast_weekly<br/>demand_forecast_id · planning_unit_sk · planning_unit_id · product_id"]:::gold
+    gold_demand_sensing_queue["gold_demand_sensing_queue<br/>demand_sensing_signal_id · product_id · store_id · planning_unit_id"]:::gold
+    gold_effective_forecast["gold_effective_forecast<br/>planning_unit_sk · planning_unit_id"]:::gold
+    gold_forecast_accuracy["gold_forecast_accuracy<br/>forecast_accuracy_sk · planning_unit_sk · planning_unit_id · cluster_id"]:::gold
+    gold_forecast_value_added["gold_forecast_value_added<br/>planning_unit_sk · planning_unit_id"]:::gold
+    gold_inventory_capital_summary["gold_inventory_capital_summary"]:::gold
+    gold_inventory_health["gold_inventory_health"]:::gold
+    gold_inventory_policy_compliance["gold_inventory_policy_compliance<br/>product_id · store_id"]:::gold
+    gold_inventory_productivity["gold_inventory_productivity"]:::gold
+    gold_lost_sales_summary["gold_lost_sales_summary<br/>fiscal_week_id"]:::gold
+    gold_oos_current["gold_oos_current<br/>oos_event_sk · oos_event_id · product_id · store_id"]:::gold
+    gold_oos_preventability["gold_oos_preventability<br/>oos_event_id · product_id · store_id"]:::gold
+    gold_oos_rate["gold_oos_rate<br/>store_id · fiscal_week_id"]:::gold
+    gold_oos_recovery_priority["gold_oos_recovery_priority<br/>oos_event_id · product_id · store_id"]:::gold
+    gold_order_forecast["gold_order_forecast<br/>order_forecast_sk · order_forecast_id · planning_unit_sk · planning_unit_id"]:::gold
+    gold_replenishment_queue["gold_replenishment_queue<br/>inventory_recommendation_id · planning_unit_id"]:::gold
+    gold_service_level_attainment["gold_service_level_attainment<br/>store_id · fiscal_week_id"]:::gold
+    product --> planning_unit
+    store --> planning_unit
+    account --> planning_unit
+    planning_unit --> planning_unit_segment
+    forecast_model_run --> demand_forecast
+    planning_unit --> demand_forecast
+    demand_forecast --> forecast_component
+    planning_unit --> forecast_adjustment
+    planning_unit --> forecast_accuracy
+    planning_unit --> order_forecast
+    demand_forecast --> order_forecast
+    inventory_policy --> order_forecast
+    store --> order_forecast
+    planning_unit --> inventory_policy
+    service_level_target --> inventory_policy
+    inventory_policy --> inventory_policy_calculation
+    planning_unit --> inventory_recommendation
+    inventory_policy --> inventory_recommendation
+    product --> oos_event
+    store --> oos_event
+    oos_event --> lost_sales_estimate
+    planning_unit --> demand_sensing_signal
+    product --> demand_sensing_signal
+    store --> demand_sensing_signal
+    oos_event --> demand_sensing_signal
+    oos_event --> oos_recovery_action
+    inventory_recommendation --> oos_recovery_action
+    purchase_order_line --> oos_recovery_action
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;

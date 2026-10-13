@@ -1,0 +1,122 @@
+%%{init: {"theme":"dark"}}%%
+erDiagram
+    profile ||--o{ address : "profile_sk"
+    profile ||--o{ contact : "profile_sk"
+    profile ||--o{ consent : "profile_sk"
+    profile ||--o{ account : "primary_contact_profile_sk"
+    household ||--o{ profile : "household_sk"
+    profile ||--o{ identity_link : "profile_sk"
+    profile ||--o{ channel_preference : "profile_sk"
+    account {
+        bigint account_sk PK
+        string account_id
+        string account_name
+        string account_type  "enum"
+        string registration_number
+        string tax_id  "PII"
+        string gln
+        string industry_classification_code
+        string parent_account_id
+        bigint primary_contact_profile_sk FK
+        string primary_contact_profile_id
+        string account_status  "enum"
+        decimal credit_limit_amount  "PII"
+        string currency_code
+    }
+    address {
+        bigint address_sk PK
+        string address_id
+        bigint profile_sk FK
+        string profile_id
+        string address_type  "enum"
+        string address_line_1  "PII"
+        string address_line_2  "PII"
+        string city  "PII"
+        string state_province
+        string postal_code  "PII"
+        string country_code
+        decimal latitude
+    }
+    channel_preference {
+        bigint channel_preference_sk PK
+        string channel_preference_id
+        bigint profile_sk FK
+        string profile_id
+        string channel  "enum"
+        string preference_type  "enum"
+        string preference_value
+        boolean is_subscribed
+        int frequency_cap_per_period
+        string frequency_period  "enum"
+        date effective_from_date
+        date effective_to_date
+    }
+    consent {
+        bigint consent_sk PK
+        string consent_id
+        bigint profile_sk FK
+        string profile_id
+        string consent_type  "enum"
+        string consent_status  "enum"
+        string legal_basis
+        string capture_channel
+        string disclosure_version
+        string jurisdiction_code
+        boolean suppression_indicator
+        string suppression_reason_code  "enum"
+    }
+    contact {
+        bigint contact_sk PK
+        string contact_id
+        bigint profile_sk FK
+        string profile_id
+        string contact_type
+        string contact_value  "PII"
+        string country_calling_code
+        boolean is_primary
+        boolean is_verified
+        timestamp verified_timestamp
+        string contact_status  "enum"
+        timestamp created_timestamp
+    }
+    household {
+        bigint household_sk PK
+        string household_id  "PII"
+        string household_type  "enum"
+        date formation_date
+        string household_status  "enum"
+        date effective_from_date
+        date effective_to_date
+        boolean is_current
+        timestamp created_timestamp
+        timestamp source_updated_timestamp
+    }
+    identity_link {
+        bigint identity_link_sk PK
+        string identity_link_id
+        bigint profile_sk FK
+        string profile_id
+        string source_system
+        string identifier_type  "enum"
+        string identifier_value_hash  "PII"
+        string match_method  "enum"
+        decimal match_confidence
+        string link_status  "enum"
+        date effective_from_date
+        date effective_to_date
+    }
+    profile {
+        bigint profile_sk PK
+        string profile_id
+        string name_prefix
+        string first_name  "PII"
+        string middle_name  "PII"
+        string last_name  "PII"
+        string name_suffix
+        date date_of_birth  "PII"
+        string gender
+        string preferred_language_code
+        string loyalty_id  "PII"
+        bigint household_sk FK
+        string household_id  "PII"
+    }

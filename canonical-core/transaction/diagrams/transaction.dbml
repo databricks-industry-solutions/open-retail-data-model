@@ -1,0 +1,29 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_transaction { Note: 'core unit' }
+
+Table sales {
+  sales_sk bigint [pk, note: 'Surrogate key.']
+  sales_id string [not null, note: 'Durable natural/business key for the daily sales record.']
+  date_key date [not null, note: 'Selling date. FK to fiscal_calendar.date_key (ISO 8601).']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key.']
+  promo_sk bigint [note: 'FK to promotion.promo_sk. Non-promoted rows carry the NO_PROMO member surrogate.']
+  promo_id string [note: 'Durable promotion business key; equals NO_PROMO when the sale was not on promotion.']
+  units int [note: 'Units sold (count).']
+  gross_revenue decimal(18,2) [note: 'Gross sales amount before promotional discount, in the reporting/base currency.']
+  discount_amount decimal(18,2) [note: 'Promotional discount amount applied, in the reporting/base currency.']
+  net_revenue decimal(18,2) [note: 'Net sales amount after discount (gross_revenue - discount_amount), in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; the canonical core …']
+  transaction_currency_code string [note: 'Original transaction currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: sales.product_sk > product.product_sk
+Ref: sales.store_sk > store.store_sk
+Ref: sales.promo_sk > promotion.promo_sk
+
+TableGroup transaction [color: #3b4a59] { sales }

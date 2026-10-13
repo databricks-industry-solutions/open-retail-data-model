@@ -1,0 +1,15 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed with the use-case owners, 2026-10-07; Market Analysis confirmed done by its owner, 2026-10-09.
+use_cases:
+  - name: Behavioral Segmentation
+    status: done
+    tables: [gold_customer_behavioral_attributes]
+  - name: Product Affinity
+    status: done
+    description: "Rules-based market-basket association rules (support/confidence/lift) plus individualized recency-weighted purchase-history customer→product affinity, both derived from customer_order_line. The ML vector-embedding modality (product/customer embeddings + ANN search) is a documented follow-on."
+    tables: [gold_product_affinity_pairwise, gold_customer_product_affinity]
+  - name: Market Analysis
+    status: done
+    description: "UC-RET-0021 Competitive & Market Intelligence. Observation-native price, product-day promotion SOV, listed-channel/availability, observed-active assortment/match-quality, market-share with denominator-only total-category inputs, and dimension-specific mean detection-bound surfaces are implemented; owner confirmation and KPI validation recorded in pre-publication record 165. Directional distribution gap, median/percentile detection, fair-share gap, top-N digital share-of-shelf and physical competitor share-of-shelf are explicit follow-ons."
+    tables: [gold_competitive_position, gold_market_share]

@@ -1,0 +1,16 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed with the use-case owners, 2026-10-07.
+use_cases:
+  - name: Media Measurement
+    status: done
+    tables: [gold_supplier_media_report]
+  - name: Data Monetization
+    status: done
+    tables: [gold_data_product_revenue, gold_data_monetization_exceptions]
+  - name: Joint Demand Planning
+    status: done
+    tables: [gold_joint_demand_plan, gold_demand_plan_exceptions]
+  - name: Category Growth
+    status: done
+    tables: [gold_category_growth]

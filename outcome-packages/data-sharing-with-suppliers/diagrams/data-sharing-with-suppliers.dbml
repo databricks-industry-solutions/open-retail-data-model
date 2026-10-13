@@ -1,0 +1,371 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_data-sharing-with-suppliers { Note: 'outcome unit' }
+
+Table consensus_forecast_snapshot {
+  consensus_forecast_snapshot_sk bigint [pk, note: 'Surrogate key.']
+  consensus_forecast_snapshot_id string [not null, note: 'Durable natural/business key (grain hash incl. plan_version).']
+  plan_cycle_id string [not null, note: 'CPFR plan cycle this consensus was agreed in (NOT NULL, matching demand_plan_submission.plan_cycle_id).']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk.']
+  supplier_id string [note: 'Durable supplier business key.']
+  product_sk bigint [note: 'FK to product.product_sk.']
+  product_id string [note: 'Durable product business key.']
+  fiscal_week_id int [note: 'Target demand week = fiscal_year * 100 + fiscal_week (join key to fiscal_calendar.fiscal_week_id).']
+  snapshot_ts timestamp [not null, note: 'When this consensus was published/frozen (UTC, ISO 8601).']
+  snapshot_date date [not null, note: 'Publish date (cluster key).']
+  plan_version int [note: 'Monotonic publish version for this scope/week (immutable per version).']
+  consensus_qty bigint [note: 'Agreed consensus demand quantity (units) for the week.']
+  consensus_value_net decimal(18,2) [note: 'Agreed consensus net value for the week, reporting/base currency.']
+  retailer_qty bigint [note: 'Retailer submitted quantity at agreement time.']
+  supplier_qty bigint [note: 'Supplier submitted quantity at agreement time.']
+  variance_pct decimal(9,4) [note: 'Retailer-vs-supplier disagreement FROZEN at agreement time = (retailer_qty - supplier_qty) / NULLIF(supplier_qty, 0) …']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  threshold_suppressed_flag boolean [note: 'TRUE if any measure was threshold-suppressed before disclosure.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table data_product {
+  data_product_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  data_product_id string [not null, note: 'Durable natural/business key for the data product.']
+  data_product_name string [note: 'Display name of the licensable data product.']
+  data_product_category string [note: 'What kind of data product this is. Allowed values: media_measurement, demand_collaboration, category_benchmark …']
+  delivery_mode string [note: 'How the licensed data reaches the partner. Allowed values: share, api, file_export, dashboard.']
+  pricing_model string [note: 'How the product is charged. Allowed values: subscription_flat, per_consumption_unit, tiered, revenue_share. SCOPE NOTE …']
+  consumption_unit string [note: 'Unit metered for usage-based pricing. Allowed values: query, row_scanned, report_delivery, api_call.']
+  list_price_amount decimal(18,2) [note: 'Published list price per billing period (subscription_flat/tiered) or per consumption_unit (per_consumption_unit) …']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  min_disclosure_threshold int [note: 'Default minimum aggregation volume a row of this product must reach before it is disclosable — a low-volume/materiality …']
+  data_product_status string [note: 'Catalog lifecycle. Allowed values: draft, published, deprecated, retired.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table data_product_subscription {
+  data_product_subscription_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  data_product_subscription_id string [not null, note: 'Durable natural/business key for the subscription grant.']
+  principal_id string [not null, note: 'Governance principal holding the licence (UC group / account / service principal; not a customer identity).']
+  principal_type string [note: 'Kind of principal. Allowed values: group, account, service_principal.']
+  data_product_sk bigint [note: 'FK to data_product.data_product_sk (the licensed product version).']
+  data_product_id string [note: 'Durable data-product business key.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk when the licence is scoped to one supplier (NULL = every supplier the product covers).']
+  supplier_id string [note: 'Durable supplier business key; NULL for an all-supplier licence.']
+  advertiser_sk bigint [note: 'FK to commerce-media-networks advertiser.advertiser_sk when the licence is tied to one advertiser (brand) role of the …']
+  advertiser_id string [note: 'Durable advertiser business key; NULL when the licence is not advertiser-scoped.']
+  contracted_price_amount decimal(18,2) [note: 'Negotiated price per billing period (or per consumption_unit, per the product pricing_model), reporting/base currency …']
+  contracted_units bigint [note: 'Committed consumption allowance per billing period, in the product consumption_unit. Metered usage is compared against …']
+  billing_frequency string [note: 'How often the subscription bills. Allowed values: monthly, quarterly, annual.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  term_start_date date [note: 'Contractual term start (business date, distinct from the SCD2 version window).']
+  term_end_date date [note: 'Contractual term end; NULL for an evergreen/auto-renewing term.']
+  min_disclosure_threshold int [note: 'Minimum aggregation volume a row must reach before it is disclosable to this principal — a low-volume/materiality …']
+  subscription_status string [note: 'Licence lifecycle. Allowed values: pending, active, suspended, cancelled, expired.']
+  subscribed_ts timestamp [not null, note: 'When this version of the licence was agreed (UTC, ISO 8601). NOT NULL: it is the primary latest-wins ordering key in …']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table data_share_consumption {
+  data_share_consumption_sk bigint [pk, note: 'Surrogate key.']
+  data_share_consumption_id string [not null, note: 'Durable natural/business key (grain hash: subscription, product, usage date).']
+  data_product_subscription_sk bigint [note: 'FK to data_product_subscription.data_product_subscription_sk (the licence this usage billed under).']
+  data_product_subscription_id string [note: 'Durable subscription business key.']
+  principal_id string [not null, note: 'Governance principal that consumed the data (denormalized from the subscription so the row filter and usage reporting …']
+  data_product_sk bigint [note: 'FK to data_product.data_product_sk.']
+  data_product_id string [note: 'Durable data-product business key.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk (the supplier whose data was consumed); NULL when the licence is all-supplier and the usage …']
+  supplier_id string [note: 'Durable supplier business key; NULL when not attributable to one supplier.']
+  usage_date date [not null, note: 'Business date the consumption occurred (cluster key).']
+  fiscal_year int [note: 'NRF 4-5-4 fiscal year of usage_date (degenerate key; join-compatible with fiscal_calendar.fiscal_year).']
+  fiscal_period int [note: 'NRF fiscal period / retail month (1-12) of usage_date (degenerate key; join-compatible with …']
+  access_channel string [note: 'How the data was accessed. Allowed values: share, api, file_export, dashboard.']
+  consumption_units bigint [note: 'Metered usage for the day, in the data product consumption_unit.']
+  billed_query_count bigint [note: 'Number of billable requests behind consumption_units (reported for transparency; not itself the billing basis).']
+  billable_amount decimal(18,2) [note: 'Money this day of consumption earned, already resolved against the subscription commercial terms. Stored rather than …']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  threshold_suppressed_flag boolean [note: 'TRUE if any measure on this SOURCE usage row was threshold-suppressed before it was recorded. Set upstream, at …']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table demand_collaboration {
+  demand_collaboration_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  demand_collaboration_id string [not null, note: 'Durable natural/business key for the collaboration grant.']
+  principal_id string [not null, note: 'Governance principal in the collaboration (UC group / account / service principal; not a customer identity).']
+  principal_type string [note: 'Kind of principal. Allowed values: group, account, service_principal.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk (the supplier whose demand plan is shared).']
+  supplier_id string [note: 'Durable supplier business key.']
+  product_sk bigint [note: 'FK to product.product_sk when scoped to one product (NULL = all products of the supplier).']
+  product_id string [note: 'Durable product business key; NULL for supplier-wide collaboration.']
+  plan_horizon_weeks int [note: 'Agreed collaborative planning horizon, in fiscal weeks.']
+  min_disclosure_threshold int [note: 'Minimum demand volume (units) a plan row must reach before it is disclosable to this principal — a …']
+  collaboration_status string [note: 'Lifecycle. Allowed values: active, suspended, ended.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table demand_plan_submission {
+  demand_plan_submission_sk bigint [pk, note: 'Surrogate key.']
+  demand_plan_submission_id string [not null, note: 'Durable natural/business key (grain hash incl. submission_version).']
+  plan_cycle_id string [not null, note: 'CPFR plan cycle this submission belongs to (e.g. a monthly consensus round).']
+  party_role string [note: 'Which side submitted the plan. Allowed values: retailer, supplier.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk.']
+  supplier_id string [note: 'Durable supplier business key.']
+  product_sk bigint [note: 'FK to product.product_sk.']
+  product_id string [note: 'Durable product business key.']
+  fiscal_week_id int [note: 'Target demand week = fiscal_year * 100 + fiscal_week (join key to fiscal_calendar.fiscal_week_id).']
+  forecast_qty bigint [note: 'Submitted forecast demand quantity (units) for the week.']
+  forecast_value_net decimal(18,2) [note: 'Submitted forecast net value for the week, reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  submission_version int [note: 'Monotonic version for this (cycle, party, grain); latest wins in reconciliation.']
+  submission_status string [note: 'Lifecycle. Allowed values: draft, submitted, superseded, withdrawn.']
+  submitted_ts timestamp [not null, note: 'When this version was submitted (UTC, ISO 8601). NOT NULL: it is the primary latest-wins ordering key in …']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table reporting_entitlement {
+  reporting_entitlement_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  reporting_entitlement_id string [not null, note: 'Durable natural/business key for the entitlement.']
+  principal_id string [not null, note: 'Governance principal granted access (UC group / account / service principal; not a customer identity).']
+  principal_type string [note: 'Kind of principal. Allowed values: group, account, service_principal.']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk (the advertiser the principal may see).']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk when scoped to one campaign (NULL = all campaigns of the brand).']
+  campaign_id string [note: 'Durable campaign business key; NULL for brand-wide entitlement.']
+  min_disclosure_threshold int [note: 'Minimum aggregation count required before a row is disclosable to this principal.']
+  entitlement_status string [note: 'Lifecycle. Allowed values: active, suspended, revoked.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table supplier_media_report_snapshot {
+  supplier_media_report_snapshot_sk bigint [pk, note: 'Surrogate key.']
+  supplier_media_report_snapshot_id string [not null, note: 'Durable natural/business key (grain hash incl. report_version).']
+  advertiser_sk bigint [note: 'FK to cmn.advertiser.advertiser_sk.']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  campaign_sk bigint [note: 'FK to cmn.campaign.campaign_sk (or NULL for brand-level).']
+  campaign_id string [note: 'Durable campaign business key; NULL for brand-level.']
+  report_level string [note: 'Aggregation level of the report row. Allowed values: brand, campaign, product.']
+  report_period_start date [note: 'Reporting period start, inclusive (ISO 8601).']
+  report_period_end date [note: 'Reporting period end, inclusive (ISO 8601).']
+  snapshot_ts timestamp [not null, note: 'When this report was published/frozen (UTC, ISO 8601).']
+  snapshot_date date [not null, note: 'Publish date (cluster key).']
+  report_version int [note: 'Monotonic publish version for this scope/period (immutable per version).']
+  impressions bigint [note: 'Impressions disclosed.']
+  viewable_impressions bigint [note: 'Viewable impressions disclosed.']
+  clicks bigint [note: 'Clicks disclosed.']
+  conversions bigint [note: 'Attributed conversions disclosed.']
+  units bigint [note: 'Attributed units disclosed.']
+  media_spend_net decimal(18,2) [note: 'Net media spend disclosed, reporting/base currency.']
+  attributed_net_sales decimal(18,2) [note: 'Attributed net sales disclosed, reporting/base currency.']
+  new_to_brand_sales decimal(18,2) [note: 'New-to-brand sales disclosed, reporting/base currency.']
+  incremental_sales decimal(18,2) [note: 'Incremental sales disclosed, reporting/base currency.']
+  roas_net decimal(12,4) [note: 'Return on ad spend at publish time.']
+  iroas_value decimal(12,4) [note: 'Incremental ROAS at publish time.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3 (single reporting currency).']
+  threshold_suppressed_flag boolean [note: 'TRUE if any measure was threshold-suppressed before disclosure.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table gold_category_growth {
+  category string [note: 'Merchandising category.']
+  fiscal_year string [note: 'NRF fiscal year.']
+  fiscal_period string [note: 'NRF 4-5-4 fiscal period (1-12).']
+  category_revenue string [note: 'Category net revenue in the period.']
+  category_units string [note: 'Category units sold in the period.']
+  category_margin string [note: 'Category gross margin (revenue - units x unit_cost).']
+  prior_period_revenue string [note: 'Revenue in the prior fiscal period (period_index - 1).']
+  delta_revenue string [note: 'category_revenue - prior_period_revenue (the four effects reconcile to this).']
+  pop_growth_pct string [note: 'Period-over-period revenue growth %; NULL when no prior period.']
+  prior_year_revenue string [note: 'Revenue in the same fiscal period last year (period_index - 12).']
+  yoy_growth_pct string [note: 'Year-over-year revenue growth %; NULL when no prior-year period.']
+  distribution_effect string [note: 'Delta-revenue from changing the number of product x store selling points.']
+  volume_effect string [note: 'Delta-revenue from changing units per selling point (depth).']
+  price_effect string [note: 'Delta-revenue from like-for-like sub-category price change.']
+  mix_effect string [note: 'Delta-revenue from shifting the sub-category mix.']
+  category_share string [note: 'category_revenue / total period revenue (sums to ~1 across categories).']
+  promo_contribution string [note: 'Incremental margin from promotions in the category that period (NULL if the promo view is absent).']
+  value_share_platinum string [note: 'Share of customer-attributed category revenue from PLATINUM CLV customers.']
+  value_share_gold string [note: 'Share of customer-attributed category revenue from GOLD CLV customers.']
+  value_share_silver string [note: 'Share of customer-attributed category revenue from SILVER CLV customers.']
+  value_share_bronze string [note: 'Share of customer-attributed category revenue from BRONZE CLV customers.']
+  top_supplier_id string [note: 'Supplier with the largest share of category procurement spend.']
+  supplier_top_share string [note: 'That supplier share of category procurement spend.']
+  supplier_top_score string [note: 'That supplier average scorecard composite (NULL if the scorecard is absent).']
+  Note: 'gold · gold'
+}
+
+Table gold_data_monetization_exceptions {
+  principal_id string [note: 'Governance principal entitled to see this row (row-filter key).']
+  data_product_id string [note: 'Durable data-product business key.']
+  data_product_name string [note: 'Display name of the licensed data product.']
+  data_product_category string [note: 'Kind of data product.']
+  supplier_scope_id string [note: 'Durable supplier business key the licence is scoped to; NULL for an all-supplier licence.']
+  supplier_name string [note: 'Supplier registered/legal name; NULL for an all-supplier licence.']
+  fiscal_year string [note: 'NRF fiscal year.']
+  fiscal_period string [note: 'NRF 4-5-4 fiscal period (1-12) the exception was raised in.']
+  exception_reason string [note: 'Why the row needs attention. One of: paid_unused_subscription, under_consumed_subscription …']
+  subscription_status string [note: 'Licence lifecycle at its latest version.']
+  term_end_date string [note: 'Contractual term end; NULL for an evergreen term.']
+  contracted_units string [note: 'Committed consumption allowance per billing period.']
+  consumption_units string [note: 'Metered consumption in the period.']
+  contract_utilisation_pct string [note: 'Share of the period allowance consumed (pro-rated to one fiscal period).']
+  contracted_price_amount string [note: 'Negotiated price per billing period, reporting/base currency.']
+  data_revenue_amount string [note: 'Revenue billed from metered consumption in the period, reporting/base currency.']
+  revenue_per_consumption_unit string [note: 'Realised price per metered unit.']
+  contract_discount_pct string [note: 'Discount granted off the rate card.']
+  last_usage_date string [note: 'Most recent usage date in the period; NULL when unused.']
+  revenue_at_risk string [note: 'Money exposed by the exception, used to rank the queue: the contracted price for an unused licence (what a non-renewal …']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3.']
+  priority_rank string [note: 'Rank within a principal by revenue_at_risk (1 = highest).']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_data_product_revenue {
+  principal_id string [note: 'Governance principal entitled to see this row (row-filter key).']
+  data_product_id string [note: 'Durable data-product business key.']
+  data_product_name string [note: 'Display name of the licensed data product.']
+  data_product_category string [note: 'Kind of data product. One of: media_measurement, demand_collaboration, category_benchmark, audience_insight.']
+  pricing_model string [note: 'How the product is charged. One of: subscription_flat, per_consumption_unit, tiered, revenue_share.']
+  consumption_unit string [note: 'Unit the consumption_units measure is denominated in. One of: query, row_scanned, report_delivery, api_call.']
+  supplier_scope_id string [note: 'Durable supplier business key the LICENCE is scoped to; NULL for a licence spanning every supplier the product covers …']
+  supplier_name string [note: 'Supplier registered/legal name; NULL for an all-supplier licence.']
+  advertiser_id string [note: 'Durable advertiser business key the licence is tied to (the brand role of the supplier); NULL when not …']
+  fiscal_year string [note: 'NRF fiscal year.']
+  fiscal_period string [note: 'NRF 4-5-4 fiscal period (1-12).']
+  subscription_status string [note: 'Licence lifecycle at its latest version. One of: active, suspended, expired (pending and cancelled licences are …']
+  billing_frequency string [note: 'How often the subscription bills. One of: monthly, quarterly, annual.']
+  term_start_date string [note: 'Contractual term start.']
+  term_end_date string [note: 'Contractual term end; NULL for an evergreen/auto-renewing term.']
+  contracted_price_amount string [note: 'Negotiated price per billing period, reporting/base currency.']
+  list_price_amount string [note: 'Published rate-card price from the data-product catalog, reporting/base currency.']
+  contracted_units string [note: 'Committed consumption allowance per BILLING period (not per fiscal period; contract_utilisation_pct pro-rates it).']
+  consumption_units string [note: 'Metered consumption in the period, in the product consumption_unit. NULL when the licence billed no usage that period.']
+  billed_query_count string [note: 'Number of billable requests behind consumption_units (transparency; not the billing basis).']
+  data_revenue_amount string [note: 'Revenue billed from metered consumption in the period, reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3.']
+  last_usage_date string [note: 'Most recent usage date in the period; NULL when the licence was unused or its usage was suppressed.']
+  usage_suppressed_flag string [note: 'TRUE when this period had usage but below the entitled disclosure floor (the grant threshold, else the data product …']
+  contract_discount_pct string [note: 'Discount granted off the rate card = (list_price_amount - contracted_price_amount) / list_price_amount.']
+  contract_utilisation_pct string [note: 'Share of the period allowance consumed = consumption_units / (contracted_units pro-rated from the billing frequency to …']
+  revenue_per_consumption_unit string [note: 'Realised price the partner effectively paid per metered unit = data_revenue_amount / consumption_units.']
+  media_spend_net string [note: 'The advertiser retail-media net spend for the period from the Commerce Media Networks package, ALLOCATED to this …']
+  total_monetised_value string [note: 'Total monetised value of the supplier relationship for the period = data_revenue_amount + media_spend_net …']
+  data_revenue_share_pct string [note: 'Data revenue as a share of total monetised value. Because the media allocation is revenue-proportional, this is …']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_demand_plan_exceptions {
+  principal_id string [note: 'Governance principal entitled to see this row (row-filter key).']
+  supplier_id string [note: 'Durable supplier business key.']
+  supplier_name string [note: 'Supplier registered/legal name.']
+  product_id string [note: 'Durable product business key.']
+  product_name string [note: 'Product display name.']
+  fiscal_week_id string [note: 'Fiscal week identifier = fiscal_year * 100 + fiscal_week.']
+  plan_cycle_id string [note: 'CPFR plan cycle the exception was raised in.']
+  exception_reason string [note: 'Why the row needs attention. One of: missing_retailer_plan, missing_supplier_plan, party_disagreement …']
+  retailer_qty string [note: 'Latest retailer-submitted demand quantity for the week.']
+  supplier_qty string [note: 'Latest supplier-submitted demand quantity for the week.']
+  consensus_qty string [note: 'Agreed consensus demand quantity for the week.']
+  statistical_forecast_qty string [note: 'Statistical demand baseline from the Smarter Demand package (NULL if absent).']
+  plan_variance_pct string [note: 'Retailer-vs-supplier disagreement on the latest submissions.']
+  consensus_vs_baseline_pct string [note: 'Consensus lift over the statistical baseline.']
+  demand_value_at_risk string [note: 'Consensus net value used to rank the exception queue.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3.']
+  priority_rank string [note: 'Rank within a principal by demand_value_at_risk (1 = highest).']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_joint_demand_plan {
+  principal_id string [note: 'Governance principal entitled to see this row (row-filter key).']
+  supplier_id string [note: 'Durable supplier business key.']
+  supplier_name string [note: 'Supplier registered/legal name.']
+  product_id string [note: 'Durable product business key.']
+  product_name string [note: 'Product display name.']
+  fiscal_week_id string [note: 'Fiscal week identifier = fiscal_year * 100 + fiscal_week.']
+  plan_cycle_id string [note: 'CPFR plan cycle the consensus was agreed in.']
+  retailer_qty string [note: 'Latest retailer-submitted demand quantity for the week.']
+  supplier_qty string [note: 'Latest supplier-submitted demand quantity for the week.']
+  consensus_qty string [note: 'Agreed consensus demand quantity for the week.']
+  retailer_value_net string [note: 'Latest retailer-submitted net value for the week, reporting/base currency.']
+  supplier_value_net string [note: 'Latest supplier-submitted net value for the week, reporting/base currency.']
+  consensus_value_net string [note: 'Agreed consensus net value, reporting/base currency.']
+  currency_code string [note: 'Amount currency, ISO 4217 alpha-3.']
+  statistical_forecast_qty string [note: 'Statistical demand baseline from the Smarter Demand package, allocated to this supplier by its demand share of the …']
+  plan_variance_pct string [note: 'Retailer-vs-supplier disagreement recomputed LIVE from the latest submissions = (retailer_qty - supplier_qty) / …']
+  consensus_vs_baseline_pct string [note: 'Consensus lift over the statistical baseline = (consensus_qty - statistical_forecast_qty) / statistical_forecast_qty.']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_supplier_media_report {
+  principal_id string [note: 'Governance principal entitled to see this row (row-filter key).']
+  advertiser_id string [note: 'Durable advertiser business key.']
+  brand_name string [note: 'Advertised brand name.']
+  campaign_id string [note: 'Durable campaign business key.']
+  campaign_name string [note: 'Campaign display name.']
+  impressions string [note: 'Impressions disclosed to the supplier.']
+  viewable_impressions string
+  clicks string
+  conversions string
+  units string
+  media_spend_net string [note: 'Net media spend, reporting/base currency.']
+  attributed_net_sales string [note: 'Attributed net sales, reporting/base currency.']
+  new_to_brand_sales string
+  incremental_sales string
+  roas_net string [note: 'Return on ad spend.']
+  iroas string [note: 'Incremental ROAS.']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Ref: reporting_entitlement.advertiser_sk > advertiser.advertiser_sk
+Ref: reporting_entitlement.campaign_sk > campaign.campaign_sk
+Ref: supplier_media_report_snapshot.advertiser_sk > advertiser.advertiser_sk
+Ref: supplier_media_report_snapshot.campaign_sk > campaign.campaign_sk
+Ref: demand_collaboration.supplier_sk > supplier.supplier_sk
+Ref: demand_collaboration.product_sk > product.product_sk
+Ref: demand_plan_submission.supplier_sk > supplier.supplier_sk
+Ref: demand_plan_submission.product_sk > product.product_sk
+Ref: consensus_forecast_snapshot.supplier_sk > supplier.supplier_sk
+Ref: consensus_forecast_snapshot.product_sk > product.product_sk
+Ref: data_product_subscription.data_product_sk > data_product.data_product_sk
+Ref: data_product_subscription.supplier_sk > supplier.supplier_sk
+Ref: data_product_subscription.advertiser_sk > advertiser.advertiser_sk
+Ref: data_share_consumption.data_product_subscription_sk > data_product_subscription.data_product_subscription_sk
+Ref: data_share_consumption.data_product_sk > data_product.data_product_sk
+Ref: data_share_consumption.supplier_sk > supplier.supplier_sk
+
+TableGroup data-sharing-with-suppliers [color: #3b4a59] { consensus_forecast_snapshot, data_product, data_product_subscription, data_share_consumption, demand_collaboration, demand_plan_submission, reporting_entitlement, supplier_media_report_snapshot, gold_category_growth, gold_data_monetization_exceptions, gold_data_product_revenue, gold_demand_plan_exceptions, gold_joint_demand_plan, gold_supplier_media_report }

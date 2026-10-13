@@ -1,0 +1,113 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_logistics { Note: 'core unit' }
+
+Table lane {
+  lane_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  lane_id string [not null, note: 'Durable natural/business key for the lane (origin|destination|mode).']
+  origin_location_id string [not null, note: 'Business key of the origin location (store, DC, supplier site).']
+  origin_location_name string [note: 'Display name of the origin.']
+  origin_country_code string [note: 'Origin country, ISO 3166-1 alpha-2.']
+  origin_location_type string [note: 'Type of origin. Allowed values: supplier_site, distribution_center, port, store, warehouse.']
+  destination_location_id string [not null, note: 'Business key of the destination location.']
+  destination_location_name string [note: 'Display name of the destination.']
+  destination_country_code string [note: 'Destination country, ISO 3166-1 alpha-2.']
+  destination_location_type string [note: 'Type of destination. Allowed values: distribution_center, store, port, warehouse, customer.']
+  transport_mode string [note: 'Primary transport mode. Allowed values: road, rail, ocean, air, intermodal.']
+  planned_transit_days int [note: 'Standard planned transit time for this lane (calendar days).']
+  distance_km decimal(10,2) [note: 'Approximate distance in kilometers.']
+  is_active boolean [note: 'Whether the lane is actively used for shipment planning.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table shipment {
+  shipment_sk bigint [pk, note: 'Surrogate key.']
+  shipment_id string [not null, note: 'Durable natural/business key for the shipment (ASN number or shipment reference).']
+  po_id string [note: 'Purchase-order header business key this shipment fulfills.']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk (version-specific).']
+  supplier_id string [not null, note: 'Durable supplier business key.']
+  lane_sk bigint [note: 'FK to lane.lane_sk (version-specific).']
+  lane_id string [note: 'Durable lane business key.']
+  destination_store_sk bigint [note: 'FK to store.store_sk for the ship-to location (version-specific).']
+  destination_store_id string [note: 'Durable store business key for the ship-to location.']
+  carrier_name string [note: 'Carrier or logistics provider name (free text, vendor-neutral).']
+  transport_mode string [note: 'Transport mode for this shipment. Allowed values: road, rail, ocean, air, intermodal.']
+  shipment_status string [note: 'Current lifecycle status. Allowed values: planned, in_transit, delivered, cancelled.']
+  ship_date date [note: 'Date the shipment departed origin (ISO 8601).']
+  estimated_arrival_date date [note: 'Estimated arrival date at destination, set at load time (ISO 8601). Real-time ETA revisions are tracked via …']
+  original_eta_date date [note: 'Original ETA at time of dispatch, before any revisions (ISO 8601).']
+  actual_arrival_date date [note: 'Actual arrival date; NULL if not yet delivered (ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table shipment_line {
+  shipment_line_sk bigint [pk, note: 'Surrogate key.']
+  shipment_line_id string [not null, note: 'Durable natural/business key for the shipment line.']
+  shipment_sk bigint [note: 'FK to shipment.shipment_sk (version-specific).']
+  shipment_id string [not null, note: 'Durable shipment business key.']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  po_line_sk bigint [note: 'FK to purchase_order_line.po_line_sk (foreign surrogate; nullable, not a PK). The purchase-order line this shipment …']
+  po_line_id string [note: 'Durable purchase-order line business key this shipment line fulfills. Retained alongside po_line_sk; the declared UC FK …']
+  shipped_quantity int [not null, note: 'Units shipped on this line.']
+  received_quantity int [note: 'Units actually received; NULL if not yet delivered.']
+  damaged_quantity int [note: 'Units received damaged.']
+  unit_weight_kg decimal(10,3) [note: 'Weight per unit in kilograms.']
+  line_weight_kg decimal(12,3) [note: 'Total line weight in kilograms.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table shipment_tracking {
+  shipment_tracking_sk bigint [pk, note: 'Surrogate key.']
+  shipment_tracking_id string [not null, note: 'Durable natural/business key for the tracking message (carrier_code|tracking_number|sequence).']
+  shipment_sk bigint [note: 'FK to shipment.shipment_sk (version-specific).']
+  shipment_id string [not null, note: 'Durable shipment business key.']
+  carrier_code string [not null, note: 'Standardized carrier identifier (e.g. a SCAC or BIC code).']
+  carrier_name string [note: 'Display name of the carrier.']
+  tracking_number string [not null, note: 'Carrier-assigned tracking or waybill number.']
+  carrier_service_level string [note: 'Service level (e.g. express, standard, economy, ltl, ftl, ocean_fcl).']
+  checkpoint_type string [not null, note: 'Type of tracking checkpoint. Allowed values: pickup, hub_scan, in_transit, out_for_delivery, delivered …']
+  checkpoint_status_code string [note: 'Carrier-native status code (free text, carrier-specific).']
+  checkpoint_message string [note: 'Raw carrier message text describing the event.']
+  facility_name string [note: 'Name of the facility or hub where the scan occurred.']
+  city string [note: 'City of the checkpoint location.']
+  state_province string [note: 'State or province of the checkpoint location.']
+  country_code string [note: 'Country of the checkpoint, ISO 3166-1 alpha-2.']
+  postal_code string [note: 'Postal/ZIP code of the checkpoint location.']
+  latitude double [note: 'Latitude of the checkpoint location.']
+  longitude double [note: 'Longitude of the checkpoint location.']
+  signed_by string [note: 'PII · Name of the person who signed for delivery (if delivered).']
+  is_signature_required boolean [note: 'Whether signature was required for this shipment (shipment-level attribute, populated on delivered checkpoint only).']
+  delivery_location_type string [note: 'Where delivered. Allowed values: dock, front_door, mailroom, locker, neighbor, other.']
+  scanned_weight_kg decimal(10,3) [note: 'Weight recorded at this scan point, in kilograms.']
+  piece_count int [note: 'Number of pieces scanned at this checkpoint.']
+  exception_code string [note: 'Carrier exception code (free text, carrier-specific).']
+  exception_reason string [note: 'Reason for the exception (e.g. address_unknown, refused, damaged, weather_delay).']
+  carrier_eta_date date [note: 'Carrier-provided revised ETA as of this checkpoint (ISO 8601); NULL if not revised.']
+  event_timestamp timestamp [not null, note: 'When the tracking event occurred at the carrier (UTC, ISO 8601).']
+  ingest_timestamp timestamp [not null, note: 'When this message was ingested into the lakehouse (UTC, ISO 8601).']
+  latency_seconds int [note: 'Ingest latency = ingest_timestamp - event_timestamp, in seconds.']
+  record_source string [note: 'Originating carrier or tracking aggregator (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: shipment.supplier_sk > supplier.supplier_sk
+Ref: shipment.lane_sk > lane.lane_sk
+Ref: shipment.destination_store_sk > store.store_sk
+Ref: shipment_line.shipment_sk > shipment.shipment_sk
+Ref: shipment_line.product_sk > product.product_sk
+Ref: shipment_line.po_line_sk > purchase_order_line.po_line_sk
+Ref: shipment_tracking.shipment_sk > shipment.shipment_sk
+
+TableGroup logistics [color: #3b4a59] { lane, shipment, shipment_line, shipment_tracking }

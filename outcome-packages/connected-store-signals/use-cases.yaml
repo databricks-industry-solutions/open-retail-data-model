@@ -1,0 +1,56 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed by the maintainer, 2026-10-13.
+#
+# Non-RFID use cases reuse the shared interval envelope and add keyed extensions only when
+# their measures do not fit the reusable scalar contract.
+use_cases:
+  - name: Foot Traffic Analysis
+    # conversion_rate is deliberately not published (footfall and transactions are not
+    # the same population); traffic_sales_productivity carries the honest ratio instead.
+    status: done
+    tables:
+      - gold_store_traffic_daily_current
+      - gold_zone_traffic_current
+      - gold_store_traffic_daily_shared
+      - gold_zone_traffic_shared
+      - gold_zone_traffic_interval_shared
+      - gold_traffic_sales_productivity_current
+      - gold_css_device_health
+  - name: IoT Sensor Monitoring
+    # Control-loop base tables (actuator_capability, evaluation_rule, automation_action,
+    # execution_log) plus the gold consumable that makes the sense -> evaluate -> act ->
+    # log loop read as built, plus the environmental-compliance serving layer (daily
+    # compliance, excursion episodes, rule effectiveness) and their metric views.
+    status: done
+    tables:
+      - gold_css_automation_response
+      - gold_css_environmental_compliance_daily
+      - gold_css_excursion_episodes
+      - gold_css_rule_effectiveness_daily
+      - gold_css_device_health
+  - name: RFID Tracking
+    status: done
+    tables:
+      - gold_item_current_state
+      - gold_zone_item_presence_current
+      - gold_item_visibility_daily
+      - gold_inventory_accuracy_daily
+      - gold_inventory_accuracy_daily_latest
+      - gold_count_session_summary
+      - gold_zone_count_coverage
+      - gold_receiving_verification
+      - gold_rfid_oos_candidates
+      - gold_unaccounted_exits
+      - gold_css_device_health
+  - name: Smart Shelf
+    status: done
+    tables:
+      - gold_shelf_state_current
+      - gold_osa_daily_current
+      - gold_planogram_compliance_current
+      - gold_share_of_shelf_current
+      - gold_price_accuracy_current
+      - gold_observed_oos_episodes
+      - gold_shelf_vs_system_variance_daily
+      - gold_css_device_health

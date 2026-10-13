@@ -1,0 +1,33 @@
+%%{init: {"theme":"default"}}%%
+flowchart TB
+    labor_standard["labor_standard<br/>labor_standard_sk · labor_standard_id"]:::core
+    maintenance_schedule["maintenance_schedule<br/>maintenance_schedule_sk · maintenance_schedule_id · equipment_sk · equipment_id"]:::core
+    store_risk_score["store_risk_score<br/>store_risk_score_sk · store_risk_score_id · store_sk · store_id"]:::core
+    work_order["work_order<br/>work_order_sk · work_order_id · equipment_sk · equipment_id"]:::core
+    work_order_line["work_order_line<br/>work_order_line_sk · work_order_line_id · work_order_sk · work_order_id"]:::core
+    workforce_coverage_exception["workforce_coverage_exception<br/>workforce_coverage_exception_sk · workforce_coverage_exception_id · workforce_optimization_run_id · store_sk"]:::core
+    workforce_demand_forecast["workforce_demand_forecast<br/>workforce_demand_forecast_sk · workforce_demand_forecast_id · workforce_optimization_run_id · store_sk"]:::core
+    workforce_labor_requirement["workforce_labor_requirement<br/>workforce_labor_requirement_sk · workforce_labor_requirement_id · workforce_optimization_run_id · store_sk"]:::core
+    workforce_optimization_run["workforce_optimization_run<br/>workforce_optimization_run_sk · workforce_optimization_run_id"]:::core
+    workforce_schedule_recommendation["workforce_schedule_recommendation<br/>workforce_schedule_recommendation_sk · workforce_schedule_recommendation_id · workforce_optimization_run_id · employee_sk"]:::core
+    gold_downtime_impact["gold_downtime_impact<br/>work_order_sk · work_order_id · equipment_id · store_id"]:::gold
+    gold_equipment_health["gold_equipment_health<br/>equipment_sk · equipment_id · store_id"]:::gold
+    gold_labor_risk["gold_labor_risk<br/>store_sk · store_id"]:::gold
+    gold_maintenance_effectiveness["gold_maintenance_effectiveness<br/>equipment_sk · equipment_id · store_id"]:::gold
+    gold_store_operational_risk["gold_store_operational_risk<br/>store_sk · store_id"]:::gold
+    gold_workforce_coverage_gap["gold_workforce_coverage_gap<br/>store_sk · store_id"]:::gold
+    gold_workforce_demand_forecast["gold_workforce_demand_forecast<br/>store_sk · store_id"]:::gold
+    gold_workforce_forecast_accuracy["gold_workforce_forecast_accuracy<br/>store_id · optimization_run_id"]:::gold
+    gold_workforce_labor_requirement["gold_workforce_labor_requirement<br/>store_sk · store_id · labor_standard_id"]:::gold
+    equipment --> work_order
+    store --> work_order
+    work_order --> work_order_line
+    equipment --> maintenance_schedule
+    store --> store_risk_score
+    store --> workforce_demand_forecast
+    store --> workforce_labor_requirement
+    store --> workforce_schedule_recommendation
+    employee --> workforce_schedule_recommendation
+    store --> workforce_coverage_exception
+    classDef core fill:#e9eef3,stroke:#3b4a59,color:#101d29;
+    classDef gold fill:#fce3d6,stroke:#c4320a,color:#4a1b0a;

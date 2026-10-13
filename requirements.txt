@@ -1,1 +1,5 @@
 # Check here to get the latest version of the databricks-cli: https://github.com/databricks/cli
+
+# Synthetic-data generation (runs on a Databricks cluster / serverless).
+dbldatagen>=0.4.0
+PyYAML>=6.0

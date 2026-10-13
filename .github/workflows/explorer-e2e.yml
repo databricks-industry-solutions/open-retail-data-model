@@ -1,0 +1,57 @@
+name: Explorer e2e (advisory)
+
+# Real-browser end-to-end tests for the explorer SPA (Playwright + headless
+# Chromium against the built site under `vite preview`). These guard the
+# interactive behaviours the jsdom unit suite CANNOT reach: cytoscape's canvas
+# edge/node hover, zoom durability, click-to-L2 without a re-mount, the minimap.
+#
+# ADVISORY / NON-BLOCKING for now: this job is informational and is NOT a required
+# check. The deterministic Explorer CI (typecheck + vitest + build) stays the gate;
+# `continue-on-error` here means a red e2e run never blocks a merge while the
+# harness is still stabilising. Promote it to a required check once it is proven.
+#
+# Native path filtering keeps this inert for non-explorer changes.
+on:
+  pull_request:
+    branches: [main]
+    paths: ['explorer/**']
+  push:
+    branches: [main]
+    paths: ['explorer/**']
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Advisory: a failure is surfaced but must not block the PR (see header).
+    continue-on-error: true
+    env:
+      # Install from the public registry, never the internal Databricks npm proxy
+      # baked into some environments (mirrors explorer-ci.yml / the committed lock).
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies (public registry)
+        run: |
+          cd explorer
+          npm ci --no-audit --no-fund
+      - name: Install Playwright browsers (Chromium + OS deps)
+        run: |
+          cd explorer
+          npx playwright install --with-deps chromium
+      - name: Run the real-browser e2e suite
+        run: |
+          cd explorer
+          npm run e2e
+      - name: Upload the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: explorer-playwright-report
+          path: explorer/playwright-report
+          retention-days: 7

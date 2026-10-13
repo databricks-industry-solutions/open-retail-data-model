@@ -1,0 +1,3 @@
+# URLs the link checker should skip (the Explorer serves client-side routes).
+https://open-retail-data-model.github.io/model-explorer/.*
+https://github.com/open-retail-data-model/.*

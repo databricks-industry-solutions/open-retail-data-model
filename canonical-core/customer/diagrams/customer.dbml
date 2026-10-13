@@ -1,0 +1,193 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_customer { Note: 'core unit' }
+
+Table account {
+  account_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  account_id string [not null, note: 'Durable natural/business key for the organization account.']
+  account_name string [note: 'Registered / legal name of the organization.']
+  account_type string [note: 'Organization type. Allowed values: business, government, education, nonprofit, reseller.']
+  registration_number string [note: 'Business registration / company number (jurisdiction-dependent).']
+  tax_id string [note: 'PII · Tax registration identifier for the organization.']
+  gln string [note: 'GS1 Global Location Number (13 digits) identifying the primary location of the organization.']
+  industry_classification_code string [note: 'Standard industry classification code (e.g. NAICS/SIC-style); stored as code, not name.']
+  parent_account_id string [note: 'Business key of the parent organization account for hierarchies; NULL for top-level (self-FK on the business key …']
+  primary_contact_profile_sk bigint [note: 'FK to profile.profile_sk (foreign surrogate; nullable, not a PK). The primary-contact profile version resolved AS OF …']
+  primary_contact_profile_id string [note: 'Durable business key of the individual (profile) who is the primary contact for the account. Retained for …']
+  account_status string [note: 'Lifecycle status. Allowed values: prospect, active, inactive, closed.']
+  credit_limit_amount decimal(18,2) [note: 'PII · Assigned credit limit for the account, in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; the canonical core …']
+  transaction_currency_code string [note: 'Original account/billing currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  enrollment_date date [note: 'Date the account was established (ISO 8601 date).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this account.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table address {
+  address_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  address_id string [not null, note: 'Durable natural/business key for the address.']
+  profile_sk bigint [note: 'FK to profile.profile_sk (the profile version this address attaches to).']
+  profile_id string [not null, note: 'Durable business key of the owning customer (join on current profile version).']
+  address_type string [note: 'Role of this address. Allowed values: billing, shipping, home, work, other.']
+  address_line_1 string [note: 'PII · Primary street address line.']
+  address_line_2 string [note: 'PII · Secondary address line (unit, suite, floor).']
+  city string [note: 'PII · City / locality.']
+  state_province string [note: 'State, province, or region.']
+  postal_code string [note: 'PII · Postal or ZIP code.']
+  country_code string [note: 'Country, ISO 3166-1 alpha-2 code.']
+  latitude decimal(9,6) [note: 'Geocoded latitude (decimal degrees, WGS84).']
+  longitude decimal(9,6) [note: 'Geocoded longitude (decimal degrees, WGS84).']
+  is_primary boolean [note: 'TRUE if this is the primary address of its type for the customer.']
+  address_status string [note: 'Status of the address. Allowed values: active, inactive.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this address.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table channel_preference {
+  channel_preference_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  channel_preference_id string [not null, note: 'Durable natural/business key for the preference record.']
+  profile_sk bigint [note: 'FK to profile.profile_sk (the profile version this preference attaches to).']
+  profile_id string [not null, note: 'Durable business key of the owning customer (join on current profile version).']
+  channel string [note: 'Communication channel the preference applies to. For preference_type = preferred_channel this is the CHOSEN channel …']
+  preference_type string [note: 'What the preference governs. Allowed values: contact_frequency, topic_subscription, format, preferred_channel.']
+  preference_value string [note: 'The preference value, interpreted per preference_type: topic name (topic_subscription), format code (format). Unused …']
+  is_subscribed boolean [note: 'Soft enrolment flag for THIS preference (topic/format/channel), by customer choice. Non-legal: a false value is a soft …']
+  frequency_cap_per_period int [note: 'Maximum desired contacts per frequency_period for this channel (NULL = no cap expressed).']
+  frequency_period string [note: 'Period the frequency cap applies over. Allowed values: day, week, month.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version. Current-row grain by type: (profile, channel, preference_type) for …']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table consent {
+  consent_sk bigint [pk, note: 'Surrogate key. Unique per consent version.']
+  consent_id string [not null, note: 'Durable natural/business key for the consent record.']
+  profile_sk bigint [note: 'FK to profile.profile_sk.']
+  profile_id string [not null, note: 'Durable business key of the customer giving/withholding consent.']
+  consent_type string [note: 'What the consent governs. third_party_sharing = disclosure of personal information for cross-context behavioral …']
+  consent_status string [note: 'Current decision. Allowed values: granted, withdrawn, pending, expired.']
+  legal_basis string [note: 'Lawful basis for processing. Allowed values: consent, contract, legitimate_interest, legal_obligation, vital_interest …']
+  capture_channel string [note: 'Channel where consent was captured (vendor-neutral). Allowed values: web, mobile_app, store, call_center, email.']
+  disclosure_version string [note: 'Identifier/version of the consent statement or privacy notice presented at capture.']
+  jurisdiction_code string [note: 'Region/law scope this decision applies under. May be an ISO 3166-1 country (GB), an ISO 3166-2 subdivision (US-CA), or …']
+  suppression_indicator boolean [note: 'Operational do-not-activate overlay for this consent scope. TRUE = suppress activation on this purpose x channel even …']
+  suppression_reason_code string [note: 'Why this scope is suppressed (set only when suppression_indicator is TRUE). Two scopes: CHANNEL-level reasons block …']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this consent version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL while still in effect.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently effective consent record per (profile, consent_type, jurisdiction_code).']
+  decision_timestamp timestamp [note: 'Legal-grade instant the consent decision was given/withdrawn (UTC, ISO 8601).']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table contact {
+  contact_sk bigint [pk, note: 'Surrogate key.']
+  contact_id string [not null, note: 'Durable natural/business key for the contact point.']
+  profile_sk bigint [note: 'FK to profile.profile_sk.']
+  profile_id string [not null, note: 'Durable business key of the owning customer.']
+  contact_type string [note: 'Type of contact point. Allowed values: email, mobile_phone, landline_phone, fax.']
+  contact_value string [note: 'PII · The email address or phone number (PII). Format depends on contact_type.']
+  country_calling_code string [note: 'For phone types: country calling code without the + prefix (e.g. 1, 44).']
+  is_primary boolean [note: 'TRUE if this is the primary contact point of its type for the customer.']
+  is_verified boolean [note: 'TRUE if the contact point has been verified (e.g. confirmed email / SMS).']
+  verified_timestamp timestamp [note: 'Timestamp the contact point was verified (UTC, ISO 8601); NULL if unverified.']
+  contact_status string [note: 'Deliverability/consent status. Allowed values: active, inactive, bounced, opted_out.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table household {
+  household_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version. FK target for profile.household_sk.']
+  household_id string [not null, note: 'PII · Durable natural/business key for the household. Referenced by profile.household_id. Treated as PII.']
+  household_type string [note: 'Nature of the household grouping. Allowed values: family, single, shared, business, other.']
+  formation_date date [note: 'Date the household grouping was first established/observed (ISO 8601 date).']
+  household_status string [note: 'Lifecycle status. Allowed values: active, inactive.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this household.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table identity_link {
+  identity_link_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  identity_link_id string [not null, note: 'Durable natural/business key for the assertion, stable per (source_system, identifier_type, identifier_value_hash) …']
+  profile_sk bigint [note: 'FK to profile.profile_sk (the profile version this identifier resolves to).']
+  profile_id string [not null, note: 'Durable business key of the resolved customer (join on current profile version).']
+  source_system string [note: 'Originating system that asserted the identifier (vendor-neutral label).']
+  identifier_type string [note: 'Type of identifier. Allowed values: email_hash, phone_hash, device_id, cookie_id, maid, loyalty_id, login_id …']
+  identifier_value_hash string [note: 'PII · Canonical hashed/tokenized identifier value. Never a raw email/phone/device id (PII, pseudonymized).']
+  match_method string [note: 'How the link was established. Allowed values: deterministic, probabilistic, declared, manual.']
+  match_confidence decimal(5,4) [note: 'Resolution confidence in [0,1]. 1.0000 = asserted/deterministic.']
+  link_status string [note: 'Lifecycle of the link. Allowed values: active, superseded, suppressed.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this link version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL while still in effect.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently effective version of this identity link.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table profile {
+  profile_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version. Used as the join/FK target for downstream dimensional models.']
+  profile_id string [not null, note: 'Durable natural/business key for the individual customer. Stable across SCD2 versions; pseudonymous identifier, not a …']
+  name_prefix string [note: 'Honorific prefix. Common values include mr, mrs, ms, mx, dr.']
+  first_name string [note: 'PII · Given name.']
+  middle_name string [note: 'PII · Middle name(s) or initial.']
+  last_name string [note: 'PII · Family / surname.']
+  name_suffix string [note: 'Generational/qualification suffix. Common values include jr, sr, ii, iii.']
+  date_of_birth date [note: 'PII · Date of birth (ISO 8601 date).']
+  gender string [note: 'Self-described gender. Free text; common values include female, male, non_binary, prefer_not_to_say.']
+  preferred_language_code string [note: 'Preferred communication language, ISO 639-1 alpha-2 (e.g. en, fr, es).']
+  nationality_country_code string [note: 'Nationality, ISO 3166-1 alpha-2 country code.']
+  loyalty_id string [note: 'PII · Loyalty/membership program identifier for the individual. Treated as PII.']
+  household_sk bigint [note: 'FK to household.household_sk (the household version this profile is a member of). Resolved as-of the profile version.']
+  household_id string [note: 'PII · Durable household grouping key linking related individuals; joins household.household_id (current version) …']
+  customer_status string [note: 'Lifecycle status. Allowed values: prospect, active, inactive, closed.']
+  enrollment_date date [note: 'Date the individual first became a known customer (ISO 8601 date).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date this version stopped being effective; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version of this profile.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Ref: address.profile_sk > profile.profile_sk
+Ref: contact.profile_sk > profile.profile_sk
+Ref: consent.profile_sk > profile.profile_sk
+Ref: account.primary_contact_profile_sk > profile.profile_sk
+Ref: profile.household_sk > household.household_sk
+Ref: identity_link.profile_sk > profile.profile_sk
+Ref: channel_preference.profile_sk > profile.profile_sk
+
+TableGroup customer [color: #3b4a59] { account, address, channel_preference, consent, contact, household, identity_link, profile }

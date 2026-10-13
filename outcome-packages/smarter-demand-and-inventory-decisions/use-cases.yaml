@@ -1,0 +1,30 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed by the maintainer, 2026-10-13.
+use_cases:
+  - name: Demand & Order Forecasting
+    status: done
+    tables:
+      - gold_demand_forecast_weekly
+      - gold_effective_forecast
+      - gold_order_forecast
+      - gold_forecast_accuracy
+      - gold_forecast_value_added
+      - gold_demand_sensing_queue
+  - name: Inventory Optimization
+    status: done
+    tables:
+      - gold_inventory_health
+      - gold_inventory_policy_compliance
+      - gold_replenishment_queue
+      - gold_inventory_capital_summary
+      - gold_service_level_attainment
+      - gold_inventory_productivity
+  - name: Out-of-Stocks Optimization
+    status: done
+    tables:
+      - gold_oos_current
+      - gold_oos_preventability
+      - gold_lost_sales_summary
+      - gold_oos_recovery_priority
+      - gold_oos_rate

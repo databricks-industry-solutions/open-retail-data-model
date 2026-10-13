@@ -1,0 +1,27 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    fiscal_calendar {
+        bigint date_sk PK
+        date date_key
+        string date_id
+        int calendar_year
+        int calendar_month
+        int calendar_day
+        int day_of_week
+        string day_name  "enum"
+        boolean is_weekend
+        boolean is_holiday
+        int fiscal_week_id
+    }
+    fx_rate {
+        bigint fx_rate_sk PK
+        string fx_rate_id
+        date date_key
+        string from_currency_code
+        string to_currency_code
+        decimal rate
+        timestamp created_timestamp
+        timestamp source_updated_timestamp
+        string record_source
+        timestamp load_timestamp
+    }

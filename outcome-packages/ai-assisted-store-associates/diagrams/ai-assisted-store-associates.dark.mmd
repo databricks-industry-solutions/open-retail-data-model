@@ -1,0 +1,29 @@
+%%{init: {"theme":"dark"}}%%
+flowchart TB
+    action_response_log["action_response_log<br/>action_response_log_sk · action_response_log_id · suggested_action_sk · suggested_action_id"]:::core
+    associate["associate<br/>associate_sk · associate_id · store_sk · store_id"]:::core
+    associate_context_event["associate_context_event<br/>associate_context_event_sk · associate_context_event_id · store_sk · store_id"]:::core
+    associate_fulfillment_status["associate_fulfillment_status<br/>associate_fulfillment_status_sk · associate_fulfillment_status_id · order_id · store_sk"]:::core
+    associate_lookup_audit["associate_lookup_audit<br/>associate_lookup_audit_sk · associate_lookup_audit_id · request_id · correlation_id"]:::core
+    outcome_resolution["outcome_resolution<br/>outcome_resolution_sk · outcome_resolution_id · suggested_action_sk · suggested_action_id"]:::core
+    suggested_action["suggested_action<br/>suggested_action_sk · suggested_action_id · associate_sk · associate_id"]:::core
+    gold_action_outcome_funnel_daily["gold_action_outcome_funnel_daily<br/>store_id · store_zone_id · associate_id"]:::gold
+    gold_associate_action_queue_current["gold_associate_action_queue_current<br/>associate_id · store_id · store_zone_id · suggested_action_id"]:::gold
+    gold_associate_data_freshness["gold_associate_data_freshness<br/>store_id"]:::gold
+    gold_associate_operational_context_current["gold_associate_operational_context_current<br/>store_id · store_sk · context_id · related_product_id"]:::gold
+    gold_associate_order_status_current["gold_associate_order_status_current<br/>associate_fulfillment_status_sk · associate_fulfillment_status_id · order_id · store_sk"]:::gold
+    gold_associate_price_promotion_current["gold_associate_price_promotion_current<br/>product_sk · product_id · store_sk · store_id"]:::gold
+    gold_associate_product_inventory_current["gold_associate_product_inventory_current<br/>product_sk · product_id · store_sk · store_id"]:::gold
+    store --> associate
+    associate --> suggested_action
+    store --> suggested_action
+    profile --> suggested_action
+    product --> suggested_action
+    suggested_action --> action_response_log
+    associate --> action_response_log
+    suggested_action --> outcome_resolution
+    store --> associate_context_event
+    product --> associate_context_event
+    store --> associate_fulfillment_status
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;

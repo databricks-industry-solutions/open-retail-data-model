@@ -6,39 +6,451 @@ variables:
     description: "Project name"
     default: "open-retail-data-model"
 
-  # The "warehouse_id" variable is used by metric views / dashboards.
+  # Target Unity Catalog. Keep separate deployments in SEPARATE catalogs so
+  # deployment order never matters (data-model-standards #14). Never hardcode
+  # this in SQL — canonical-core/*.sql reference it as ${catalog}.
+  catalog:
+    description: "Target Unity Catalog for ORDM (e.g. retail_prod, retail_dev)."
+    default: "retail_prod"
+
+  # Reporting / base currency. The canonical core normalizes ALL monetary
+  # columns to this currency at ingest (currency_code = base on every row);
+  # transaction_currency_code preserves the original currency for lineage, and
+  # the fx_rate dimension is the conversion reference. Gold aggregations are
+  # therefore single-currency and correct.
+  base_currency:
+    description: "Reporting/base currency for all monetary columns (ISO 4217)."
+    default: "USD"
+
+  # Per-domain schema names. Each canonical-core domain (and each outcome
+  # package) is its own Unity Catalog schema; SQL references the matching
+  # ${<domain>_schema} token and never hardcodes a schema name (guardrail #1).
+  # These variables are the single source of truth for schema names —
+  # tools/ordm_config.py reads them, and the DQ runner + tests resolve the
+  # ${*_schema} tokens from here.
+  customer_schema:
+    description: "Schema for the customer canonical-core domain."
+    default: "customer"
+  product_schema:
+    description: "Schema for the product canonical-core domain."
+    default: "product"
+  store_schema:
+    description: "Schema for the store canonical-core domain."
+    default: "store"
+  calendar_schema:
+    description: "Schema for the calendar (fiscal-calendar) canonical-core domain."
+    default: "calendar"
+  transaction_schema:
+    description: "Schema for the transaction (sales) canonical-core domain."
+    default: "transaction"
+  marketing_schema:
+    description: "Schema for the marketing canonical-core domain (the conformed promotion dimension)."
+    default: "marketing"
+  promo_schema:
+    description: "Schema for the Promote with Purpose outcome package."
+    default: "promote_with_purpose"
+  supplier_schema:
+    description: "Schema for the supplier canonical-core domain."
+    default: "supplier"
+  procurement_schema:
+    description: "Schema for the procurement (purchase order) canonical-core domain."
+    default: "procurement"
+  risk_schema:
+    description: "Schema for the Early Risk Detection outcome package."
+    default: "early_risk_detection"
+  order_schema:
+    description: "Schema for the order canonical-core domain (customer orders). 'orders' avoids the reserved word ORDER."
+    default: "orders"
+  payment_schema:
+    description: "Schema for the payment canonical-core domain (payments / refunds / adjustments)."
+    default: "payment"
+  acu_schema:
+    description: "Schema for the Actionable Customer Understanding outcome package."
+    default: "actionable_customer_understanding"
+  dss_schema:
+    description: "Schema for the Data Sharing with Suppliers outcome package."
+    default: "data_sharing_with_suppliers"
+  inventory_schema:
+    description: "Schema for the inventory canonical-core domain."
+    default: "inventory"
+  logistics_schema:
+    description: "Schema for the logistics canonical-core domain."
+    default: "logistics"
+  bmv_schema:
+    description: "Schema for the Balancing Margin and Volume outcome package."
+    default: "balancing_margin_and_volume"
+  ucv_schema:
+    description: "Schema for the Unified Customer View outcome package."
+    default: "unified_customer_view"
+  equipment_schema:
+    description: "Schema for the equipment canonical-core domain."
+    default: "equipment"
+  labor_schema:
+    description: "Schema for the labor canonical-core domain (employee / schedule / actuals). Gates Workforce Optimization — ADR 0043."
+    default: "labor"
+  predops_schema:
+    description: "Schema for the Predictive Operations outcome package (In-Store Equipment Maintenance + Store Performance + Workforce Optimization). See ADR 0028 / ADR 0043."
+    default: "predictive_operations"
+  cmn_schema:
+    description: "Schema for the Commerce Media Networks outcome package."
+    default: "commerce_media_networks"
+  sdi_schema:
+    description: "Schema for the Smarter Demand and Inventory Decisions outcome package."
+    default: "smarter_demand_and_inventory_decisions"
+  interaction_schema:
+    description: "Schema for the interaction canonical-core domain (omnichannel touchpoint fact)."
+    default: "interaction"
+  css_schema:
+    description: "Schema for the Connected Store Signals outcome package."
+    default: "connected_store_signals"
+  ac_schema:
+    description: "Schema for the Agentic Commerce outcome package."
+    default: "agentic_commerce"
+  aasa_schema:
+    description: "Schema for the AI-Assisted Store Associates outcome package (Real-Time Data Access + Associates Best Next Actions)."
+    default: "ai_assisted_store_associates"
+
+  rfid_as_of_mode:
+    description: "RFID item-presence evaluation clock: wall_clock for live/production data, or data_max for frozen historical demos."
+    default: "wall_clock"
+
+  rfid_fixed_freshness_minutes:
+    description: "RFID presence-evidence freshness window for fixed readers."
+    default: "120"
+  rfid_mobile_freshness_minutes:
+    description: "RFID presence-evidence freshness window for mobile platforms."
+    default: "1440"
+  rfid_count_target_cadence_days:
+    description: "Reference number of days between RFID count sessions."
+    default: "7"
+  rfid_count_lookback_days:
+    description: "Lookback window for recent RFID count-session coverage."
+    default: "30"
+
+  shelf_as_of_mode:
+    description: "Smart Shelf evaluation clock: wall_clock for live/production data, or data_max for frozen historical demos (ADR 0038 pattern, second consumer)."
+    default: "wall_clock"
+  shelf_fixed_freshness_minutes:
+    description: "Shelf-observation freshness window for fixed platforms (weight shelves, fixed cameras)."
+    default: "120"
+  shelf_mobile_freshness_minutes:
+    description: "Shelf-observation freshness window for mobile/robot capture platforms."
+    default: "1440"
+
+  # SQL warehouse for metric-view dashboards (optional). The serverless deploy job
+  # below does not use it, so it is empty by default and does NOT block
+  # `bundle validate` / `deploy` on a workspace that has no preset warehouse. When
+  # you wire a dashboard, set it to your warehouse id — or swap in a
+  # `lookup: { warehouse: "<name>" }` to resolve it by name at deploy time.
   warehouse_id:
-    lookup:
-      # Replace with the name of your SQL warehouse.
-      warehouse: "Shared Unity Catalog Serverless"
+    description: "SQL warehouse id for metric-view dashboards (optional)."
+    default: ""
 
   environment:
     description: "Deployment environment (dev, staging, prod)"
     default: "dev"
 
+  # The MAIN "serving" catalog the daily full-deploy job (deploy_ordm_daily) targets --
+  # distinct from `catalog` (the demo/CI catalog) so the daily serving deploy and per-PR /
+  # demo runs never share a database (data-model-standards #14). Override at deploy time.
+  main_catalog:
+    description: "Target catalog for the DAILY full serving deploy (deploy_ordm_daily)."
+    default: "open_retail_data_model_catalog"
+
+  # Emails notified when the DAILY full deploy FAILS (Databricks-native on_failure, no extra
+  # infra). A COMPLEX (list) variable defaulting to [] so `on_failure` renders as an EMPTY
+  # LIST (valid: no notification) when unset -- NOT `[""]`, which the Jobs API can reject and
+  # which would break the pre-existing `validate-and-test` required check (it bundle-deploys
+  # the whole bundle with no alert override; AI review #108 H1). A COMPLEX var cannot be set
+  # via --var or BUNDLE_VAR_ env (CLI limitation), so real recipients are supplied by a
+  # TARGET override (see the `serving` target), not at the command line.
+  alert_emails:
+    description: "Emails (list) for deploy_ordm_daily on_failure; default [] = no notification."
+    type: complex
+    default: []
+
 targets:
   dev:
     default: true
     mode: development
+  # The daily full-deploy workflow deploys `--target serving`. This is where real failure-
+  # alert recipients live (a complex var can only be overridden per-target, not via --var).
+  # Edit `alert_emails` here to the maintainer address(es). `catalog`/`main_catalog` still
+  # come from the workflow's --var (they are plain string vars).
+  serving:
+    # No `mode: production` -- that would require an explicit workspace.root_path; this target
+    # exists only to carry the alert_emails override (a complex var can't be set via --var).
+    variables:
+      alert_emails:
+        - "data-alerts@example.com"  # set to your team
 
-# Resources are added per outcome package as they mature.
-# ORDM deploys canonical-core tables, outcome-package metric views, and
-# synthetic-data generation jobs. See examples/deploy-with-dab/ for a
-# worked deployment template.
+# End-to-end model deploy: one serverless job that stands the whole model up in
+# order: schemas -> tables -> relationships -> gold views (apply_model_ddl.py),
+# then synthetic data, then data-quality checks. Every task is a plain .py that
+# reads --catalog (and any ${*_schema} override) via get_param, so a recreated
+# workspace is `databricks bundle deploy` + run this job, not a hand-run sequence.
 #
-# resources:
-#   jobs:
-#     generate_synthetic_data:
-#       name: "${var.project_name} - Generate Synthetic Data"
-#       tasks:
-#         - task_key: generate
-#           notebook_task:
-#             notebook_path: "./synthetic-data/generators/generate.py"
+# Parallel apply (apply_ddl): apply_model_ddl.py applies independent files
+# CONCURRENTLY within each phase (--max_workers, default 16). A parallel unit is an
+# independent group whose statements stay ordered: a file, or a per-target-table regroup
+# for relationships and comments. So a table's CREATE always precedes its SET TAGS, and
+# same-table DDL never races on the delta log. Non-MV phase barriers require terminal
+# SUCCEEDED before the next phase runs, and the gold semantic layer keeps a bounded
+# fixpoint sweep as a safety net over
+# the dependency waves. Committed SQL is byte-identical; only apply ORDER changes.
 #
-#   dashboards:
-#     unified_customer_view:
-#       display_name: "Unified Customer View"
-#       file_path: "./outcome-packages/unified-customer-view/sample-dashboard.lvdash.json"
-#       warehouse_id: "${var.warehouse_id}"
+# Warehouse concurrency (operator guidance, empirically confirmed on the reference workspace): a SQL
+# warehouse admits ~10 concurrent queries PER CLUSTER, so effective parallelism is
+# bounded by cluster COUNT, not warehouse SIZE. A bigger warehouse size buys ~zero
+# extra concurrency for these metadata-bound DDL/comment ops (a COMMENT ON COLUMN is a
+# near-zero-compute metadata commit); more clusters do. So set the warehouse to
+# AUTOSCALE rather than upsizing it. CRITICAL (measured): set min_num_clusters >= 3, not
+# just max: the apply/DQ phases are short bursts (~1-4 min) and autoscale is LAGGY (it adds
+# clusters over minutes), so a warehouse left at min=1 never scales up during a burst and
+# --max_workers just piles onto ~10 admit slots, DEEPENING the queue and metadata-lock
+# retries (a run at 32 workers on a min=1 warehouse was SLOWER than 16). The committed
+# --max_workers is the FAIL-SAFE 16 (safe on any warehouse); once pre-warmed to min>=3
+# (~30 concurrent) an operator can opt UP to ~24, not blindly higher. Keep the size Small
+# (concurrency is cluster COUNT, not size) unless a compute-heavy phase (gold / metric
+# views) proves it needs more. This job does not own a warehouse resource, so tune it on
+# the warehouse you pass via ${var.warehouse_id}. See runtime/examples/README.md.
 #
+# The generators run in ONE serverless task (generate_all.py), which computes dependency
+# WAVES (Kahn levels) from the declarative registry (runtime/synthetic-data/generators/_registry.py)
+# via each generator's provides/depends_on, so a reader never runs before the master it
+# reads. Generators in the same wave run CONCURRENTLY on the shared SparkSession (waves stay
+# strictly ordered); this cut generate_all from ~337s to ~214s in a measured run. Keeping
+# all generators in one task installs the serverless environment ONCE instead of once per
+# generator. The 15 generators form dependency waves (customer/trade_promotion first, ...
+# early_risk / data_sharing last). Cross-package ordering is dependency-derived: e.g. CSS
+# (connected_store_signals) precedes CMN because CMN's synthetic inputs + the exact-name
+# compatibility view consume CSS-owned traffic, so CSS lands in an earlier wave;
+# agentic_commerce depends only on customer/product/store (all wave 1) so it runs in wave 2.
+# Every generator that ships is wired; a domain/package with
+# no generator still gets its schema+tables from the DDL step but no synthetic rows.
+# Metric views ARE created by the apply_ddl step (the
+# METRIC_VIEWS phase applies `outcome-packages/*/metric-views/*.sql` on the SQL
+# warehouse); what is NOT wired yet is the dashboards / Genie spaces built on top
+# of them (tracked as a follow-on).
+resources:
+  jobs:
+    deploy_ordm:
+      name: "${var.project_name} - deploy model (${var.catalog})"
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      # Serverless compute for the Python tasks (no cluster to size or recreate).
+      # dbldatagen (Databricks Labs) is used by the master-entity generators and is
+      # NOT pre-installed on serverless, so it is declared here; pyyaml is used by
+      # the config resolver and seeds. Pinned for reproducibility.
+      environments:
+        - environment_key: default
+          spec:
+            client: "1"
+            dependencies:
+              - pyyaml
+              - dbldatagen>=0.4
+              - databricks-sdk
+              # apply_model_ddl.py imports sqlglot lazily in _normalize_view_body (the MV-definition
+              # reconcile path); keep it in the env so this job never dies at that import even if a
+              # reconcile flag is added here later. Pin matches requirements-dev.txt.
+              - sqlglot==30.17.0
+      tasks:
+        - task_key: apply_ddl
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            # --warehouse routes the semantic layer (gold + metric views) to a SQL
+            # warehouse (materialized views require it). Empty -> falls back to Spark.
+            #
+            # --max_workers 16: apply independent files CONCURRENTLY within each phase.
+            # A unit is a file, or a per-target-table regroup for relationships and
+            # comments; statements stay ordered within a unit (so a table's CREATE always
+            # precedes its SET TAGS, and same-table ALTERs never race). Concurrency is bounded by the
+            # WAREHOUSE cluster count (~10 concurrent queries per cluster), NOT warehouse
+            # size. 16 is the FAIL-SAFE default: it is safe on ANY warehouse, including an
+            # un-scaled min_num_clusters=1 one (which the bundle cannot enforce, since
+            # warehouse_id is an optional operator-supplied var). Operators who pre-warm the
+            # warehouse to min_num_clusters>=3 (~30 admit) can opt UP to ~24 for more
+            # parallelism; do NOT raise it ABOVE the warm admit ceiling -- that is
+            # counter-productive (measured: 24-32 workers on a min=1 warehouse was SLOWER
+            # than 16 -- deeper queue + more metadata-lock retries). Plain gold views get their
+            # column comments inline on CREATE OR REPLACE VIEW; the remaining comments phase
+            # (tables + materialized views, one COMMENT ON COLUMN per column) is still bounded
+            # by this cluster-count ceiling, so raising workers past it does nothing.
+            #
+            # --demote-materialized: DEMO / dev target ONLY. Rewrites the
+            # CREATE OR REFRESH MATERIALIZED VIEW statements to plain CREATE OR REPLACE
+            # VIEW: the demo data is tiny so nothing needs materialization, and plain
+            # views avoid the empty-MV-refresh correctness trap (MVs are created against
+            # empty tables at apply time, before any data loads). For a SERVING / prod
+            # deploy, REMOVE --demote-materialized so the MVs stay materialized (and
+            # refresh them after data loads). This bundle has a single dev/demo target,
+            # so the flag lives on the base task: per-target task params do NOT merge by
+            # task_key (an override appends a duplicate task instead), so a demo-only
+            # override is not cleanly expressible here. See runtime/examples/README.md.
+            #
+            # For a SERVING / prod deploy, strip BOTH --demote-materialized AND --profile:
+            # --profile is harmless (near-zero overhead) but prints per-statement timing on
+            # every run, which is noise outside a tuning/demo context.
+            parameters: ["--catalog", "${var.catalog}", "--warehouse", "${var.warehouse_id}", "--max_workers", "16", "--demote-materialized", "--profile", "--rfid_as_of_mode", "${var.rfid_as_of_mode}", "--rfid_fixed_freshness_minutes", "${var.rfid_fixed_freshness_minutes}", "--rfid_mobile_freshness_minutes", "${var.rfid_mobile_freshness_minutes}", "--rfid_count_target_cadence_days", "${var.rfid_count_target_cadence_days}", "--rfid_count_lookback_days", "${var.rfid_count_lookback_days}", "--shelf_as_of_mode", "${var.shelf_as_of_mode}", "--shelf_fixed_freshness_minutes", "${var.shelf_fixed_freshness_minutes}", "--shelf_mobile_freshness_minutes", "${var.shelf_mobile_freshness_minutes}"]
+        - task_key: generate_all  # one serverless task: every generator in dependency order (registry topo-sort)
+          depends_on: [{ task_key: apply_ddl }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./runtime/synthetic-data/generators/generate_all.py
+            parameters: ["--catalog", "${var.catalog}"]
+        # Physical gold snapshot tables are loaded once more after base generation so DQ
+        # sees this run's rows rather than the snapshot created during the pre-data DDL pass.
+        - task_key: refresh_gold_tables
+          depends_on: [{ task_key: generate_all }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            parameters: ["--catalog", "${var.catalog}", "--warehouse", "${var.warehouse_id}", "--refresh_gold_tables"]
+        - task_key: data_quality
+          depends_on: [{ task_key: refresh_gold_tables }]
+          environment_key: default
+          # --fail_on none (report-only) on the demo deploy: the checks run across the
+          # whole committed model, but not every domain has a generator, so an
+          # empty/partially-populated domain must not red the deploy. Every violation
+          # is printed to the run log; the job does not fail. So the deploy has NO
+          # enforced DQ gating yet — a stricter, populated-domains-only gate
+          # (--fail_on error --domains ...) is tracked as the follow-on in issue #37.
+          # (Note: --fail_on warn is STRICTER, not lenient.)
+          # --max_parallel 16: the check runner is already thread-parallel (code default 8;
+          # a measured run had DQ at ~276s at 8). 16 is the fail-safe default like apply_ddl's
+          # --max_workers -- safe on an un-scaled warehouse; opt UP to ~24 once the warehouse
+          # is pre-warmed to min_num_clusters>=3 (concurrency is cluster COUNT, see the header).
+          spark_python_task:
+            python_file: ./runtime/data-quality/run_checks.py
+            parameters: ["--catalog", "${var.catalog}", "--fail_on", "none", "--max_parallel", "16"]
+
+    # DAILY full serving deploy (design/59): stands up the WHOLE model with data + DQ into
+    # the MAIN catalog on a schedule, and EMAILS ${var.alert_emails} on failure. Differs from
+    # deploy_ordm (the demo/CI job) in three deliberate ways:
+    #   * targets ${var.main_catalog}, not the demo ${var.catalog};
+    #   * NO --demote-materialized -> materialized views STAY materialized for serving (the
+    #     serving catalog is refreshed daily so an MV built against real data is correct);
+    #   * NO --profile (no per-statement timing noise on an unattended run).
+    # It applies EVERYTHING (no --domains / --single_schema): the daily job is the full model,
+    # the per-PR lean gate (GH workflow) is the scoped one.
+    deploy_ordm_daily:
+      name: "${var.project_name} - DAILY full deploy (${var.main_catalog})"
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      # Schedule is defined but PAUSED: the GitHub workflow (ordm-daily-deploy.yml) is the
+      # SINGLE daily trigger (it bundle-deploys the current main, then bundle-runs this job).
+      # Leaving this UNPAUSED too would fire a SECOND full deploy at the same time, serialized by
+      # max_concurrent_runs:1 into two back-to-back serving deploys (AI review #108 M2). Keep it
+      # PAUSED as a documented in-workspace fallback an operator can flip on if GitHub Actions is
+      # unavailable. 6pm America/Denver daily; timezone_id makes the workspace schedule DST-correct
+      # (the GH cron is UTC-only, set to the MT-equivalent in ordm-daily-deploy.yml).
+      schedule:
+        quartz_cron_expression: "0 0 18 * * ?"
+        timezone_id: "America/Denver"
+        pause_status: PAUSED
+      # Email the maintainer when the unattended daily deploy fails (native, no extra infra).
+      # Complex var -> renders [] when unset (valid, no-op) instead of [""] (Jobs API reject).
+      email_notifications:
+        on_failure: ${var.alert_emails}
+      environments:
+        - environment_key: default
+          spec:
+            client: "1"
+            dependencies:
+              - pyyaml
+              - dbldatagen>=0.4
+              - databricks-sdk
+              # apply_model_ddl.py imports sqlglot in _normalize_view_body, reached by the
+              # reconcile_schema (--reconcile_materialized) + refresh tasks below; without it the
+              # reconcile task dies at `import sqlglot` (ModuleNotFoundError). Pin matches
+              # requirements-dev.txt so the parse output is consistent with the drift-gated tests.
+              - sqlglot==30.17.0
+      tasks:
+        # Reconcile table schema FIRST, BEFORE apply_ddl (AI review #108 H1). apply_ddl uses
+        # CREATE TABLE IF NOT EXISTS, so a table whose committed DDL changed since the last deploy
+        # keeps its OLD structure (silent drift). This task DESCRIBEs each managed table, diffs its
+        # columns vs the committed CREATE, and DROPs ONLY the drifted ones (drop-only) -- then the
+        # apply_ddl step that follows recreates each dropped table WITH its SET TAGS (dbx_data_type
+        # / PII), cross-table FKs (relationships.sql), and comments, which a CREATE-only recreate
+        # would have lost. UNCHANGED tables are left live (apply's IF NOT EXISTS no-ops them) -> no
+        # availability gap for them. A DRIFTED table, however, is dropped here and only reappears
+        # once the apply_ddl step succeeds -- so if apply_ddl FAILS, that (only that) table is
+        # missing until the next green daily run (M1). This is acceptable on THIS path: it is a
+        # batch serving catalog rebuilt in full every day (generate_all refills all data), it is
+        # not a low-latency source of truth, an apply failure fires the alert_emails, and the gap
+        # is scoped to tables whose DDL actually changed that day. Do NOT reuse --reconcile_schema
+        # as-is on a continuously-served, no-downtime catalog without a rebuild-then-swap.
+        # Data is refilled by generate_all. For an admin clean-reinstall, --recreate (full nuke,
+        # also drop-only + relies on the following apply) exists but is NOT wired here.
+        # SCOPE: reconcile covers TABLES (--reconcile_schema) AND materialized-view DEFINITIONS
+        # (--reconcile_materialized, AI review #108 M2). Plain views (gold + metric-views) are
+        # CREATE OR REPLACE, so a changed body self-heals every deploy. But the MATERIALIZED
+        # views are CREATE OR REFRESH MATERIALIZED VIEW, applied IF-NOT-EXISTS-style -- so a
+        # changed MV SELECT body would keep the STALE definition (refresh only recomputes DATA).
+        # --reconcile_materialized diffs each committed MV body vs its live view_definition
+        # (sqlglot-normalized: strips the trailing CLUSTER BY layout + comments, canonicalizes, so
+        # an UNCHANGED MV never needlessly recreates -- verified false-positive-free over all of them)
+        # and DROPs only the drifted ones, so apply_ddl recreates them with the new body and
+        # refresh_materialized_views repopulates. Serving-only (the lean gate demotes MVs to plain
+        # views, which self-heal). Both run BEFORE apply_ddl.
+        - task_key: reconcile_schema
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            parameters: ["--catalog", "${var.main_catalog}", "--warehouse", "${var.warehouse_id}", "--reconcile_schema", "--reconcile_materialized"]
+        - task_key: apply_ddl
+          depends_on: [{ task_key: reconcile_schema }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            # Serving deploy: main catalog, MVs stay materialized (no --demote-materialized).
+            # Recreates any table reconcile_schema dropped, with tags + FKs + comments.
+            parameters: ["--catalog", "${var.main_catalog}", "--warehouse", "${var.warehouse_id}", "--max_workers", "16", "--rfid_fixed_freshness_minutes", "${var.rfid_fixed_freshness_minutes}", "--rfid_mobile_freshness_minutes", "${var.rfid_mobile_freshness_minutes}", "--rfid_count_target_cadence_days", "${var.rfid_count_target_cadence_days}", "--rfid_count_lookback_days", "${var.rfid_count_lookback_days}", "--shelf_fixed_freshness_minutes", "${var.shelf_fixed_freshness_minutes}", "--shelf_mobile_freshness_minutes", "${var.shelf_mobile_freshness_minutes}"]
+        - task_key: generate_all
+          depends_on: [{ task_key: apply_ddl }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./runtime/synthetic-data/generators/generate_all.py
+            parameters: ["--catalog", "${var.main_catalog}"]
+        - task_key: refresh_gold_tables
+          depends_on: [{ task_key: generate_all }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            parameters: ["--catalog", "${var.main_catalog}", "--warehouse", "${var.warehouse_id}", "--refresh_gold_tables"]
+        # Refresh the gold materialized views AFTER data loads (AI review #108 H1, Approach B).
+        # apply_ddl (no --demote-materialized on serving) creates the MVs against EMPTY tables
+        # and there is no SCHEDULE clause, so without this they stay empty/stale. This task issues
+        # REFRESH MATERIALIZED VIEW in dependency order (parents before children) so a child MV
+        # that reads another MV recomputes against fresh parent data. Runs on the warehouse
+        # (MVs refresh there); demo job does NOT need it (it demotes MVs to plain views).
+        - task_key: refresh_materialized_views
+          depends_on: [{ task_key: refresh_gold_tables }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./tools/apply_model_ddl.py
+            parameters: ["--catalog", "${var.main_catalog}", "--warehouse", "${var.warehouse_id}", "--refresh_materialized"]
+        - task_key: data_quality
+          depends_on: [{ task_key: refresh_materialized_views }]
+          environment_key: default
+          spark_python_task:
+            python_file: ./runtime/data-quality/run_checks.py
+            # SERVING deploy uses --fail_on error (NOT the demo job's report-only 'none', :280):
+            # a data-quality regression in the MAIN catalog must red the run so the job's
+            # on_failure email actually fires on bad data, not only on a crash (AI review #108
+            # M1). A check's VIOLATION path is vacuously safe on empty tables (checks are
+            # COUNT(*)-wrapped -> 0 violations, run_checks.py), so a generator-less domain's empty
+            # tables do not red it. CAVEAT (AI review #108 M2): that argument covers only the
+            # violation-count path -- a check whose QUERY itself RAISES returns status ERROR, and
+            # ERROR is in the failed set regardless of --fail_on (run_checks.py:339-341). So a
+            # committed check that errors over empty inputs (e.g. one referencing a gold view/MV
+            # that failed to refresh, or a join that errors on empty) WOULD red the serving deploy.
+            # This is intended (a check that can't even run IS a real failure), but if the reference workspace
+            # daily run surfaces a spurious ERROR from a generator-less package, scope DQ with
+            # --domains <populated set> (NOT revert to none). Stricter enforcement tracked in #37.
+            parameters: ["--catalog", "${var.main_catalog}", "--fail_on", "error", "--max_parallel", "16"]
+
 # For schema/options, see: https://docs.databricks.com/aws/en/dev-tools/bundles/settings

@@ -1,0 +1,28 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_store { Note: 'core unit' }
+
+Table store {
+  store_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  store_id string [not null, note: 'Durable natural/business key for the store.']
+  gln string [note: 'GS1 Global Location Number (13 digits) for the store location.']
+  store_name string [note: 'Display name of the store.']
+  store_format string [note: 'Format. Allowed values: hypermarket, supermarket, convenience, drugstore, online.']
+  region string [note: 'Sales region / area.']
+  district string [note: 'District within the region.']
+  city string [note: 'City / locality of the store.']
+  state_province string [note: 'State, province, or region code.']
+  country_code string [note: 'Country, ISO 3166-1 alpha-2 code.']
+  open_date date [note: 'Date the store opened (ISO 8601 date).']
+  store_status string [note: 'Lifecycle status. Allowed values: active, inactive, closed.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+
+TableGroup store [color: #3b4a59] { store }

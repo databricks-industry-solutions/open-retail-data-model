@@ -1,0 +1,21 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed with the use-case owners, 2026-10-07.
+use_cases:
+  - name: Store Performance
+    status: done
+    # tables: maps a use case to the GOLD tables that serve it (drives the
+    # explorer's L1 grouping + use-case -> core lineage). store_risk_score is an
+    # append-only extension fact, not a gold table, so it is not listed here.
+    tables: [gold_store_operational_risk]
+  - name: Workforce Optimization
+    status: done
+    tables:
+      - gold_workforce_demand_forecast
+      - gold_workforce_labor_requirement
+      - gold_workforce_coverage_gap
+      - gold_labor_risk
+      - gold_workforce_forecast_accuracy
+  - name: In-Store Equipment Maintenance
+    status: done
+    tables: [gold_equipment_health, gold_maintenance_effectiveness, gold_downtime_impact]

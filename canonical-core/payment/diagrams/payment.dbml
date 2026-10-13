@@ -1,0 +1,24 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_payment { Note: 'core unit' }
+
+Table payment {
+  payment_sk bigint [pk, note: 'Surrogate key.']
+  payment_id string [not null, note: 'Durable natural/business key for the payment event.']
+  order_id string [note: 'FK to customer_order_line.order_id (the order this payment settles).']
+  profile_sk bigint [note: 'FK to profile.profile_sk (version-specific).']
+  profile_id string [not null, note: 'Durable customer business key (pseudonymous; not direct PII).']
+  payment_type string [note: 'Direction/kind of the event. Allowed values: sale, refund, adjustment, chargeback.']
+  payment_method string [note: 'Tender used. Allowed values: card, cash, wallet, bank_transfer, gift_card, voucher.']
+  payment_status string [note: 'Settlement status. Allowed values: authorized, captured, settled, declined, refunded, voided.']
+  amount decimal(18,2) [note: 'Event amount (magnitude, >= 0), in the reporting/base currency. payment_type carries the direction.']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; single-currency by …']
+  transaction_currency_code string [note: 'Original tender currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  event_timestamp timestamp [note: 'Instant the payment event occurred (UTC, ISO 8601) — the event-time, distinct from load_timestamp (processing-time).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: payment.profile_sk > profile.profile_sk
+
+TableGroup payment [color: #3b4a59] { payment }

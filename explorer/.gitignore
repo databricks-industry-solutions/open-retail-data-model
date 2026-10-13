@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# Playwright e2e artifacts (reports, traces, screenshots, cached browsers)
+playwright-report/
+test-results/
+.playwright/
+blob-report/

@@ -1,0 +1,24 @@
+%%{init: {"theme":"dark"}}%%
+erDiagram
+    profile ||--o{ customer_order_line : "profile_sk"
+    product ||--o{ customer_order_line : "product_sk"
+    store ||--o{ customer_order_line : "store_sk"
+    customer_order_line {
+        bigint order_line_sk PK
+        string order_line_id
+        string order_id
+        bigint profile_sk FK
+        string profile_id
+        bigint product_sk FK
+        string product_id
+        bigint store_sk FK
+        string store_id
+        date order_date
+        timestamp event_timestamp
+        int units
+        decimal gross_amount
+        decimal net_amount
+        string currency_code
+        string transaction_currency_code
+        string record_source
+    }

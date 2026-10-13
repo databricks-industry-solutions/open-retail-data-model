@@ -1,0 +1,73 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    supplier ||--o{ shipment : "supplier_sk"
+    lane ||--o{ shipment : "lane_sk"
+    store ||--o{ shipment : "destination_store_sk"
+    shipment ||--o{ shipment_line : "shipment_sk"
+    product ||--o{ shipment_line : "product_sk"
+    purchase_order_line ||--o{ shipment_line : "po_line_sk"
+    shipment ||--o{ shipment_tracking : "shipment_sk"
+    lane {
+        bigint lane_sk PK
+        string lane_id
+        string origin_location_id
+        string origin_location_name
+        string origin_country_code
+        string origin_location_type
+        string destination_location_id
+        string destination_location_name
+        string destination_country_code
+        string destination_location_type
+        string transport_mode
+        int planned_transit_days
+    }
+    shipment {
+        bigint shipment_sk PK
+        string shipment_id
+        string po_id
+        bigint supplier_sk FK
+        string supplier_id
+        bigint lane_sk FK
+        string lane_id
+        bigint destination_store_sk FK
+        string destination_store_id
+        string carrier_name
+        string transport_mode
+        string shipment_status
+        date ship_date
+        date estimated_arrival_date
+        date original_eta_date
+        date actual_arrival_date
+        string record_source
+    }
+    shipment_line {
+        bigint shipment_line_sk PK
+        string shipment_line_id
+        bigint shipment_sk FK
+        string shipment_id
+        bigint product_sk FK
+        string product_id
+        bigint po_line_sk FK
+        string po_line_id
+        int shipped_quantity
+        int received_quantity
+        int damaged_quantity
+        decimal unit_weight_kg
+        decimal line_weight_kg
+        string record_source
+        timestamp load_timestamp
+    }
+    shipment_tracking {
+        bigint shipment_tracking_sk PK
+        string shipment_tracking_id
+        bigint shipment_sk FK
+        string shipment_id
+        string carrier_code
+        string carrier_name
+        string tracking_number
+        string carrier_service_level
+        string checkpoint_type
+        string checkpoint_status_code
+        string checkpoint_message
+        string facility_name
+    }

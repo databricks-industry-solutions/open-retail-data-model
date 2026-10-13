@@ -19,9 +19,23 @@ __pycache__/
 dist/
 build/
 
+# Virtual environments (never synced into the bundle)
+.venv/
+.venv-*/
+venv/
+env/
+
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
 # Environment files
 .env
 .env.local 
+# Test / benchmark caches
+.pytest_cache/
+.benchmarks/
+
+
+# Patch files
+*.patch
+

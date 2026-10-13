@@ -1,0 +1,27 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# tables: names this package's gold views (or another package's as <package>.<gold_view>, ADR 0045).
+# Associates Best Next Actions and Digital Assistant Selling Tools were marked done by the
+# maintainer, 2026-10-12; both cards show Done on the ownership tracker (checked 2026-10-13).
+use_cases:
+  - name: Associates Best Next Actions
+    status: done
+    # The live prioritized action queue routed to each associate. Marked done by the
+    # maintainer, 2026-10-12: queue populated on the serving deploy from synthetic data.
+    tables: [gold_associate_action_queue_current]
+  - name: Real-Time Data Access
+    status: done
+    # Lookup contract: inventory, price/promotion, order status, operational
+    # context, and the freshness surface the associate device reads.
+    tables:
+      - gold_associate_product_inventory_current
+      - gold_associate_price_promotion_current
+      - gold_associate_order_status_current
+      - gold_associate_operational_context_current
+      - gold_associate_data_freshness
+  - name: Digital Assistant Selling Tools
+    status: done
+    # Clienteling / selling effectiveness measured over the response + outcome loop.
+    # Marked done by the maintainer, 2026-10-12: funnel and metric view populated on the
+    # serving deploy.
+    tables: [gold_action_outcome_funnel_daily]

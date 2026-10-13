@@ -1,0 +1,31 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses (not the tables: mapping below) confirmed with the use-case owners, 2026-10-07.
+# tables: confirmed by the maintainer, 2026-10-13, against the source-table headers below.
+# How it was drawn: a use case lists each gold view whose source fact conforms that use case's
+# brief, per the source table's header, which names the briefs it conforms or dedupes (SP =
+# Sponsored Products, ISDA = In-Store Digital Ads, INCR = Incrementality Testing, CPRM =
+# Cross-Platform Retail Management; MM, Media Measurement, is a data-sharing-with-suppliers use case):
+#   gold_campaign_performance, gold_supplier_campaign_report <- campaign_day (SP, ISDA, CPRM)
+#   gold_pacing_current <- pacing_snapshot (SP, CPRM)
+#   gold_incrementality_readout <- incrementality_result (SP, INCR)
+# ISDA's own in-store input, product_store_day, has no gold view, so In-Store Digital Ads shows
+# only the shared campaign views. gold/store_zone_interval is a deprecated compatibility shim
+# with a removal date, so it stays unmapped.
+use_cases:
+  - name: Sponsored Products Placement
+    status: done
+    tables:
+      - gold_campaign_performance
+      - gold_pacing_current
+      - gold_incrementality_readout
+      - gold_supplier_campaign_report
+  - name: In-Store Digital Ads
+    status: done
+    tables: [gold_campaign_performance, gold_supplier_campaign_report]
+  - name: Incrementality Testing
+    status: done
+    tables: [gold_incrementality_readout]
+  - name: Cross-Platform Retail Management
+    status: done
+    tables: [gold_campaign_performance, gold_pacing_current, gold_supplier_campaign_report]

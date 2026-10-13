@@ -1,0 +1,23 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    product ||--o{ sales : "product_sk"
+    store ||--o{ sales : "store_sk"
+    promotion ||--o{ sales : "promo_sk"
+    sales {
+        bigint sales_sk PK
+        string sales_id
+        date date_key
+        bigint product_sk FK
+        string product_id
+        bigint store_sk FK
+        string store_id
+        bigint promo_sk FK
+        string promo_id
+        int units
+        decimal gross_revenue
+        decimal discount_amount
+        decimal net_revenue
+        string currency_code
+        string transaction_currency_code
+        string record_source
+    }

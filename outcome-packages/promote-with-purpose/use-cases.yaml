@@ -1,0 +1,13 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed with the use-case owners, 2026-10-07.
+use_cases:
+  - name: Trade Promotion
+    status: done
+    tables: [gold_trade_promotion, gold_promo_performance]
+  - name: Location-Based Offers
+    status: done
+    tables: [gold_location_offer_performance, gold_zone_engagement_weekly]
+  - name: Post-Promotion ROI Analysis
+    status: done
+    tables: [gold_promo_roi, gold_promo_roi_by_category, gold_weekly_baseline]

@@ -1,0 +1,97 @@
+{
+  "version": 2,
+  "data_sources": {
+    "tables": [
+      {"identifier": "${catalog}.${aasa_schema}.gold_associate_data_freshness"},
+      {"identifier": "${catalog}.${aasa_schema}.gold_associate_operational_context_current"},
+      {"identifier": "${catalog}.${aasa_schema}.gold_associate_order_status_current"},
+      {"identifier": "${catalog}.${aasa_schema}.gold_associate_price_promotion_current"},
+      {"identifier": "${catalog}.${aasa_schema}.gold_associate_product_inventory_current"},
+      {"identifier": "${catalog}.${aasa_schema}.mv_associate_inventory_availability"},
+      {"identifier": "${catalog}.${aasa_schema}.mv_associate_lookup_audit_metrics"},
+      {"identifier": "${catalog}.${aasa_schema}.mv_associate_lookup_freshness"}
+    ]
+  },
+  "config": {
+    "sample_questions": [
+      {
+        "id": "10000000000000000000000000000001",
+        "question": ["What is the stock status and inventory basis for product P-100 at store S-01?"]
+      },
+      {
+        "id": "10000000000000000000000000000002",
+        "question": ["Which feeds are breaching the associate freshness SLA?"]
+      },
+      {
+        "id": "10000000000000000000000000000003",
+        "question": ["Show pickup-ready BOPIS orders at store S-01 without customer PII."]
+      },
+      {
+        "id": "10000000000000000000000000000004",
+        "question": ["List high-severity operational alerts for store S-01."]
+      }
+    ]
+  },
+  "instructions": {
+    "example_question_sqls": [
+      {
+        "id": "20000000000000000000000000000001",
+        "question": ["What is the stock status and inventory basis for product P-100 at store S-01?"],
+        "sql": [
+          "SELECT product_id, store_id, stock_status, quantity_on_hand,\n",
+          "       inventory_basis, location_basis, freshness_status, explanation, warning\n",
+          "FROM ${catalog}.${aasa_schema}.gold_associate_product_inventory_current\n",
+          "WHERE product_id = 'P-100' AND store_id = 'S-01'"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000002",
+        "question": ["Which feeds are breaching the associate freshness SLA?"],
+        "sql": [
+          "SELECT feed_name, store_id, freshness_status, freshness_lag_minutes, sla_state\n",
+          "FROM ${catalog}.${aasa_schema}.gold_associate_data_freshness\n",
+          "WHERE sla_state = 'breach' OR freshness_status = 'stale'\n",
+          "ORDER BY freshness_lag_minutes DESC"
+        ]
+      }
+    ],
+    "text_instructions": [
+      {
+        "id": "30000000000000000000000000000001",
+        "content": [
+          "Always surface inventory_basis, explanation, and warning on inventory answers. ",
+          "daily_snapshot means end-of-day inventory_position grain — never describe it as live shelf counts. ",
+          "event_overlay means an associate_context_event overlay is present."
+        ]
+      },
+      {
+        "id": "30000000000000000000000000000002",
+        "content": [
+          "ORDM has no shelf, bay, or planogram geo model. ",
+          "If location_basis is not_modeled, say location is not available — do not invent aisle coordinates."
+        ]
+      },
+      {
+        "id": "30000000000000000000000000000003",
+        "content": [
+          "nearby_store_with_stock_id is same-region on-hand peer stock ",
+          "(nearby_store_match_basis = same_region_on_hand). Never call it the nearest store by distance."
+        ]
+      },
+      {
+        "id": "30000000000000000000000000000004",
+        "content": [
+          "Never return customer PII, unit_cost, margin, payment details, or loss-prevention fields. ",
+          "Order answers use gold_associate_order_status_current only and require an exact order_id."
+        ]
+      },
+      {
+        "id": "30000000000000000000000000000005",
+        "content": [
+          "Prefer certified gold_*_current tables and mv_associate_* metric views. ",
+          "Do not query associate_lookup_audit for customer-facing answers; it is ops telemetry with hashed keys only."
+        ]
+      }
+    ]
+  }
+}

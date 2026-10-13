@@ -1,0 +1,343 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_ai-assisted-store-associates { Note: 'outcome unit' }
+
+Table action_response_log {
+  action_response_log_sk bigint [pk, note: 'Surrogate key. Unique per response event.']
+  action_response_log_id string [not null, note: 'Durable business key for the response event.']
+  suggested_action_sk bigint [not null, note: 'FK to suggested_action.suggested_action_sk — the action responded to.']
+  suggested_action_id string [not null, note: 'Durable action business key.']
+  associate_sk bigint [note: 'FK to associate.associate_sk — the responding associate (version at response time).']
+  associate_id string [note: 'Durable associate business key. The SCD2-safe join/aggregation key.']
+  response_timestamp timestamp [not null, note: 'When the associate responded (UTC, ISO 8601). The business event time.']
+  response_type string [not null, note: 'How the associate acted on the prompt. Allowed values: accepted, rejected, deferred, completed, expired, reassigned.']
+  reason_code string [note: 'Optional reason the associate gave, esp. on reject/defer. Free STRING (operationally extensible); common values …']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table associate {
+  associate_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  associate_id string [not null, note: 'Durable business key for the associate — a pseudonymous workforce/employee code. Stable across SCD2 versions. Not a …']
+  store_sk bigint [note: 'FK to store.store_sk — the associate\'s home store (SCD2 version current at load).']
+  store_id string [note: 'Durable home-store business key. Prefer this for SCD2-safe joins.']
+  role string [note: 'Job role on the floor. Allowed values: sales_associate, cashier, department_specialist, stock_associate …']
+  skill_tags string [note: 'Pipe-delimited capability tags used to route skill-matched tasks, e.g. "electronics|appliances|installations". Free …']
+  employment_type string [note: 'Allowed values: full_time, part_time, seasonal, contractor.']
+  primary_department string [note: 'Home merchandising department the associate is normally assigned to. Free STRING (brand-specific department taxonomy).']
+  is_active boolean [note: 'TRUE if currently employed and rostered. NOT a live floor-availability signal — that is operational state the …']
+  hire_date date [note: 'Date the associate was hired.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table associate_context_event {
+  associate_context_event_sk bigint [pk, note: 'Surrogate key.']
+  associate_context_event_id string [not null, note: 'Durable natural/business key for the source event (idempotency key).']
+  event_domain string [not null, note: 'Domain of the change. Allowed values: inventory, price, promotion, order, operations.']
+  event_type string [not null, note: 'Change type within the domain (e.g. stock_adjustment, price_update, promo_activate, fulfillment_update …']
+  store_sk bigint [note: 'FK to store.store_sk when store-scoped.']
+  store_id string [note: 'Durable store business key when store-scoped.']
+  product_sk bigint [note: 'FK to product.product_sk when product-scoped.']
+  product_id string [note: 'Durable product business key when product-scoped.']
+  order_id string [note: 'Durable order business key when order-scoped. No customer identifiers.']
+  promo_id string [note: 'Durable promotion business key when promotion-scoped.']
+  equipment_id string [note: 'Durable equipment business key when operations/equipment-scoped.']
+  quantity_on_hand decimal(12,3) [note: 'Observed on-hand quantity for inventory events (nullable).']
+  quantity_available decimal(12,3) [note: 'Observed available-to-sell quantity for inventory events (nullable).']
+  quantity_reserved decimal(12,3) [note: 'Observed reserved quantity for inventory events (nullable).']
+  quantity_in_transit decimal(12,3) [note: 'Observed in-transit quantity for inventory events (nullable).']
+  unit_price_amount decimal(18,4) [note: 'Observed unit price for price events (unit-grain DECIMAL scale 4).']
+  currency_code string [note: 'ISO 4217 reporting/base currency for monetary amounts; constant base_currency.']
+  status_code string [note: 'Domain status payload (stock status, order status, alert severity, etc.).']
+  location_code string [note: 'Sales-floor or backroom location code when provided by source.']
+  event_payload_summary string [note: 'Short vendor-neutral summary suitable for associate display; never PII.']
+  source_system string [not null, note: 'Vendor-neutral source-system label (e.g. inventory_ledger, price_engine, oms, iot_gateway).']
+  event_timestamp timestamp [not null, note: 'Event time at source (UTC, ISO 8601).']
+  ingest_timestamp timestamp [not null, note: 'When the event was ingested into the lakehouse (UTC, ISO 8601).']
+  processed_timestamp timestamp [note: 'When current-state processing considered this event (UTC, ISO 8601).']
+  latency_seconds int [note: 'Ingest latency = ingest_timestamp - event_timestamp, in seconds.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table associate_fulfillment_status {
+  associate_fulfillment_status_sk bigint [pk, note: 'Surrogate key.']
+  associate_fulfillment_status_id string [not null, note: 'Durable natural/business key (typically equals order_id for current-state grain).']
+  order_id string [not null, note: 'Durable customer-order business key. Required for associate lookup.']
+  store_sk bigint [note: 'FK to store.store_sk of the fulfillment / pickup store.']
+  store_id string [not null, note: 'Durable store business key where the order is fulfilled or picked up.']
+  fulfillment_type string [not null, note: 'Fulfillment mode. Allowed values: bopis, curbside, ship_to_store, ship_to_home, in_store_reserve.']
+  order_status string [not null, note: 'Associate-safe order status. Allowed values: received, picking, packing, ready_for_pickup, picked_up, shipped …']
+  pickup_readiness string [not null, note: 'Pickup readiness. Allowed values: not_ready, ready, overdue, completed, not_applicable.']
+  pickup_location_code string [note: 'Pickup desk / locker / curbside bay code. No customer address.']
+  exception_state string [note: 'Exception state when order_status = exception. Allowed values: missing_item, payment_hold, customer_no_show, damaged …']
+  last_event_timestamp timestamp [not null, note: 'Latest known fulfillment event time (UTC, ISO 8601).']
+  source_system string [not null, note: 'Vendor-neutral OMS / fulfillment source label.']
+  requires_customer_verification boolean [not null, note: 'TRUE when associate must present authorized customer-verification context before detail is returned.']
+  data_freshness_timestamp timestamp [not null, note: 'When this current-state row was last refreshed (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table associate_lookup_audit {
+  associate_lookup_audit_sk bigint [pk, note: 'Surrogate key.']
+  associate_lookup_audit_id string [not null, note: 'Durable natural/business key for the audit event.']
+  request_id string [not null, note: 'Caller-supplied request identifier.']
+  correlation_id string [not null, note: 'Cross-system correlation identifier.']
+  request_timestamp timestamp [not null, note: 'When the lookup was requested (UTC, ISO 8601).']
+  generated_at timestamp [not null, note: 'When the audit row was written (UTC, ISO 8601).']
+  associate_id string [note: 'Pseudonymous associate / session identifier. Not a legal name.']
+  associate_role string [note: 'Requester role code (e.g. sales_associate, fulfillment, supervisor, store_manager).']
+  channel string [note: 'Request channel. Allowed values: mobile, kiosk, pos, dashboard, api, test.']
+  store_id string [note: 'Store scope asserted on the request.']
+  capability string [not null, note: 'Requested capability. Allowed values: get_product_availability, get_product_location, get_price_and_promotions …']
+  access_decision string [not null, note: 'Authorization outcome. Allowed values: allow, deny.']
+  access_reason_code string [not null, note: 'Machine-readable reason for the access decision.']
+  response_status string [not null, note: 'Envelope status returned to the caller. Allowed values: SUCCESS, NOT_FOUND, NOT_AVAILABLE, STALE_DATA, ACCESS_DENIED …']
+  latency_ms int [note: 'End-to-end lookup latency in milliseconds.']
+  domains_accessed string [note: 'Comma-separated domain tags actually read (inventory,price,promotion,order,operations).']
+  data_classification string [note: 'Highest classification of returned fields. Allowed values: public_ops, associate_ops, restricted.']
+  product_id_hash string [note: 'SHA-256 hex of product_id when product-scoped; NULL otherwise. Never store raw search text.']
+  order_id_hash string [note: 'SHA-256 hex of order_id when order-scoped; NULL otherwise.']
+  record_source string [note: 'Originating lookup service label.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table outcome_resolution {
+  outcome_resolution_sk bigint [pk, note: 'Surrogate key. Unique per resolution.']
+  outcome_resolution_id string [not null, note: 'Durable business key for the resolution.']
+  suggested_action_sk bigint [not null, note: 'FK to suggested_action.suggested_action_sk — the action resolved.']
+  suggested_action_id string [not null, note: 'Durable action business key.']
+  resolution_timestamp timestamp [not null, note: 'When the real-world outcome was recorded (UTC, ISO 8601).']
+  outcome_type string [not null, note: 'What happened. Allowed values: sale_closed, item_restocked, customer_assisted, issue_resolved, task_abandoned …']
+  outcome_value_amount decimal(18,2) [note: 'Realized monetary value attributable to the action (e.g. closed-sale amount), in currency_code. NULL for non-monetary …']
+  currency_code string [note: 'ISO 4217 currency of outcome_value_amount. Required whenever outcome_value_amount is present (paired by CHECK).']
+  units_affected int [note: 'Non-monetary outcome magnitude where it applies, e.g. units restocked. NULL when not applicable.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table suggested_action {
+  suggested_action_sk bigint [pk, note: 'Surrogate key. Unique per generated action.']
+  suggested_action_id string [not null, note: 'Durable business key for the action. Stable; joined by the response log and outcome.']
+  generated_timestamp timestamp [not null, note: 'When the engine generated/dispatched the action (UTC, ISO 8601). The business event time and the decay origin.']
+  associate_sk bigint [note: 'FK to associate.associate_sk — the routed associate (version at dispatch). NULL when the action was generated but not …']
+  associate_id string [note: 'Durable associate business key. The SCD2-safe join/aggregation key. NULL while unrouted.']
+  store_sk bigint [note: 'FK to store.store_sk (version current at dispatch).']
+  store_id string [note: 'Durable store business key.']
+  store_zone_id string [note: 'Durable zone id of the action\'s target location. LOGICAL reference to connected-store-signals.store_zone.store_zone_id …']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk — the customer the action concerns. NULL for customer-agnostic tasks (restock …']
+  profile_id string [note: 'Durable, pseudonymous customer business key. NULL for customer-agnostic tasks.']
+  product_sk bigint [note: 'FK to product.product.product_sk — the product the action concerns. NULL when not product-specific.']
+  product_id string [note: 'Durable product business key. NULL when not product-specific.']
+  action_type string [not null, note: 'The task class. Allowed values: customer_assist, restock_shelf, bopis_fulfill, safety_loss_prevention …']
+  trigger_source string [note: 'What fired the action. Allowed values: ble_beacon_dwell, pos_inventory_decrement, order_management_system …']
+  base_score int [note: 'Hierarchy-of-needs base score in [0,100] before dynamic multipliers/decay (e.g. safety_loss_prevention 90 …']
+  priority_score double [note: 'Dynamic Business Value Score in [0,100] AT GENERATION (base_score x context multipliers), before time decay. The gold …']
+  decay_type string [note: 'Relevance-decay curve the queue view applies to priority_score. Allowed values: linear, exponential …']
+  context_payload string [note: 'Schemaless JSON payload the associate app renders (location, customer_context, product_context, suggested_dialogue …']
+  expiration_timestamp timestamp [note: 'When the action becomes stale/un-actionable (UTC). NULL for tasks that persist until completed. The queue view drops …']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table gold_action_outcome_funnel_daily {
+  store_id string [note: 'Durable store business key.']
+  store_zone_id string [note: 'Durable target-zone id (logical reference to connected-store-signals.store_zone). NULL when the actions had no target …']
+  associate_id string [note: 'Durable associate business key the actions were routed to. NULL for unrouted actions; the grain for per-associate …']
+  trading_date string [note: 'Business date the actions were generated.']
+  action_type string [note: 'Task class of the actions in the row.']
+  actions_generated string [note: 'Count of actions generated in the cell.']
+  actions_accepted string [note: 'Actions with an accepted response (from action_response_log).']
+  actions_rejected string [note: 'Actions with a rejected response (from action_response_log).']
+  actions_completed string [note: 'Actions with a completed response (from action_response_log).']
+  actions_expired string [note: 'Actions with an expired response (from action_response_log).']
+  acceptance_rate string [note: 'actions_accepted / actions_generated for the cell (ratio-of-sums-safe components are also exposed).']
+  completion_rate string [note: 'actions_completed / actions_generated for the cell.']
+  avg_response_seconds string [note: 'Mean seconds from dispatch to first response for the cell (display convenience; re-aggregate via response_seconds_total …']
+  response_seconds_total string [note: 'Sum of dispatch-to-first-response seconds; the additive numerator for average response time.']
+  responses_timed string [note: 'Count of actions that received a first response; the additive denominator for average response time.']
+  sales_closed string [note: 'Count of actions resolved as a closed sale.']
+  realized_outcome_value string [note: 'Sum of monetary outcomes attributed to the actions (in outcome_currency_code).']
+  outcome_currency_code string [note: 'ISO 4217 currency of realized_outcome_value (single reporting currency; see or_single_currency).']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_associate_action_queue_current {
+  associate_id string [note: 'Durable associate business key the queue belongs to.']
+  associate_role string [note: 'Associate job role (from the associate version at dispatch).']
+  associate_skill_tags string [note: 'Associate capability tags (pipe-delimited) used for skill matching.']
+  store_id string [note: 'Durable store business key.']
+  store_zone_id string [note: 'Durable target-zone id (logical reference to connected-store-signals.store_zone).']
+  suggested_action_id string [note: 'Durable action business key.']
+  action_type string [note: 'Task class: customer_assist, restock_shelf, bopis_fulfill, safety_loss_prevention, maintenance_cleaning, price_check …']
+  trigger_source string [note: 'What fired the action (ble_beacon_dwell, pos_inventory_decrement, order_management_system, sensor_event …']
+  base_score string [note: 'Hierarchy-of-needs base score in [0,100] before dynamic multipliers/decay.']
+  priority_score string [note: 'Business Value Score at generation (before time decay), in [0,100].']
+  current_priority_score string [note: 'Time-decayed Business Value Score the queue is ranked on, derived in-view from priority_score and decay_type since …']
+  decay_type string [note: 'Relevance-decay curve applied to priority_score: linear, exponential, immediate_nullification, none.']
+  current_state string [note: 'Derived lifecycle state (open states only appear here): pending, or the latest non-terminal response (accepted / …']
+  profile_id string [note: 'Durable, pseudonymous customer key the action concerns; NULL for customer-agnostic tasks.']
+  product_id string [note: 'Durable product key the action concerns; NULL when not product-specific.']
+  generated_timestamp string [note: 'When the action was generated/dispatched (UTC).']
+  expiration_timestamp string [note: 'When the action becomes stale; NULL for persistent tasks.']
+  minutes_to_expiry string [note: 'Minutes remaining until expiration at view evaluation time; NULL for persistent tasks.']
+  queue_rank string [note: 'Rank of the action within the associate\'s open queue (1 = highest priority_score).']
+  context_payload string [note: 'Schemaless JSON payload the associate app renders (location, customer/product context, suggested dialogue).']
+  fresh_as_of_ts string [note: 'View evaluation timestamp (UTC).']
+  Note: 'gold · gold'
+}
+
+Table gold_associate_data_freshness {
+  feed_name string
+  store_id string
+  last_source_event_timestamp string
+  last_ingest_timestamp string
+  last_processed_timestamp string
+  freshness_lag_minutes string
+  freshness_status string
+  sla_state string [note: 'within_sla or breach vs 60-minute associate freshness objective.']
+  event_count string
+  Note: 'gold · gold'
+}
+
+Table gold_associate_operational_context_current {
+  store_id string
+  store_sk string
+  store_name string
+  context_type string [note: 'replenishment_task, equipment_alert, or operations signal type.']
+  context_id string
+  related_product_id string
+  related_equipment_id string
+  severity string [note: 'info/medium/high style severity safe for associate display.']
+  resolution_status string
+  signal_summary string
+  source_event_timestamp string
+  source_ingest_timestamp string
+  current_state_updated_at string
+  source_system string
+  freshness_status string
+  freshness_lag_minutes string
+  explanation string
+  warning string
+  Note: 'gold · gold'
+}
+
+Table gold_associate_order_status_current {
+  associate_fulfillment_status_sk string
+  associate_fulfillment_status_id string
+  order_id string [note: 'Exact order business key required for lookup.']
+  store_sk string
+  store_id string
+  store_name string
+  fulfillment_type string
+  order_status string
+  pickup_readiness string [note: 'not_ready, ready, overdue, completed, or not_applicable.']
+  pickup_location_code string
+  exception_state string
+  requires_customer_verification string [note: 'TRUE when associate must verify customer before detail release.']
+  last_event_timestamp string
+  source_ingest_timestamp string
+  current_state_updated_at string
+  source_system string
+  freshness_status string
+  freshness_lag_minutes string
+  explanation string
+  warning string
+  Note: 'gold · gold'
+}
+
+Table gold_associate_price_promotion_current {
+  product_sk string
+  product_id string
+  sku string
+  gtin string
+  product_name string
+  store_sk string
+  store_id string
+  store_name string
+  base_price_amount string [note: 'Current base/list unit price in reporting currency.']
+  effective_selling_price_amount string [note: 'Effective selling unit price after known store promo mechanics.']
+  currency_code string
+  active_promo_id string [note: 'Active store-scoped promotion id, if any.']
+  active_promo_name string
+  active_promo_type string
+  promo_start_date string
+  promo_end_date string
+  store_channel_eligibility string
+  customer_eligibility_status string [note: 'Always CUSTOMER_ELIGIBILITY_REQUIRES_AUTHORIZED_CONTEXT for associate gold.']
+  source_event_timestamp string
+  source_ingest_timestamp string
+  current_state_updated_at string
+  source_system string
+  freshness_status string
+  freshness_lag_minutes string
+  explanation string
+  warning string
+  Note: 'gold · gold'
+}
+
+Table gold_associate_product_inventory_current {
+  product_sk string
+  product_id string [note: 'Durable product business key (SKU/item).']
+  sku string
+  gtin string
+  product_name string
+  brand string
+  category string
+  department string
+  store_sk string
+  store_id string [note: 'Durable store business key for the associate store scope.']
+  store_name string
+  region string
+  district string
+  quantity_on_hand string
+  quantity_available_to_sell string [note: 'Available-to-sell units after reservations.']
+  quantity_reserved string
+  quantity_in_transit string
+  stock_status string [note: 'IN_STOCK, LOW_STOCK, OUT_OF_STOCK, or UNKNOWN.']
+  replenishment_indicator string
+  sales_floor_or_backroom_location string [note: 'Optional free-text location_code from an inventory event. Not aisle/bay coordinates.']
+  location_basis string [note: 'event_location_code when optional free-text location_code is present; not_modeled when absent. No shelf/bay geo in ORDM.']
+  nearby_store_with_stock_id string [note: 'Same-region active store with on-hand > 0 (qty then store_id). Not geo-nearest.']
+  nearby_store_on_hand string
+  nearby_store_match_basis string [note: 'same_region_on_hand when a peer store is suggested — not distance-ranked.']
+  snapshot_date_key string
+  inventory_basis string [note: 'daily_snapshot (EOD inventory_position only) or event_overlay (intra-day associate_context_event).']
+  source_event_timestamp string
+  source_ingest_timestamp string
+  current_state_updated_at string
+  source_system string
+  freshness_status string [note: 'For event_overlay: lag bands. For daily_snapshot: calendar age of date_key (EOD semantics — not live shelf).']
+  freshness_lag_minutes string
+  explanation string [note: 'Human-readable provenance for associate UI display; states EOD vs overlay and nearby-match rule.']
+  warning string [note: 'Honesty warning for EOD grain, stale overlay, or incomplete location; NULL when none.']
+  Note: 'gold · gold'
+}
+
+Ref: associate.store_sk > store.store_sk
+Ref: suggested_action.associate_sk > associate.associate_sk
+Ref: suggested_action.store_sk > store.store_sk
+Ref: suggested_action.profile_sk > profile.profile_sk
+Ref: suggested_action.product_sk > product.product_sk
+Ref: action_response_log.suggested_action_sk > suggested_action.suggested_action_sk
+Ref: action_response_log.associate_sk > associate.associate_sk
+Ref: outcome_resolution.suggested_action_sk > suggested_action.suggested_action_sk
+Ref: associate_context_event.store_sk > store.store_sk
+Ref: associate_context_event.product_sk > product.product_sk
+Ref: associate_fulfillment_status.store_sk > store.store_sk
+
+TableGroup ai-assisted-store-associates [color: #3b4a59] { action_response_log, associate, associate_context_event, associate_fulfillment_status, associate_lookup_audit, outcome_resolution, suggested_action, gold_action_outcome_funnel_daily, gold_associate_action_queue_current, gold_associate_data_freshness, gold_associate_operational_context_current, gold_associate_order_status_current, gold_associate_price_promotion_current, gold_associate_product_inventory_current }

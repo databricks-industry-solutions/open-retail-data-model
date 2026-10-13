@@ -1,0 +1,22 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# tables: drawn from each gold view's "Goal:" sections and lineage (gold_assortment_optimization
+# reads gold_bucket_features); confirmed by the maintainer, 2026-10-13.
+# Dynamic Price Optimization and Elasticity Modeling show Done on the ownership tracker;
+# Assortment Optimization was confirmed done by the maintainer, 2026-10-12. Realized Margin &
+# Revenue Leakage has no card owner on the tracker; confirmed done by the maintainer, 2026-10-13.
+use_cases:
+  - name: Dynamic Price Optimization
+    status: done
+    tables: [gold_price_actuals, gold_competitor_analysis, gold_pricing_constraints, gold_bucket_features, gold_external_signals, gold_promotional_features, gold_sales_actuals]
+  - name: Assortment Optimization
+    status: done
+    description: "Space productivity, inventory health, margin contribution, baseline velocity, a rule-based KEEP/DROP/EXPAND recommendation, and computed model outputs: a heuristic space elasticity per category (cross-store, shrunk toward a literature prior, with its standard error), scenario volume and margin lift for each recommendation, and cannibalization drag from substitute demand transfer. Heuristic estimators, not a fitted causal model. (Space Productivity, Days on Hand, Sell-Through, Margin Contribution, Space Elasticity, Projected Lift, Cannibalization.)"
+    tables: [gold_assortment_optimization, gold_affinity_features, gold_competitor_analysis, gold_sales_actuals, gold_bucket_features]
+  - name: Elasticity Modeling
+    status: done
+    tables: [gold_price_actuals, gold_competitor_analysis, gold_affinity_features, gold_seasonality_features, gold_bucket_features, gold_external_signals, gold_promotional_features, gold_sales_actuals]
+  - name: Realized Margin & Revenue Leakage
+    status: done
+    description: "Realized margin after refunds, chargebacks, and adjustments, computed by allocating order-payment reversals back to the order date using the same net-amount weight as gold_payment_actuals. Combines POS and order channels. Booked revenue vs realized revenue (settled sales minus reversals) and revenue leakage from unsettled orders, refunds, chargebacks, and adjustments. Metric views compute ratio-of-sums measures: booked/realized margin in currency and %, leakage rate, refund/chargeback/adjustment rates, unsettled sales, order-channel contribution. Sale-cohort basis. DQ checks: grain uniqueness, currency consistency, conservation vs payment facts. (Booked Revenue, Realized Revenue, Revenue Leakage, Unsettled Sales, Realized Margin, Refund Rate, Chargeback Rate, Adjustment Rate, Leakage Rate, Order Channel Share.)"
+    tables: [gold_realized_margin, gold_payment_actuals]

@@ -1,0 +1,23 @@
+-r requirements.txt
+pytest>=9.0
+# Runs the suite on every runner core (`pytest -n auto`); CI also shards it across jobs
+# (ORDM_TEST_SHARD, tests/conftest.py).
+pytest-xdist>=3.6
+# Pinned EXACTLY, not to a range. tools/ordm_ddl/parser.py runs sqlglot's
+# annotate_types() to infer gold-view column types, and that inference is not
+# stable across 30.x patch releases: ROW_NUMBER() annotates UNKNOWN below 30.9.0
+# and BIGINT at/above it, and some inferred DECIMAL scales differ below 30.5.0.
+# Those types land in contracts/odcs/ and explorer/public/model.json, which are
+# byte-gated by `make check`. A floating range therefore lets the resolved patch
+# version, rather than the source DDL, decide the committed artifact bytes.
+sqlglot==30.17.0
+pyspark>=3.5
+# apply_model_ddl.py runs all DDL on a SQL warehouse via the SDK Statement Execution API when
+# --warehouse is given (the lean per-PR gate's reconcile + apply steps, and the daily deploy).
+# Without this the gate's deploy steps fail with `ModuleNotFoundError: No module named
+# 'databricks'` -- which stayed hidden until a PR first changed a DOMAIN dir (the deploy steps
+# are gated on `domains != ''`, so a tools/CI-only PR skips them and looks green).
+databricks-sdk>=0.20
+# Optional CP-SAT solver for Workforce Optimization (tests/support/workforce_optimization.py).
+# The scheduler falls back to the greedy heuristic when ortools is absent.
+ortools>=9.10

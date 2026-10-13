@@ -1,0 +1,32 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    store ||--o{ equipment : "store_sk"
+    equipment ||--o{ equipment_reading : "equipment_sk"
+    equipment {
+        bigint equipment_sk PK
+        string equipment_id
+        string equipment_name
+        string equipment_type
+        string manufacturer
+        string model_number
+        string serial_number
+        bigint store_sk FK
+        string store_id
+        string installation_zone
+        date install_date
+        date warranty_expiry_date
+    }
+    equipment_reading {
+        bigint equipment_reading_sk PK
+        string equipment_reading_id
+        bigint equipment_sk FK
+        string equipment_id
+        string reading_type
+        double reading_value
+        string reading_unit
+        string error_code
+        string error_message
+        boolean is_anomaly
+        string threshold_breached
+        timestamp event_timestamp
+    }

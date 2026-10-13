@@ -1,0 +1,20 @@
+%%{init: {"theme":"dark"}}%%
+flowchart TB
+    disruption_alert["disruption_alert<br/>disruption_alert_sk · disruption_alert_id · disruption_event_sk · disruption_event_id"]:::core
+    disruption_event["disruption_event<br/>disruption_event_sk · disruption_event_id · disruption_rule_sk · disruption_rule_id"]:::core
+    disruption_rule["disruption_rule<br/>disruption_rule_sk · disruption_rule_id"]:::core
+    gold_control_tower["gold_control_tower<br/>disruption_alert_sk · disruption_alert_id · shipment_id · supplier_id"]:::gold
+    gold_inventory_risk["gold_inventory_risk<br/>product_id · product_sk · store_id · store_sk"]:::gold
+    gold_procurement_risk["gold_procurement_risk<br/>supplier_sk · supplier_id"]:::gold
+    gold_shipment_current_state["gold_shipment_current_state<br/>shipment_sk · shipment_id · supplier_id · supplier_sk"]:::gold
+    gold_supplier_scorecard["gold_supplier_scorecard<br/>supplier_sk · supplier_id"]:::gold
+    disruption_rule --> disruption_event
+    shipment --> disruption_event
+    supplier --> disruption_event
+    product --> disruption_event
+    store --> disruption_event
+    lane --> disruption_event
+    disruption_event --> disruption_alert
+    disruption_rule --> disruption_alert
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;

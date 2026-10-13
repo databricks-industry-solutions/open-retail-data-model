@@ -1,0 +1,129 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_labor { Note: 'core unit' }
+
+Table employee {
+  employee_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  employee_id string [not null, note: 'PII · Durable pseudonymous business key for the associate. Not a legal name or government ID.']
+  home_store_sk bigint [note: 'FK to store.store_sk for the associate home store (version-specific).']
+  home_store_id string [not null, note: 'Durable business key of the home store.']
+  primary_role_code string [not null, note: 'Primary role. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  employment_status string [not null, note: 'Employment status. Allowed values: active, leave, terminated.']
+  employment_type string [note: 'Engagement type. Allowed values: full_time, part_time, seasonal, contractor.']
+  hourly_labor_cost decimal(18,4) [note: 'PII · Fully-loaded hourly labor cost in base currency (unit-grain rate; DECIMAL scale 4).']
+  currency_code string [note: 'ISO 4217 alpha-3 for hourly_labor_cost; constant base_currency (USD) per single-reporting-currency rule.']
+  max_daily_hours decimal(6,2) [not null, note: 'Maximum scheduled hours in a single calendar day.']
+  max_weekly_hours decimal(6,2) [not null, note: 'Maximum scheduled hours in a calendar week (Mon-Sun UTC).']
+  min_rest_hours decimal(6,2) [not null, note: 'Minimum rest hours required between the end of one shift and the start of the next.']
+  preferred_shift_start_local string [note: 'Preferred local shift start as HH:mm (store-local); advisory only.']
+  preferred_shift_end_local string [note: 'Preferred local shift end as HH:mm (store-local); advisory only.']
+  hire_date date [note: 'Date employment began (ISO 8601).']
+  termination_date date [note: 'Date employment ended; NULL while active (ISO 8601).']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table employee_availability {
+  employee_availability_sk bigint [pk, note: 'Surrogate key.']
+  employee_availability_id string [not null, note: 'Durable business key for the availability window.']
+  employee_sk bigint [note: 'FK to employee.employee_sk (version-specific).']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  availability_date date [not null, note: 'Local business date the window applies to (ISO 8601).']
+  available_start_ts timestamp [not null, note: 'Inclusive availability start (UTC, ISO 8601).']
+  available_end_ts timestamp [not null, note: 'Exclusive availability end (UTC, ISO 8601).']
+  is_available boolean [not null, note: 'TRUE = can work this window; FALSE = explicitly unavailable (e.g. PTO block).']
+  availability_type string [note: 'Window type. Allowed values: preferred, available, unavailable, time_off.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table employee_skill {
+  employee_skill_sk bigint [pk, note: 'Surrogate key.']
+  employee_skill_id string [not null, note: 'Durable business key (e.g. "<employee_id>|<skill_code>").']
+  employee_sk bigint [note: 'FK to employee.employee_sk (version-specific).']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  skill_code string [not null, note: 'Skill / qualification code. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor, food_handler …']
+  proficiency_level string [note: 'Proficiency. Allowed values: trainee, qualified, expert.']
+  is_active boolean [not null, note: 'TRUE when the skill is currently usable for scheduling.']
+  effective_from_date date [not null, note: 'Inclusive date the skill became effective.']
+  effective_to_date date [note: 'Exclusive end date; NULL while active.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table employee_store_eligibility {
+  employee_store_eligibility_sk bigint [pk, note: 'Surrogate key.']
+  employee_store_eligibility_id string [not null, note: 'Durable business key (e.g. "<employee_id>|<store_id>").']
+  employee_sk bigint [note: 'FK to employee.employee_sk (version-specific).']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key the associate may work.']
+  is_primary boolean [not null, note: 'TRUE when this is the primary / home eligibility row.']
+  is_active boolean [not null, note: 'TRUE when the eligibility is currently usable.']
+  effective_from_date date [not null, note: 'Inclusive eligibility start date.']
+  effective_to_date date [note: 'Exclusive eligibility end date; NULL while active.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table labor_actuals {
+  labor_actuals_sk bigint [pk, note: 'Surrogate key.']
+  labor_actuals_id string [not null, note: 'Durable business key for the worked interval.']
+  employee_sk bigint [note: 'FK to employee.employee_sk (version-specific).']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key where time was worked.']
+  labor_schedule_sk bigint [note: 'FK to labor_schedule.labor_schedule_sk when the punch maps to a planned shift.']
+  labor_schedule_id string [note: 'Durable schedule business key when mapped.']
+  role_code string [not null, note: 'Role worked. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  department_or_zone string [note: 'Department or zone worked (free STRING; common values include storewide, front_end, grocery, backroom).']
+  business_date date [not null, note: 'Local business date of the worked interval (ISO 8601).']
+  clock_in_ts timestamp [not null, note: 'Inclusive clock-in (UTC, ISO 8601).']
+  clock_out_ts timestamp [not null, note: 'Exclusive clock-out (UTC, ISO 8601).']
+  worked_hours decimal(8,2) [not null, note: 'Paid / worked hours for the interval (non-negative).']
+  actuals_status string [not null, note: 'Status. Allowed values: approved, pending, rejected, adjusted.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table labor_schedule {
+  labor_schedule_sk bigint [pk, note: 'Surrogate key.']
+  labor_schedule_id string [not null, note: 'Durable business key for the scheduled shift.']
+  employee_sk bigint [note: 'FK to employee.employee_sk (version-specific).']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key where the shift is worked.']
+  role_code string [not null, note: 'Role for the shift. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  department_or_zone string [note: 'Department or zone label (e.g. front_end, grocery, backroom, storewide). Free STRING; common values include storewide …']
+  business_date date [not null, note: 'Local business date of the shift (ISO 8601).']
+  shift_start_ts timestamp [not null, note: 'Inclusive shift start (UTC, ISO 8601).']
+  shift_end_ts timestamp [not null, note: 'Exclusive shift end (UTC, ISO 8601).']
+  scheduled_hours decimal(8,2) [not null, note: 'Scheduled duration in hours (must be non-negative).']
+  schedule_status string [not null, note: 'Status. Allowed values: draft, published, cancelled.']
+  schedule_source string [note: 'Origin. Allowed values: workforce_system, manager, recommendation_accepted, other.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: employee.home_store_sk > store.store_sk
+Ref: employee_skill.employee_sk > employee.employee_sk
+Ref: employee_availability.employee_sk > employee.employee_sk
+Ref: employee_store_eligibility.employee_sk > employee.employee_sk
+Ref: employee_store_eligibility.store_sk > store.store_sk
+Ref: labor_schedule.employee_sk > employee.employee_sk
+Ref: labor_schedule.store_sk > store.store_sk
+Ref: labor_actuals.employee_sk > employee.employee_sk
+Ref: labor_actuals.store_sk > store.store_sk
+Ref: labor_actuals.labor_schedule_sk > labor_schedule.labor_schedule_sk
+
+TableGroup labor [color: #3b4a59] { employee, employee_availability, employee_skill, employee_store_eligibility, labor_actuals, labor_schedule }
