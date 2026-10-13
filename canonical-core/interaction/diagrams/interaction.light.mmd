@@ -1,0 +1,29 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    identity_link ||--o{ touchpoint : "identity_link_sk"
+    profile ||--o{ touchpoint : "profile_sk"
+    product ||--o{ touchpoint : "product_sk"
+    store ||--o{ touchpoint : "store_sk"
+    touchpoint {
+        bigint touchpoint_sk PK
+        string touchpoint_id
+        string device_id_hash  "PII"
+        string session_id
+        bigint identity_link_sk FK
+        string identity_link_id
+        bigint profile_sk FK
+        string profile_id
+        string interaction_type  "enum"
+        string channel_code  "enum"
+        string source_application  "enum"
+        string touch_origin  "enum"
+        timestamp event_timestamp
+        date event_date
+        timestamp ingest_timestamp
+        bigint product_sk FK
+        string product_id
+        bigint store_sk FK
+        string store_id
+        string cart_id
+        string order_id
+    }

@@ -1,0 +1,45 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_interaction { Note: 'core unit' }
+
+Table touchpoint {
+  touchpoint_sk bigint [pk, note: 'Surrogate key. Unique per interaction row.']
+  touchpoint_id string [not null, note: 'Durable natural/business key for the interaction, unique at row grain.']
+  device_id_hash string [note: 'PII · Hashed/tokenized device/cookie/app identifier — the anonymous digital actor key. Never a raw device id, cookie …']
+  session_id string [note: 'Session/visit grouping key for sessionization (degenerate attribute; vendor-neutral, no PII). NULL for touches with no …']
+  identity_link_sk bigint [note: 'FK to customer.identity_link.identity_link_sk — the assertion that stitched this device/actor to a profile, if resolved.']
+  identity_link_id string [note: 'Durable identity-link business key.']
+  profile_sk bigint [note: 'FK to customer.profile.profile_sk (resolved as-of event_date), if the touch is stitched to a known customer.']
+  profile_id string [note: 'Durable customer business key (pseudonymous; NULL while the touch is anonymous). Resolved AT INGEST: this fact is …']
+  interaction_type string [not null, note: 'The kind of touch. Digital: page_view, product_view, search, add_to_cart, remove_from_cart, cart_view, checkout_start …']
+  channel_code string [note: 'Channel the touch occurred on (omnichannel discriminator). The coarse MEDIUM. Allowed values: web, mobile_app …']
+  source_application string [note: 'The specific application / property / data stream the touch came from (degenerate attribute; vendor-neutral, no PII) …']
+  touch_origin string [note: 'Whether the touch is customer-initiated or brand-initiated. Allowed values: inbound, outbound.']
+  event_timestamp timestamp [not null, note: 'When the touch occurred at source (UTC, ISO 8601).']
+  event_date date [not null, note: 'Business date of the touch (cluster key). This IS the date_key-role natural key (the same calendar-join role …']
+  ingest_timestamp timestamp [note: 'When this touch was ingested into the lakehouse (UTC, ISO 8601).']
+  latency_seconds int [note: 'Seconds between event_timestamp and ingest_timestamp (freshness monitoring).']
+  product_sk bigint [note: 'FK to product.product_sk (version as-of event_date) — set for product_view / cart touches.']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk — in-store / kiosk / store-visit context, or the fulfilling store.']
+  store_id string [note: 'Durable store business key.']
+  page_type string [note: 'Page/screen class for digital touches. Allowed values: home, category, product, search, cart, checkout, account …']
+  page_url string [note: 'De-identified/normalized page path (source contract: no PII, no PII-bearing query params). NULL for offline touches.']
+  referrer_url string [note: 'De-identified/normalized referrer path (source contract: no PII).']
+  search_term_text string [note: 'Shopper search query for search touches (degenerate attribute; vendor-neutral; source contract: de-identified, no PII - …']
+  dwell_seconds int [note: 'Engagement depth: seconds spent on the touch, if known. CROSS-MODAL by interaction_type - page dwell (digital), call …']
+  cart_id string [note: 'Cart correlation key linking cart touches within a shopping journey (degenerate; no FK).']
+  order_id string [note: 'Order correlation key when a checkout touch converts (degenerate business key to the order; no surrogate FK …']
+  event_value_amount decimal(18,2) [note: 'Monetary value the touch carries, if any (e.g. cart value), in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency of event_value_amount, ISO 4217 alpha-3 (single-currency by construction).']
+  consent_status string [note: 'Consent state at touch time. Allowed values: granted, denied, unknown.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: touchpoint.identity_link_sk > identity_link.identity_link_sk
+Ref: touchpoint.profile_sk > profile.profile_sk
+Ref: touchpoint.product_sk > product.product_sk
+Ref: touchpoint.store_sk > store.store_sk
+
+TableGroup interaction [color: #3b4a59] { touchpoint }
