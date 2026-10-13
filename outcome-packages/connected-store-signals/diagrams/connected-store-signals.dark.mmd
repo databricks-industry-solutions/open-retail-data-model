@@ -1,0 +1,105 @@
+%%{init: {"theme":"dark"}}%%
+flowchart TB
+    actuator_capability["actuator_capability<br/>actuator_capability_sk · actuator_capability_id · sensor_device_sk · sensor_device_id"]:::core
+    automation_action["automation_action<br/>automation_action_sk · automation_action_id · evaluation_rule_sk · evaluation_rule_id"]:::core
+    esl_label["esl_label<br/>esl_label_sk · esl_label_id · store_sk · store_id"]:::core
+    esl_label_assignment["esl_label_assignment<br/>esl_label_assignment_sk · esl_label_assignment_id · esl_label_sk · esl_label_id"]:::core
+    esl_price_observation["esl_price_observation<br/>esl_price_observation_sk · esl_price_observation_id · source_observation_id · esl_label_sk"]:::core
+    evaluation_rule["evaluation_rule<br/>evaluation_rule_sk · evaluation_rule_id · sensor_device_sk · sensor_device_id"]:::core
+    execution_log["execution_log<br/>execution_log_sk · execution_log_id · automation_action_sk · automation_action_id"]:::core
+    foot_traffic_interval_detail["foot_traffic_interval_detail<br/>sensor_report_interval_sk"]:::core
+    rfid_count_session["rfid_count_session<br/>rfid_count_session_sk · rfid_count_session_id · source_session_id · store_sk"]:::core
+    rfid_read_event["rfid_read_event<br/>rfid_read_event_sk · rfid_read_event_id · tagged_item_sk · tagged_item_id"]:::core
+    sensing_deployment["sensing_deployment<br/>sensing_deployment_sk · sensing_deployment_id · store_sk · store_id"]:::core
+    sensing_disclosure_policy["sensing_disclosure_policy<br/>sensing_disclosure_policy_sk · sensing_disclosure_policy_id"]:::core
+    sensor_device["sensor_device<br/>sensor_device_sk · sensor_device_id · store_sk · store_id"]:::core
+    sensor_report_interval["sensor_report_interval<br/>sensor_report_interval_sk · sensor_report_interval_id · subject_id · store_sk"]:::core
+    shelf_position_assignment["shelf_position_assignment<br/>shelf_position_assignment_sk · shelf_position_assignment_id · store_sk · store_id"]:::core
+    shelf_state_observation["shelf_state_observation<br/>shelf_state_observation_sk · shelf_state_observation_id · source_capture_id · shelf_position_assignment_sk"]:::core
+    store_zone["store_zone<br/>store_zone_sk · store_zone_id · store_sk · store_id"]:::core
+    tagged_item["tagged_item<br/>tagged_item_sk · tagged_item_id · product_sk · product_id"]:::core
+    gold_count_session_summary["gold_count_session_summary<br/>rfid_count_session_sk · rfid_count_session_id · source_session_id · store_sk"]:::gold
+    gold_css_automation_response["gold_css_automation_response<br/>store_id · store_zone_id · sensor_device_id · execution_log_id"]:::gold
+    gold_css_device_health["gold_css_device_health<br/>store_id · sensor_device_id · sensor_device_sk · store_zone_id"]:::gold
+    gold_css_environmental_compliance_daily["gold_css_environmental_compliance_daily<br/>store_id · sensor_device_id · subject_id · equipment_id"]:::gold
+    gold_css_excursion_episodes["gold_css_excursion_episodes<br/>store_id · sensor_device_id · subject_id · equipment_id"]:::gold
+    gold_css_rule_effectiveness_daily["gold_css_rule_effectiveness_daily<br/>evaluation_rule_id · store_id"]:::gold
+    gold_inventory_accuracy_daily["gold_inventory_accuracy_daily<br/>rfid_count_session_sk · rfid_count_session_id · store_sk · store_id"]:::gold
+    gold_inventory_accuracy_daily_latest["gold_inventory_accuracy_daily_latest<br/>store_sk · store_id · product_sk · product_id"]:::gold
+    gold_item_current_state["gold_item_current_state<br/>tagged_item_sk · tagged_item_id · product_sk · product_id"]:::gold
+    gold_item_visibility_daily["gold_item_visibility_daily<br/>store_id · product_id"]:::gold
+    gold_observed_oos_episodes["gold_observed_oos_episodes<br/>oos_episode_id · store_id · store_zone_id · product_id"]:::gold
+    gold_osa_daily_current["gold_osa_daily_current<br/>store_id"]:::gold
+    gold_planogram_compliance_current["gold_planogram_compliance_current<br/>store_id · product_id"]:::gold
+    gold_price_accuracy_current["gold_price_accuracy_current<br/>store_id"]:::gold
+    gold_receiving_verification["gold_receiving_verification<br/>shipment_id · shipment_line_sk · shipment_line_id · store_id"]:::gold
+    gold_rfid_oos_candidates["gold_rfid_oos_candidates<br/>rfid_oos_candidate_id · product_sk · product_id · store_sk"]:::gold
+    gold_share_of_shelf_current["gold_share_of_shelf_current<br/>store_id"]:::gold
+    gold_shelf_state_current["gold_shelf_state_current<br/>store_sk · store_id · store_zone_sk · store_zone_id"]:::gold
+    gold_shelf_vs_system_variance_daily["gold_shelf_vs_system_variance_daily<br/>store_id · product_id"]:::gold
+    gold_store_traffic_daily_current["gold_store_traffic_daily_current<br/>store_id · fiscal_week_id"]:::gold
+    gold_store_traffic_daily_shared["gold_store_traffic_daily_shared<br/>store_id · fiscal_week_id · sensing_disclosure_policy_id"]:::gold
+    gold_traffic_sales_productivity_current["gold_traffic_sales_productivity_current<br/>store_id · fiscal_week_id"]:::gold
+    gold_unaccounted_exits["gold_unaccounted_exits<br/>unaccounted_exit_id · tagged_item_sk · tagged_item_id · product_sk"]:::gold
+    gold_zone_count_coverage["gold_zone_count_coverage<br/>store_sk · store_id · store_zone_sk · store_zone_id"]:::gold
+    gold_zone_item_presence_current["gold_zone_item_presence_current<br/>store_id · store_zone_id · product_id"]:::gold
+    gold_zone_traffic_current["gold_zone_traffic_current<br/>store_id · store_zone_id · latest_store_zone_sk · parent_zone_id"]:::gold
+    gold_zone_traffic_interval_shared["gold_zone_traffic_interval_shared<br/>shared_zone_traffic_interval_sk · shared_zone_traffic_interval_id · store_sk · store_id"]:::gold
+    gold_zone_traffic_shared["gold_zone_traffic_shared<br/>store_id · store_zone_id · parent_zone_id · fiscal_week_id"]:::gold
+    store --> store_zone
+    store_zone --> store_zone
+    store --> sensing_deployment
+    sensing_disclosure_policy --> sensing_deployment
+    store --> sensor_device
+    store_zone --> sensor_device
+    sensing_deployment --> sensor_device
+    equipment --> sensor_device
+    product --> tagged_item
+    store --> rfid_count_session
+    sensor_device --> rfid_count_session
+    tagged_item --> rfid_read_event
+    product --> rfid_read_event
+    store --> rfid_read_event
+    store_zone --> rfid_read_event
+    sensor_device --> rfid_read_event
+    sensing_deployment --> rfid_read_event
+    rfid_count_session --> rfid_read_event
+    shipment_line --> rfid_read_event
+    store --> sensor_report_interval
+    store_zone --> sensor_report_interval
+    sensor_device --> sensor_report_interval
+    sensing_deployment --> sensor_report_interval
+    product --> sensor_report_interval
+    equipment --> sensor_report_interval
+    sensor_report_interval --> foot_traffic_interval_detail
+    sensor_device --> actuator_capability
+    equipment --> actuator_capability
+    sensor_device --> evaluation_rule
+    evaluation_rule --> automation_action
+    actuator_capability --> automation_action
+    automation_action --> execution_log
+    actuator_capability --> execution_log
+    evaluation_rule --> execution_log
+    sensor_report_interval --> execution_log
+    store --> shelf_position_assignment
+    store_zone --> shelf_position_assignment
+    product --> shelf_position_assignment
+    shelf_position_assignment --> shelf_state_observation
+    store --> shelf_state_observation
+    store_zone --> shelf_state_observation
+    product --> shelf_state_observation
+    sensor_device --> shelf_state_observation
+    sensing_deployment --> shelf_state_observation
+    store --> esl_label
+    sensor_device --> esl_label
+    esl_label --> esl_label_assignment
+    product --> esl_label_assignment
+    store --> esl_label_assignment
+    store_zone --> esl_label_assignment
+    esl_label --> esl_price_observation
+    esl_label_assignment --> esl_price_observation
+    product --> esl_price_observation
+    store --> esl_price_observation
+    store_zone --> esl_price_observation
+    classDef core fill:#2b3a49,stroke:#8aa4bd,color:#eef4fa;
+    classDef gold fill:#5a2e1e,stroke:#f0996a,color:#ffe8db;
