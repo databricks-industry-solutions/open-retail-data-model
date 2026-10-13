@@ -1,0 +1,471 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_predictive-operations { Note: 'outcome unit' }
+
+Table labor_standard {
+  labor_standard_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version.']
+  labor_standard_id string [not null, note: 'Durable business key for the standard (stable across versions).']
+  standard_version string [not null, note: 'Configuration version label (e.g. v1, 2026-Q3).']
+  role_code string [not null, note: 'Role the standard applies to. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  demand_driver string [not null, note: 'Demand driver. Allowed values: transaction_count, foot_traffic, pickup_orders, receiving_units, store_open_coverage …']
+  department_or_zone string [note: 'Optional department/zone scope; NULL or storewide = all zones.']
+  interval_minutes int [not null, note: 'Planning interval length in minutes (default 30).']
+  driver_units_per_labor_hour decimal(18,4) [not null, note: 'How many driver units one labor hour covers (e.g. 30 transactions per cashier hour). Must be positive except for …']
+  labor_hours_per_driver_unit decimal(18,6) [note: 'Optional inverse form (hours per driver unit). When set, used preferentially over driver_units_per_labor_hour.']
+  minimum_headcount int [not null, note: 'Minimum headcount required whenever the store is open for this role/zone.']
+  coverage_rationale string [not null, note: 'Human-readable explanation of why this standard exists.']
+  is_active boolean [not null, note: 'TRUE when this version may be applied.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for current.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the standard was created (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the standard was last modified (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table maintenance_schedule {
+  maintenance_schedule_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  maintenance_schedule_id string [not null, note: 'Durable natural/business key for the schedule entry.']
+  equipment_sk bigint [note: 'FK to equipment.equipment_sk (version-specific).']
+  equipment_id string [not null, note: 'Durable equipment business key.']
+  schedule_name string [not null, note: 'Name of the maintenance schedule (e.g. "Quarterly HVAC Filter Change").']
+  task_description string [note: 'Description of the preventive maintenance task.']
+  frequency string [not null, note: 'How often the task recurs. Allowed values: daily, weekly, biweekly, monthly, quarterly, semi_annual, annual.']
+  interval_days int [not null, note: 'Number of calendar days between scheduled occurrences.']
+  next_due_date date [note: 'Next scheduled maintenance date (ISO 8601).']
+  last_completed_date date [note: 'Date the task was last completed (ISO 8601).']
+  is_active boolean [not null, note: 'Whether this schedule is currently active.']
+  estimated_duration_hours decimal(6,1) [note: 'Estimated labor hours per occurrence.']
+  estimated_cost decimal(12,2) [note: 'Estimated cost per occurrence in base currency.']
+  currency_code string [not null, note: 'Reporting/base currency for cost columns, ISO 4217 alpha-3.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system (CMMS, EAM, or manual entry).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table store_risk_score {
+  store_risk_score_sk bigint [pk, note: 'Surrogate key.']
+  store_risk_score_id string [not null, note: 'Durable natural/business key for the score snapshot at the table grain (store x as_of_date x score_method), e.g …']
+  store_sk bigint [note: 'FK to store.store_sk. Carries the CURRENT store version (the gold view scores as-of today); a historical-backfill …']
+  store_id string [not null, note: 'Durable store business key.']
+  as_of_date date [not null, note: 'Snapshot date; conforms to fiscal_calendar.date_key (ISO 8601).']
+  horizon_days int [not null, note: 'Declared forward assessment horizon in days (7 in v1) — the label the score is interpreted against, uniform across a …']
+  operational_risk_score double [note: 'Store Operational Risk Score, 0-100, higher = riskier. Heuristic index, NOT a probability.']
+  operational_risk_tier string [not null, note: 'Risk tier. Allowed values: UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL. UNKNOWN = no domain sub-score was present …']
+  domains_scored int [note: 'How many domains had a present (non-NULL) sub-score feeding the composite. Max is 5 when labor is present (cx still …']
+  top_risk_domains string [note: 'Up-to-3 domains with the largest weighted contribution (the Diagnose step), comma-separated.']
+  inventory_risk double [note: 'Inventory domain sub-score (from gold_inventory_risk). 0-100 or NULL.']
+  supply_chain_risk double [note: 'Supply-chain domain sub-score (from gold_procurement_risk). 0-100 or NULL.']
+  sales_margin_risk double [note: 'Sales/margin domain sub-score (from BMV gold). 0-100 or NULL.']
+  equipment_risk double [note: 'Equipment domain sub-score (from gold_equipment_health). 0-100 or NULL.']
+  labor_risk double [note: 'Labor/workforce domain sub-score from gold_labor_risk (0-100). NULL when unscored.']
+  cx_risk double [note: 'Customer-experience domain sub-score. DEFERRED — always NULL until a CX source lands.']
+  score_method string [not null, note: 'How the score was produced. Allowed values: heuristic, model.']
+  model_version string [note: 'Version of the model that produced the row when score_method = model; NULL for heuristic rows.']
+  predicted_impact_amount decimal(18,2) [note: 'Estimated business impact (e.g. lost sales) in currency_code. Reserved for a model/adopter pipeline; NULL in the …']
+  currency_code string [note: 'Reporting currency for predicted_impact_amount, ISO 4217 alpha-3; NULL when predicted_impact_amount is NULL.']
+  record_source string [note: 'Originating system or pipeline that produced this score.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table work_order {
+  work_order_sk bigint [pk, note: 'Surrogate key.']
+  work_order_id string [not null, note: 'Durable natural/business key for the work order.']
+  equipment_sk bigint [note: 'FK to equipment.equipment_sk (version-specific).']
+  equipment_id string [not null, note: 'Durable equipment business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key.']
+  work_order_type string [not null, note: 'Type of maintenance. Allowed values: preventive, corrective, emergency, inspection.']
+  priority string [not null, note: 'Work order priority. Allowed values: critical, high, medium, low.']
+  work_order_status string [not null, note: 'Lifecycle status. Allowed values: open, in_progress, on_hold, completed, cancelled.']
+  title string [note: 'Short summary of the work order.']
+  description string [note: 'Detailed description of the maintenance task.']
+  failure_code string [note: 'Standardized failure/reason code triggering the work order.']
+  assigned_to string [note: 'PII · Technician or team assigned to the work order.']
+  vendor_name string [note: 'External maintenance vendor, if outsourced.']
+  created_date date [not null, note: 'Date the work order was created (ISO 8601).']
+  scheduled_date date [note: 'Planned date for the maintenance work (ISO 8601).']
+  started_date date [note: 'Date work actually began (ISO 8601).']
+  completed_date date [note: 'Date the work order was completed (ISO 8601).']
+  estimated_duration_hours decimal(6,1) [note: 'Estimated labor hours for the task.']
+  actual_duration_hours decimal(6,1) [note: 'Actual labor hours spent.']
+  estimated_cost decimal(12,2) [note: 'Estimated total cost (parts + labor) in base currency.']
+  actual_cost decimal(12,2) [note: 'Actual total cost (parts + labor) in base currency.']
+  currency_code string [not null, note: 'Reporting/base currency for cost columns, ISO 4217 alpha-3.']
+  downtime_hours decimal(8,2) [note: 'Equipment downtime caused by this maintenance event, in hours.']
+  root_cause string [note: 'Root cause analysis notes after completion.']
+  record_source string [note: 'Originating system (CMMS, EAM, or manual entry).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table work_order_line {
+  work_order_line_sk bigint [pk, note: 'Surrogate key.']
+  work_order_line_id string [not null, note: 'Durable natural/business key for the line.']
+  work_order_sk bigint [note: 'FK to work_order.work_order_sk.']
+  work_order_id string [not null, note: 'Durable work order business key.']
+  line_type string [not null, note: 'Type of line item. Allowed values: part, labor, service, other.']
+  part_number string [note: 'Part number (populated when line_type = part).']
+  part_description string [note: 'Description of the part or service.']
+  quantity decimal(10,2) [note: 'Quantity used (units for parts, hours for labor).']
+  unit_cost decimal(12,2) [note: 'Cost per unit in base currency.']
+  line_total decimal(12,2) [note: 'Total cost for this line (quantity x unit_cost) in base currency.']
+  currency_code string [not null, note: 'Reporting/base currency for cost columns, ISO 4217 alpha-3.']
+  record_source string [note: 'Originating system (CMMS, EAM, or manual entry).']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table workforce_coverage_exception {
+  workforce_coverage_exception_sk bigint [pk, note: 'Surrogate key.']
+  workforce_coverage_exception_id string [not null, note: 'Durable business key for the exception.']
+  workforce_optimization_run_id string [not null, note: 'workforce_optimization_run.workforce_optimization_run_id.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [not null, note: 'Durable store business key.']
+  business_date date [not null, note: 'Local business date (ISO 8601).']
+  interval_start_ts timestamp [not null, note: 'Inclusive understaffed interval start (UTC).']
+  interval_end_ts timestamp [not null, note: 'Exclusive understaffed interval end (UTC).']
+  department_or_zone string [not null, note: 'Department or zone.']
+  role_code string [not null, note: 'Role. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  required_headcount decimal(18,4) [not null, note: 'Required headcount for the interval.']
+  scheduled_headcount decimal(18,4) [not null, note: 'Scheduled / recommended headcount for the interval.']
+  shortfall_headcount decimal(18,4) [not null, note: 'required - scheduled (positive when understaffed).']
+  severity string [not null, note: 'Severity. Allowed values: low, medium, high, critical.']
+  exception_explanation string [not null, note: 'Why coverage could not be met.']
+  suggested_action string [not null, note: 'Suggested action. Allowed values: call_in, transfer, shorten_interval_service, overtime, accept_risk, hire_temp.']
+  record_source string [note: 'Originating pipeline or system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table workforce_demand_forecast {
+  workforce_demand_forecast_sk bigint [pk, note: 'Surrogate key.']
+  workforce_demand_forecast_id string [not null, note: 'Durable business key for the forecast line.']
+  workforce_optimization_run_id string [note: 'FK-like link to workforce_optimization_run.workforce_optimization_run_id.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [not null, note: 'Durable store business key.']
+  business_date date [not null, note: 'Local business date being forecast (ISO 8601).']
+  interval_start_ts timestamp [not null, note: 'Inclusive interval start (UTC, ISO 8601).']
+  interval_end_ts timestamp [not null, note: 'Exclusive interval end (UTC, ISO 8601).']
+  interval_minutes int [not null, note: 'Interval length in minutes.']
+  department_or_zone string [not null, note: 'Department or zone (storewide when unknown).']
+  role_code string [not null, note: 'Role. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  demand_driver string [not null, note: 'Driver being forecast. Allowed values: transaction_count, foot_traffic, pickup_orders, receiving_units …']
+  forecast_driver_units decimal(18,4) [not null, note: 'Forecasted driver units for the interval.']
+  forecast_lower_bound decimal(18,4) [note: 'Lower uncertainty proxy bound.']
+  forecast_upper_bound decimal(18,4) [note: 'Upper uncertainty proxy bound.']
+  forecast_method string [not null, note: 'Method. Allowed values: seasonal_rolling_avg, hierarchical_fallback, model, manual.']
+  model_version string [note: 'Version of the model that produced the row when forecast_method = model; NULL for heuristic rows.']
+  forecast_horizon_days int [not null, note: 'Forward horizon in days this line belongs to.']
+  forecast_origin_ts timestamp [not null, note: 'When the forecast was produced (UTC, ISO 8601).']
+  record_source string [note: 'Originating pipeline or system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table workforce_labor_requirement {
+  workforce_labor_requirement_sk bigint [pk, note: 'Surrogate key.']
+  workforce_labor_requirement_id string [not null, note: 'Durable business key for the requirement line.']
+  workforce_optimization_run_id string [note: 'Link to workforce_optimization_run.workforce_optimization_run_id.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [not null, note: 'Durable store business key.']
+  business_date date [not null, note: 'Local business date (ISO 8601).']
+  interval_start_ts timestamp [not null, note: 'Inclusive interval start (UTC).']
+  interval_end_ts timestamp [not null, note: 'Exclusive interval end (UTC).']
+  interval_minutes int [not null, note: 'Interval length in minutes.']
+  department_or_zone string [not null, note: 'Department or zone.']
+  role_code string [not null, note: 'Role. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  demand_driver string [not null, note: 'Driver applied. Allowed values: transaction_count, foot_traffic, pickup_orders, receiving_units, store_open_coverage …']
+  forecast_driver_units decimal(18,4) [not null, note: 'Forecasted workload units.']
+  labor_standard_id string [not null, note: 'labor_standard.labor_standard_id applied.']
+  labor_standard_version string [not null, note: 'labor_standard.standard_version applied.']
+  applied_labor_standard decimal(18,6) [not null, note: 'Hours per driver unit (or equivalent) used.']
+  required_labor_hours decimal(18,4) [not null, note: 'Required labor hours for the interval.']
+  required_headcount decimal(18,4) [not null, note: 'Required headcount (hours / interval length in hours), ceil-ready.']
+  minimum_headcount int [not null, note: 'Minimum coverage headcount from the standard.']
+  coverage_rationale string [not null, note: 'Explanation of why this requirement was generated.']
+  record_source string [note: 'Originating pipeline or system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table workforce_optimization_run {
+  workforce_optimization_run_sk bigint [pk, note: 'Surrogate key.']
+  workforce_optimization_run_id string [not null, note: 'Durable run business key (UUID or deterministic stamp).']
+  forecast_horizon_days int [not null, note: 'Forward horizon in days.']
+  interval_minutes int [not null, note: 'Planning interval length in minutes.']
+  forecast_method string [not null, note: 'Forecast method used. Allowed values: seasonal_rolling_avg, hierarchical_fallback, model, manual.']
+  optimizer_method string [not null, note: 'Scheduler method. Allowed values: greedy_heuristic, ortools, pulp, other.']
+  input_employee_count int [note: 'Employees considered.']
+  input_demand_intervals int [note: 'Demand intervals considered.']
+  rejected_quality_count int [note: 'Input rows rejected by quality checks.']
+  forecast_line_count int [note: 'Forecast lines produced.']
+  requirement_line_count int [note: 'Labor requirement lines produced.']
+  recommended_shift_count int [note: 'Recommended shifts produced.']
+  exception_count int [note: 'Coverage exceptions produced.']
+  scheduled_hours_total decimal(18,2) [note: 'Total recommended scheduled hours.']
+  required_hours_total decimal(18,2) [note: 'Total required labor hours.']
+  coverage_pct double [note: 'scheduled_hours_total / required_hours_total (0-1+).']
+  unfilled_demand_hours decimal(18,2) [note: 'Hours of unmet demand.']
+  estimated_labor_cost decimal(18,2) [note: 'Estimated labor cost of recommendations.']
+  currency_code string [note: 'ISO 4217 for estimated_labor_cost.']
+  fairness_score double [note: 'Workload balance proxy (e.g. 1 - CV of assigned hours); higher is fairer.']
+  forecast_mape double [note: 'MAPE vs actuals when available; NULL otherwise.']
+  forecast_bias double [note: 'Mean forecast error when actuals available; NULL otherwise.']
+  optimization_status string [not null, note: 'Run status. Allowed values: success, success_partial, infeasible, failed.']
+  diagnostics_json string [note: 'Structured diagnostics (JSON string) for debugging.']
+  data_version string [note: 'Input data version / watermark label.']
+  run_started_ts timestamp [not null, note: 'Run start (UTC, ISO 8601).']
+  run_completed_ts timestamp [note: 'Run completion (UTC, ISO 8601).']
+  stage_durations_json string [note: 'Per-stage durations in seconds (JSON string).']
+  record_source string [note: 'Originating pipeline or system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table workforce_schedule_recommendation {
+  workforce_schedule_recommendation_sk bigint [pk, note: 'Surrogate key.']
+  workforce_schedule_recommendation_id string [not null, note: 'Durable recommendation / shift ID.']
+  workforce_optimization_run_id string [not null, note: 'workforce_optimization_run.workforce_optimization_run_id that produced this row.']
+  employee_sk bigint [note: 'FK to employee.employee_sk.']
+  employee_id string [not null, note: 'PII · Durable pseudonymous employee business key.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [not null, note: 'Durable store business key.']
+  department_or_zone string [not null, note: 'Department or zone.']
+  role_code string [not null, note: 'Role. Allowed values: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  shift_start_ts timestamp [not null, note: 'Inclusive recommended shift start (UTC).']
+  shift_end_ts timestamp [not null, note: 'Exclusive recommended shift end (UTC).']
+  assigned_hours decimal(8,2) [not null, note: 'Assigned hours (non-negative).']
+  estimated_labor_cost decimal(18,2) [note: 'assigned_hours * hourly_labor_cost in base currency.']
+  currency_code string [note: 'ISO 4217 for estimated_labor_cost.']
+  is_availability_ok boolean [not null, note: 'TRUE if assignment falls inside availability.']
+  is_skill_ok boolean [not null, note: 'TRUE if employee has required skill/role.']
+  is_store_eligible_ok boolean [not null, note: 'TRUE if employee is eligible for the store.']
+  is_hours_cap_ok boolean [not null, note: 'TRUE if daily/weekly caps respected.']
+  is_min_rest_ok boolean [not null, note: 'TRUE if minimum rest respected.']
+  recommendation_status string [not null, note: 'Status. Allowed values: proposed, accepted, rejected, superseded.']
+  optimizer_status string [not null, note: 'Optimizer outcome for this assignment. Allowed values: optimal, feasible, heuristic, infeasible_partial.']
+  record_source string [note: 'Originating pipeline or system.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table gold_downtime_impact {
+  work_order_sk string
+  work_order_id string
+  equipment_id string
+  equipment_name string
+  equipment_type string
+  criticality string
+  installation_zone string
+  store_id string
+  store_name string
+  work_order_type string
+  priority string
+  title string
+  failure_code string
+  created_date string
+  completed_date string
+  downtime_hours string [note: 'Equipment downtime in hours caused by this maintenance event.']
+  actual_cost string
+  currency_code string
+  spoilage_risk_flag string [note: 'TRUE if this is a refrigeration outage with critical/high criticality.']
+  perishable_units_at_risk string [note: 'Perishable inventory units at risk in the affected store on the event date (refrigeration only).']
+  perishable_products_at_risk string [note: 'Number of perishable products at risk in the affected store (refrigeration only).']
+  spoilage_risk_tier string [note: 'Spoilage risk level for refrigeration: high (>4h), medium (2-4h), low (<2h), none.']
+  Note: 'gold · gold'
+}
+
+Table gold_equipment_health {
+  equipment_sk string [note: 'Equipment surrogate key.']
+  equipment_id string [note: 'Durable equipment business key.']
+  equipment_name string [note: 'Display name of the equipment.']
+  equipment_type string [note: 'Category: refrigeration, hvac, pos_terminal, self_checkout, oven, etc.']
+  manufacturer string
+  model_number string
+  store_id string
+  store_name string
+  installation_zone string
+  equipment_status string
+  criticality string
+  install_date string
+  warranty_expiry_date string
+  latest_temperature string
+  latest_power_kw string
+  latest_vibration string
+  latest_runtime_hours string
+  last_reading_timestamp string
+  total_readings_7d string
+  anomaly_count_7d string [note: 'Number of anomalous sensor readings in the last 7 days.']
+  error_count_7d string
+  anomaly_rate_7d string [note: 'Fraction of readings flagged as anomalous in the last 7 days.']
+  wo_count_90d string
+  corrective_wo_count_90d string [note: 'Number of corrective work orders in the last 90 days.']
+  total_downtime_hours_90d string [note: 'Total equipment downtime hours in the last 90 days.']
+  health_score string [note: '0-100 health score. 100 = fully healthy, 0 = out of service.']
+  health_tier string [note: 'Health tier: healthy, at_risk, degraded, or failed.']
+  Note: 'gold · gold'
+}
+
+Table gold_labor_risk {
+  store_sk string [note: 'Surrogate key for the store.']
+  store_id string [note: 'Durable store business key.']
+  store_name string [note: 'Display name of the store.']
+  region string [note: 'Store region for roll-up.']
+  district string [note: 'Store district for roll-up.']
+  as_of_date string [note: 'Date the sub-score is computed for (the view evaluates at query time).']
+  required_hours_7d string [note: 'Required labor hours summed over the 7-day observation window.']
+  shortfall_hours_7d string [note: 'Unmet required hours summed over the 7-day observation window.']
+  avg_coverage_pct string [note: 'Mean interval coverage ratio over the window (1.0 = fully covered).']
+  critical_intervals string [note: 'Count of intervals in the window at critical coverage (below 35% covered).']
+  high_or_critical_intervals string [note: 'Count of intervals in the window at high or critical coverage (below 60% covered).']
+  intervals_scored string [note: 'How many intervals contributed to the sub-score; a small count makes the score noisy.']
+  labor_risk string [note: 'Labor/workforce sub-score, 0-100, higher = riskier. A transparent HEURISTIC INDEX built from coverage shortfall plus …']
+  Note: 'gold · gold'
+}
+
+Table gold_maintenance_effectiveness {
+  equipment_sk string [note: 'Equipment surrogate key.']
+  equipment_id string [note: 'Durable equipment business key.']
+  equipment_name string
+  equipment_type string
+  store_id string
+  criticality string
+  total_completed_wo string
+  preventive_count string
+  corrective_count string
+  emergency_count string
+  preventive_to_corrective_ratio string [note: 'Ratio of preventive to corrective work orders. Higher = more proactive.']
+  total_maintenance_cost string [note: 'Total maintenance spend in base currency.']
+  preventive_cost string
+  corrective_cost string
+  total_labor_hours string
+  total_downtime_hours string
+  avg_completion_days string
+  mtbf_days string [note: 'Mean Time Between Failures in calendar days.']
+  active_schedules string
+  overdue_schedules string [note: 'Number of active maintenance schedules that are past due.']
+  schedule_compliance_rate string [note: 'Fraction of active schedules that are on-schedule (0-1).']
+  currency_code string [note: 'ISO currency code for cost amounts.']
+  Note: 'gold · gold'
+}
+
+Table gold_store_operational_risk {
+  store_sk string
+  store_id string [note: 'Durable store business key.']
+  store_name string [note: 'Display name of the store.']
+  region string
+  district string
+  as_of_date string [note: 'Snapshot date the score is computed for (conforms to fiscal_calendar.date_key).']
+  horizon_days string [note: 'Declared forward assessment horizon in days (7 in v1) — a comparability label, not a claim every input is windowed to 7 …']
+  operational_risk_score string [note: 'Store Operational Risk Score, 0-100, higher = riskier. A transparent expert-weighted HEURISTIC INDEX, not a calibrated …']
+  inventory_risk string [note: 'Inventory domain sub-score (0-100): sales-velocity-weighted mean of gold_inventory_risk.stockout_risk_score across the …']
+  supply_chain_risk string [note: 'Supply-chain domain sub-score (0-100), spend-weighted supplier risk from gold_procurement_risk for suppliers shipping …']
+  sales_margin_risk string [note: 'Sales/margin domain sub-score (0-100): recent-vs-prior net-sales decline + discount-depth compression from BMV gold …']
+  equipment_risk string [note: 'Equipment domain sub-score (0-100), criticality-weighted 100 - health_score from gold_equipment_health.']
+  labor_risk string [note: 'Labor/workforce domain sub-score from gold_labor_risk (0-100). Present when Workforce Optimization / labor domain is …']
+  cx_risk string [note: 'Customer-experience domain sub-score. DEFERRED — always NULL in v1 (no CX source yet).']
+  domains_scored string [note: 'How many domains had a present (non-NULL) sub-score feeding the composite. Max is 5 (cx deferred); 0 means unscored …']
+  operational_risk_tier string [note: 'Risk tier: UNKNOWN (no domain scored, domains_scored = 0), LOW, MEDIUM, HIGH, CRITICAL. Any single present domain going …']
+  top_risk_domains string [note: 'Up-to-3 domains with the largest weighted contribution to the score (the Diagnose step).']
+  Note: 'gold · gold'
+}
+
+Table gold_workforce_coverage_gap {
+  store_sk string [note: 'Surrogate key for the store.']
+  store_id string [note: 'Durable store business key.']
+  business_date string [note: 'Local business date the interval belongs to.']
+  interval_start_ts string [note: 'Inclusive start of the planning interval (UTC).']
+  interval_end_ts string [note: 'Exclusive end of the planning interval (UTC).']
+  department_or_zone string [note: 'Department or zone within the store.']
+  role_code string [note: 'Workforce role the gap is measured for.']
+  required_labor_hours string [note: 'Labor hours required in the interval, from gold_workforce_labor_requirement.']
+  required_headcount string [note: 'Required headcount in the interval.']
+  scheduled_hours string [note: 'Published labor_schedule hours overlapping the interval, clipped to the interval boundaries.']
+  recommended_hours string [note: 'Proposed workforce_schedule_recommendation hours overlapping the interval, clipped to the interval boundaries. Status = …']
+  covered_hours string [note: 'Scheduled plus recommended hours overlapping the interval.']
+  shortfall_hours string [note: 'Unmet required hours (required minus covered, floored at 0). Overstaffing is not reported as a negative shortfall.']
+  coverage_pct string [note: 'Covered hours over required hours, capped at 2.0; 1.0 when nothing is required.']
+  shortfall_severity string [note: 'Coverage band: none (no shortfall), low (>=85% covered), medium (>=60%), high (>=35%), critical (below 35%).']
+  Note: 'gold · gold'
+}
+
+Table gold_workforce_demand_forecast {
+  store_sk string [note: 'Surrogate key for the store.']
+  store_id string [note: 'Durable store business key.']
+  business_date string [note: 'Local business date the forecast interval belongs to.']
+  interval_start_ts string [note: 'Inclusive start of the planning interval (UTC).']
+  interval_end_ts string [note: 'Exclusive end of the planning interval (UTC).']
+  interval_minutes string [note: 'Planning interval length in minutes, taken from the current labor_standard (30 when none is configured).']
+  department_or_zone string [note: 'Department or zone within the store the forecast applies to.']
+  role_code string [note: 'Workforce role the forecast is produced for: cashier, sales_associate, fulfillment, inventory, supervisor.']
+  demand_driver string [note: 'Workload driver the forecast is expressed in, derived from role_code (transaction_count, foot_traffic, pickup_orders …']
+  forecast_driver_units string [note: 'Point forecast of driver units in the interval. A transparent seasonal-average HEURISTIC, not a calibrated model output.']
+  forecast_lower_bound string [note: 'Lower uncertainty proxy: 80% of the point forecast. A fixed band, not a fitted prediction interval.']
+  forecast_upper_bound string [note: 'Upper uncertainty proxy: 120% of the point forecast. A fixed band, not a fitted prediction interval.']
+  forecast_method string [note: 'How the row was produced: seasonal_rolling_avg when store-level history was available, hierarchical_fallback when the …']
+  model_version string [note: 'Reserved for a model-backed pipeline (forecast_method = model); NULL in the shipped heuristic (ADR 0028 §4).']
+  forecast_horizon_days string [note: 'Forward horizon the forecast covers, in days (7 by default).']
+  forecast_origin_ts string [note: 'When the forecast was computed (UTC) — the view evaluates at query time.']
+  Note: 'gold · gold'
+}
+
+Table gold_workforce_forecast_accuracy {
+  store_id string [note: 'Durable store business key.']
+  business_date string [note: 'Local business date the interval belongs to.']
+  interval_start_ts string [note: 'Inclusive start of the planning interval (UTC).']
+  interval_end_ts string [note: 'Exclusive end of the planning interval (UTC).']
+  interval_minutes string [note: 'Planning interval length in minutes.']
+  department_or_zone string [note: 'Department or zone within the store.']
+  role_code string [note: 'Workforce role the forecast was produced for.']
+  demand_driver string [note: 'Workload driver the forecast is expressed in.']
+  forecast_driver_units string [note: 'Forecast driver units for the interval.']
+  actual_driver_units string [note: 'Observed driver units for the interval; NULL when no actuals source is available for the driver. STORE-TOTAL grain …']
+  forecast_error string [note: 'Forecast minus actual driver units. Positive = over-forecast.']
+  ape string [note: 'Absolute percentage error for the interval; NULL when actuals are absent or zero. Aggregate as a weighted ratio of …']
+  forecast_method string [note: 'How the forecast row was produced.']
+  model_version string [note: 'Reserved for a model-backed pipeline (forecast_method = model); NULL for heuristic rows (ADR 0028 §4).']
+  optimization_run_id string [note: 'workforce_optimization_run.run_id that produced the forecast being scored.']
+  Note: 'gold · gold'
+}
+
+Table gold_workforce_labor_requirement {
+  store_sk string [note: 'Surrogate key for the store.']
+  store_id string [note: 'Durable store business key.']
+  business_date string [note: 'Local business date the requirement interval belongs to.']
+  interval_start_ts string [note: 'Inclusive start of the planning interval (UTC).']
+  interval_end_ts string [note: 'Exclusive end of the planning interval (UTC).']
+  interval_minutes string [note: 'Planning interval length in minutes.']
+  department_or_zone string [note: 'Department or zone within the store.']
+  role_code string [note: 'Workforce role the requirement applies to.']
+  demand_driver string [note: 'Workload driver the requirement was converted from.']
+  forecast_driver_units string [note: 'Forecast driver units carried through from gold_workforce_demand_forecast.']
+  labor_standard_id string [note: 'Durable key of the labor_standard row applied to this interval.']
+  labor_standard_version string [note: 'Version label of the applied labor_standard, so a requirement stays reproducible after the standard changes.']
+  applied_labor_standard string [note: 'Labor hours per driver unit taken from the applied standard.']
+  required_labor_hours string [note: 'Labor hours required in the interval: driver units x standard, floored at the minimum-headcount coverage.']
+  required_headcount string [note: 'Required headcount for the interval: required hours over interval length, floored at minimum_headcount.']
+  minimum_headcount string [note: 'Minimum headcount the standard mandates regardless of forecast demand.']
+  coverage_rationale string [note: 'Why the standard sets this coverage (service, safety, or statutory rationale recorded on labor_standard).']
+  Note: 'gold · gold'
+}
+
+Ref: work_order.equipment_sk > equipment.equipment_sk
+Ref: work_order.store_sk > store.store_sk
+Ref: work_order_line.work_order_sk > work_order.work_order_sk
+Ref: maintenance_schedule.equipment_sk > equipment.equipment_sk
+Ref: store_risk_score.store_sk > store.store_sk
+Ref: workforce_demand_forecast.store_sk > store.store_sk
+Ref: workforce_labor_requirement.store_sk > store.store_sk
+Ref: workforce_schedule_recommendation.store_sk > store.store_sk
+Ref: workforce_schedule_recommendation.employee_sk > employee.employee_sk
+Ref: workforce_coverage_exception.store_sk > store.store_sk
+
+TableGroup predictive-operations [color: #3b4a59] { labor_standard, maintenance_schedule, store_risk_score, work_order, work_order_line, workforce_coverage_exception, workforce_demand_forecast, workforce_labor_requirement, workforce_optimization_run, workforce_schedule_recommendation, gold_downtime_impact, gold_equipment_health, gold_labor_risk, gold_maintenance_effectiveness, gold_store_operational_risk, gold_workforce_coverage_gap, gold_workforce_demand_forecast, gold_workforce_forecast_accuracy, gold_workforce_labor_requirement }
