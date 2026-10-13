@@ -1,0 +1,24 @@
+%%{init: {"theme":"dark"}}%%
+erDiagram
+    supplier ||--o{ purchase_order_line : "supplier_sk"
+    product ||--o{ purchase_order_line : "product_sk"
+    store ||--o{ purchase_order_line : "store_sk"
+    purchase_order_line {
+        bigint po_line_sk PK
+        string po_line_id
+        string po_id
+        bigint supplier_sk FK
+        string supplier_id
+        bigint product_sk FK
+        string product_id
+        bigint store_sk FK
+        string store_id
+        date order_date
+        date promised_date
+        date actual_delivery_date
+        int ordered_qty
+        int received_qty
+        int defective_qty
+        int returned_qty
+        decimal unit_price
+    }

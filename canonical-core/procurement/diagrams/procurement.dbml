@@ -1,0 +1,35 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_procurement { Note: 'core unit' }
+
+Table purchase_order_line {
+  po_line_sk bigint [pk, note: 'Surrogate key.']
+  po_line_id string [not null, note: 'Durable natural/business key for the purchase-order line.']
+  po_id string [note: 'Purchase-order header business key (a PO groups several lines).']
+  supplier_sk bigint [note: 'FK to supplier.supplier_sk (version-specific).']
+  supplier_id string [not null, note: 'Durable supplier business key.']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (ship-to location, version-specific).']
+  store_id string [not null, note: 'Durable store business key (ship-to location).']
+  order_date date [note: 'Date the line was ordered. FK to fiscal_calendar.date_key (ISO 8601).']
+  promised_date date [note: 'Supplier-promised delivery date (ISO 8601).']
+  actual_delivery_date date [note: 'Actual delivery/receipt date (ISO 8601); NULL if not yet received.']
+  ordered_qty int [note: 'Quantity ordered (units).']
+  received_qty int [note: 'Quantity actually received (units).']
+  defective_qty int [note: 'Units received defective.']
+  returned_qty int [note: 'Units returned to the supplier.']
+  unit_price decimal(18,4) [note: 'Invoiced unit price, in the reporting/base currency. Unit-grain price: DECIMAL(18,4) (principle #9d).']
+  contract_price decimal(18,4) [note: 'Agreed contract unit price (basis for price compliance), in the reporting/base currency. Unit-grain price …']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; the canonical core …']
+  transaction_currency_code string [note: 'Original purchasing currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  order_status string [note: 'Line status. Allowed values: open, received, closed, cancelled.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: purchase_order_line.supplier_sk > supplier.supplier_sk
+Ref: purchase_order_line.product_sk > product.product_sk
+Ref: purchase_order_line.store_sk > store.store_sk
+
+TableGroup procurement [color: #3b4a59] { purchase_order_line }
