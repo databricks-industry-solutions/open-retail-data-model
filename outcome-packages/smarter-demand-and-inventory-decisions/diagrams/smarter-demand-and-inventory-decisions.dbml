@@ -1,0 +1,614 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_smarter-demand-and-inventory-decisions { Note: 'outcome unit' }
+
+Table demand_forecast {
+  demand_forecast_sk bigint [pk, note: 'Surrogate key.']
+  demand_forecast_id string [not null, note: 'Durable business key for the forecast line.']
+  model_run_sk bigint [note: 'FK to forecast_model_run.model_run_sk.']
+  model_run_id string [note: 'Durable model run business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  forecast_date_key date [not null, note: 'Period being forecast (day or week start).']
+  forecast_horizon_type string [not null, note: 'Horizon bucket. Allowed values: short_term, mid_term, long_term, backtest.']
+  forecast_lag_weeks int [note: 'Weeks between forecast origin and actuals availability.']
+  forecast_origin_date_key date [note: 'Date the forecast was produced.']
+  forecast_quantity decimal(12,3) [not null, note: 'Forecasted demand quantity in UOM.']
+  forecast_lower_bound decimal(12,3) [note: 'Lower prediction interval bound.']
+  forecast_upper_bound decimal(12,3) [note: 'Upper prediction interval bound.']
+  unit_of_measure string [note: 'Unit of measure code.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table demand_sensing_signal {
+  demand_sensing_signal_sk bigint [pk, note: 'Surrogate key.']
+  demand_sensing_signal_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [note: 'Durable planning unit business key.']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [note: 'Durable store business key.']
+  signal_timestamp timestamp [not null, note: 'When the signal was detected (UTC).']
+  signal_category string [not null, note: 'Category. Allowed values: supply, promo, weather, transport, social, data_quality, competitor.']
+  signal_type string [note: 'Specific signal type (e.g. retail_stockout, transport_delay).']
+  signal_description string [note: 'Human-readable description.']
+  severity string [not null, note: 'Severity. Allowed values: critical, high, medium, low.']
+  resolved_flag boolean [note: 'Whether the signal has been resolved.']
+  resolved_at_timestamp timestamp [note: 'When resolved (UTC).']
+  linked_oos_event_sk bigint [note: 'FK to oos_event.oos_event_sk when promoted.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table forecast_accuracy {
+  forecast_accuracy_sk bigint [pk, note: 'Surrogate key.']
+  forecast_accuracy_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  forecast_date_key date [not null, note: 'Forecast period evaluated.']
+  actual_quantity decimal(12,3) [note: 'Actual demand from sales or shipments.']
+  forecast_quantity decimal(12,3) [note: 'Statistical forecast at lag.']
+  effective_forecast_quantity decimal(12,3) [note: 'Forecast after planner adjustments.']
+  lag_weeks int [note: 'Lag in weeks between forecast and actuals.']
+  accuracy_pct double [note: 'Forecast accuracy percentage.']
+  bias_pct double [note: 'Forecast bias in WHOLE PERCENTAGE POINTS (e.g. -5.0 = 5% under-forecast), NOT a 0-1 fraction. Downstream thresholds …']
+  mape double [note: 'Mean absolute percentage error.']
+  is_stockout_censored boolean [note: 'TRUE when actual period had a stockout.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table forecast_adjustment {
+  forecast_adjustment_sk bigint [pk, note: 'Surrogate key.']
+  forecast_adjustment_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  forecast_date_key date [not null, note: 'Forecast period being adjusted.']
+  adjustment_quantity decimal(12,3) [not null, note: 'Adjustment amount per adjustment_method.']
+  adjustment_method string [not null, note: 'How to apply adjustment. Allowed values: absolute, delta, pct.']
+  adjustment_reason_code string [note: 'Reason code (e.g. promo_not_in_model, new_listing).']
+  adjusted_by string [note: 'PII · Planner identifier.']
+  adjusted_at_timestamp timestamp [note: 'When the adjustment was made (UTC).']
+  approval_status string [not null, note: 'Approval state. Allowed values: pending, approved, rejected.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table forecast_component {
+  forecast_component_sk bigint [pk, note: 'Surrogate key.']
+  forecast_component_id string [not null, note: 'Durable business key.']
+  demand_forecast_sk bigint [not null, note: 'FK to demand_forecast.demand_forecast_sk.']
+  demand_forecast_id string [not null, note: 'Durable demand forecast business key.']
+  component_type string [not null, note: 'Driver type. Allowed values: base, promo, price, weather, holiday, trend, residual.']
+  component_quantity decimal(12,3) [not null, note: 'Signed contribution in UOM.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table forecast_model_run {
+  model_run_sk bigint [pk, note: 'Surrogate key.']
+  model_run_id string [not null, note: 'Durable business key for the model run.']
+  model_name string [not null, note: 'Model algorithm name (e.g. lightgbm, prophet, arima).']
+  model_version string [note: 'Semantic version or artifact hash.']
+  hierarchy_level string [note: 'Forecast hierarchy level this run targets.']
+  training_start_date date [note: 'Training window start date.']
+  training_end_date date [note: 'Training window end date.']
+  scored_at_timestamp timestamp [note: 'When the model was scored (UTC).']
+  is_champion boolean [note: 'Whether this is the champion model for its hierarchy.']
+  accuracy_score double [note: 'Holdout forecast accuracy (0-1).']
+  bias_pct double [note: 'Holdout forecast bias percentage.']
+  created_timestamp timestamp [note: 'When the record was created (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table inventory_policy {
+  inventory_policy_sk bigint [pk, note: 'Surrogate key.']
+  inventory_policy_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  policy_type string [not null, note: 'Policy type. Allowed values: min_max, reorder_point, periodic_review, days_of_supply.']
+  safety_stock_quantity decimal(12,3) [note: 'Safety stock in units.']
+  reorder_point_quantity decimal(12,3) [note: 'Reorder point in units.']
+  min_quantity decimal(12,3) [note: 'Minimum shelf or order quantity.']
+  max_quantity decimal(12,3) [note: 'Maximum shelf or order quantity.']
+  order_up_to_quantity decimal(12,3) [note: 'Order-up-to level for (s,S) policies.']
+  review_period_days int [note: 'Review period for periodic review policies.']
+  lead_time_days int [note: 'Default lead time in days.']
+  service_level_target_sk bigint [note: 'FK to service_level_target.service_level_target_sk.']
+  service_level_target_id string [note: 'Durable service level target business key.']
+  policy_source string [not null, note: 'Origin. Allowed values: system_calculated, planner_override, abc_xyz_template.']
+  effective_from_date date [not null, note: 'Inclusive start date for this version.']
+  effective_to_date date [note: 'Exclusive end date; NULL for current.']
+  is_current boolean [not null, note: 'Whether this is the current version.']
+  created_timestamp timestamp [note: 'When created (UTC).']
+  source_updated_timestamp timestamp [note: 'When last modified (UTC).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table inventory_policy_calculation {
+  policy_calculation_sk bigint [pk, note: 'Surrogate key.']
+  policy_calculation_id string [not null, note: 'Durable business key.']
+  inventory_policy_sk bigint [not null, note: 'FK to inventory_policy.inventory_policy_sk.']
+  inventory_policy_id string [not null, note: 'Durable inventory policy business key.']
+  calculated_at_timestamp timestamp [not null, note: 'When the policy was calculated (UTC).']
+  avg_daily_demand decimal(12,3) [note: 'Average daily demand used.']
+  demand_std_dev decimal(12,3) [note: 'Demand standard deviation.']
+  forecast_bias_pct double [note: 'Forecast bias percentage input.']
+  lead_time_days int [note: 'Lead time in days.']
+  lead_time_std_dev double [note: 'Lead time standard deviation.']
+  safety_stock_formula string [note: 'Formula identifier used.']
+  z_score double [note: 'Z-score from service level.']
+  supplier_reliability_multiplier double [note: 'Supplier reliability adjustment.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table inventory_recommendation {
+  inventory_recommendation_sk bigint [pk, note: 'Surrogate key.']
+  inventory_recommendation_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  recommendation_date_key date [not null, note: 'Date recommendation was generated.']
+  recommended_order_quantity decimal(12,3) [not null, note: 'Recommended order quantity.']
+  recommended_order_date_key date [note: 'Recommended order placement date.']
+  projected_days_of_supply decimal(8,2) [note: 'Projected DoS before recommendation.']
+  projected_days_of_supply_after decimal(8,2) [note: 'Projected DoS after receipt.']
+  recommendation_reason string [not null, note: 'Reason. Allowed values: below_rop, below_min, forecast_spike, promo_build.']
+  recommendation_status string [not null, note: 'Status. Allowed values: open, accepted, rejected, expired.']
+  inventory_policy_sk bigint [note: 'FK to inventory_policy.inventory_policy_sk.']
+  inventory_policy_id string [note: 'Durable inventory policy business key.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table lost_sales_estimate {
+  lost_sales_estimate_sk bigint [pk, note: 'Surrogate key.']
+  lost_sales_estimate_id string [not null, note: 'Durable business key.']
+  oos_event_sk bigint [not null, note: 'FK to oos_event.oos_event_sk.']
+  oos_event_id string [not null, note: 'Durable OOS event business key.']
+  estimate_date_key date [not null, note: 'Day within the OOS episode.']
+  actual_units_sold int [note: 'Actual units sold from sales.']
+  expected_units_demand decimal(12,3) [note: 'Expected unconstrained demand.']
+  lost_units decimal(12,3) [note: 'Estimated lost units.']
+  estimation_method string [not null, note: 'Method. Allowed values: forecast_residual, trailing_average, peer_store, ml_model.']
+  censoring_adjusted boolean [note: 'TRUE when forecast excludes stockout days.']
+  lost_revenue decimal(18,2) [note: 'Estimated lost revenue, in the reporting/base currency.']
+  lost_margin decimal(18,2) [note: 'Estimated lost GROSS MARGIN (lost_units x (list_price - unit_cost)), in the reporting/base currency. Margin, not …']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; single-currency by …']
+  confidence_score double [note: 'Confidence score 0-1.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table oos_event {
+  oos_event_sk bigint [pk, note: 'Surrogate key.']
+  oos_event_id string [not null, note: 'Durable business key.']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific).']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable store business key.']
+  oos_start_date_key date [not null, note: 'First day of the OOS episode.']
+  oos_end_date_key date [note: 'Last day of the episode; NULL if ongoing.']
+  oos_duration_days int [note: 'Duration of the episode in days.']
+  detection_method string [not null, note: 'How detected. Allowed values: inventory_snapshot, velocity_collapse, pos_absence, smart_shelf, planner_reported.']
+  oos_cause string [not null, note: 'Root cause. Allowed values: replenishment_miss, supplier_delay, demand_spike, allocation_shortage, planogram_issue …']
+  oos_severity string [not null, note: 'Severity. Allowed values: critical, high, medium, low.']
+  is_promo_period boolean [note: 'Whether a promotion overlapped the episode.']
+  stockout_pct_total decimal(5,4) [note: 'Average stockout_pct_day over the episode.']
+  competitor_spillover_flag boolean [note: 'Competitor stockout spillover detected.']
+  data_quality_flag boolean [note: 'Suspected data quality issue.']
+  is_preventable boolean [note: 'Whether the OOS was preventable.']
+  linked_disruption_event_id string [note: 'Degenerate reference to early-risk-detection disruption_event.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table oos_recovery_action {
+  oos_recovery_action_sk bigint [pk, note: 'Surrogate key.']
+  oos_recovery_action_id string [not null, note: 'Durable business key.']
+  oos_event_sk bigint [not null, note: 'FK to oos_event.oos_event_sk.']
+  oos_event_id string [not null, note: 'Durable OOS event business key.']
+  action_type string [not null, note: 'Action type. Allowed values: emergency_order, transfer, allocation_shift, substitute_product, expedite_shipment.']
+  recommended_quantity decimal(12,3) [note: 'Recommended recovery quantity.']
+  recommended_action_date_key date [note: 'Recommended action date.']
+  estimated_recovery_date_key date [note: 'Estimated recovery date.']
+  estimated_revenue_recovery decimal(18,2) [note: 'Estimated revenue recovery, in the reporting/base currency.']
+  estimated_margin_recovery decimal(18,2) [note: 'Estimated GROSS-MARGIN recovery, in the reporting/base currency. Prioritizing by margin (not revenue) avoids …']
+  recoverability_probability double [note: 'Probability the recovery action succeeds within the horizon (0-1). Used with estimated_margin_recovery for …']
+  actual_revenue_recovered decimal(18,2) [note: 'Realized revenue recovery after execution (NULL until measured); closes the estimate-vs-actual learn loop.']
+  time_to_recover_days int [note: 'Days from recommended_action_date_key to observed recovery; NULL until recovered.']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; single-currency by …']
+  action_status string [not null, note: 'Status. Allowed values: recommended, approved, executed, rejected.']
+  inventory_recommendation_sk bigint [note: 'FK to inventory_recommendation.inventory_recommendation_sk.']
+  inventory_recommendation_id string [note: 'Durable inventory recommendation business key.']
+  linked_po_line_sk bigint [note: 'FK to purchase_order_line.po_line_sk when PO created.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table order_forecast {
+  order_forecast_sk bigint [pk, note: 'Surrogate key.']
+  order_forecast_id string [not null, note: 'Durable business key.']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  order_date_key date [not null, note: 'Planned order placement date.']
+  need_by_date_key date [note: 'Required on-shelf or in-DC date.']
+  order_forecast_quantity decimal(12,3) [not null, note: 'Forecasted order quantity.']
+  order_type string [not null, note: 'Order type. Allowed values: replenishment, purchase, transfer, allocation.']
+  source_location_id string [note: 'Origin DC or supplier site (degenerate polymorphic reference).']
+  destination_store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  destination_store_id string [note: 'Durable store business key.']
+  demand_forecast_sk bigint [note: 'FK to demand_forecast.demand_forecast_sk.']
+  demand_forecast_id string [note: 'Durable demand forecast business key.']
+  inventory_policy_sk bigint [note: 'FK to inventory_policy.inventory_policy_sk.']
+  inventory_policy_id string [note: 'Durable inventory policy business key.']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table planning_unit {
+  planning_unit_sk bigint [pk, note: 'Surrogate key.']
+  planning_unit_id string [not null, note: 'Durable business key for the planning unit.']
+  grain_type string [not null, note: 'Planning grain. Allowed values: store_sku, account_product_region, dc_product.']
+  product_sk bigint [note: 'FK to product.product_sk (version-specific). Nullable when grain is above SKU.']
+  product_id string [note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific). Nullable when grain is above store.']
+  store_id string [note: 'Durable store business key.']
+  account_sk bigint [note: 'FK to account.account_sk (version-specific). Optional B2B key account.']
+  account_id string [note: 'Durable account business key.']
+  planning_hierarchy_level string [note: 'Forecast hierarchy level (e.g. H1, H2, H3, H4, store_sku).']
+  is_active boolean [not null, note: 'Whether this planning unit is currently active.']
+  created_timestamp timestamp [note: 'When the record was created (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table planning_unit_segment {
+  segment_sk bigint [pk, note: 'Surrogate key.']
+  segment_id string [not null, note: 'Durable business key (planning_unit|fiscal_period).']
+  planning_unit_sk bigint [not null, note: 'FK to planning_unit.planning_unit_sk.']
+  planning_unit_id string [not null, note: 'Durable planning unit business key.']
+  fiscal_period_key int [not null, note: 'Fiscal period key = fiscal_calendar.fiscal_week_id (e.g. 202628 for fiscal year 2026 week 28).']
+  abc_class string [not null, note: 'Volume tier. Allowed values: A, B, C.']
+  xyz_class string [not null, note: 'Demand variability. Allowed values: X, Y, Z.']
+  volume_tier string [note: 'Volume tier label (e.g. very_high, intermittent, obsolete).']
+  cluster_id string [note: 'Model recipe selector cluster identifier.']
+  cumulative_volume_pct double [note: 'Cumulative volume percentage for ABC audit.']
+  coefficient_of_variation double [note: 'Coefficient of variation for XYZ audit.']
+  created_timestamp timestamp [note: 'When the record was created (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table service_level_target {
+  service_level_target_sk bigint [pk, note: 'Surrogate key.']
+  service_level_target_id string [not null, note: 'Durable business key.']
+  abc_class string [note: 'ABC class filter; NULL = default for all.']
+  xyz_class string [note: 'XYZ class filter; NULL = default for all.']
+  service_measure_type string [note: 'Which service definition target_service_level_pct expresses. Allowed values: cycle_service_level (Type I / alpha - …']
+  target_service_level_pct decimal(5,4) [note: 'Target service level (0-1) interpreted per service_measure_type.']
+  target_fill_rate_pct decimal(5,4) [note: 'Target in-stock fill rate (0-1). Retained for backward compatibility; prefer service_measure_type = fill_rate with …']
+  target_days_of_supply decimal(8,2) [note: 'Target days of supply alternative.']
+  effective_from_date date [not null, note: 'Inclusive start date for this version.']
+  effective_to_date date [note: 'Exclusive end date; NULL for current.']
+  is_current boolean [not null, note: 'Whether this is the current version.']
+  created_timestamp timestamp [note: 'When created (UTC).']
+  source_updated_timestamp timestamp [note: 'When last modified (UTC).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table service_level_z {
+  service_level_z_sk bigint [pk, note: 'Surrogate key.']
+  service_level_z_id string [not null, note: 'Durable business key (service level as basis points, e.g. SLZ-9500).']
+  service_level_pct decimal(6,5) [not null, note: 'Cycle service level / non-stockout probability (0-1).']
+  z_score double [not null, note: 'Inverse standard-normal quantile for service_level_pct (safety factor).']
+  loss_function_l_z double [note: 'Standard-normal unit loss integral L(z) = phi(z) - z*(1-Phi(z)); used for fill-rate (Type II) sizing.']
+  created_timestamp timestamp [note: 'When the record was created (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table gold_demand_forecast_weekly {
+  demand_forecast_id string
+  planning_unit_sk string
+  planning_unit_id string
+  grain_type string
+  product_id string
+  store_id string
+  fiscal_week_id string
+  forecast_horizon_type string
+  forecast_origin_date_key string
+  forecast_quantity string
+  unit_of_measure string
+  Note: 'gold · gold'
+}
+
+Table gold_demand_sensing_queue {
+  demand_sensing_signal_id string
+  signal_timestamp string
+  signal_category string
+  signal_type string
+  severity string
+  product_id string
+  store_id string
+  planning_unit_id string
+  signal_description string
+  Note: 'gold · gold'
+}
+
+Table gold_effective_forecast {
+  planning_unit_sk string
+  planning_unit_id string [note: 'Durable planning unit business key.']
+  forecast_date_key string [note: 'Forecast period (day or week start).']
+  fiscal_period_key string
+  statistical_forecast_quantity string [note: 'Model-generated forecast before adjustments.']
+  effective_forecast_quantity string [note: 'Forecast after latest approved planner adjustment.']
+  forecast_horizon_type string
+  unit_of_measure string
+  Note: 'gold · gold'
+}
+
+Table gold_forecast_accuracy {
+  forecast_accuracy_sk string
+  planning_unit_sk string
+  planning_unit_id string
+  forecast_date_key string
+  actual_quantity string
+  forecast_quantity string
+  effective_forecast_quantity string
+  lag_weeks string
+  accuracy_pct string
+  bias_pct string
+  mape string
+  is_stockout_censored string
+  abc_class string
+  xyz_class string
+  cluster_id string
+  grain_type string
+  product_id string
+  store_id string
+  Note: 'gold · gold'
+}
+
+Table gold_forecast_value_added {
+  planning_unit_sk string
+  planning_unit_id string
+  grain_type string
+  forecast_date_key string
+  model_forecast string
+  naive_forecast string
+  enriched_forecast string
+  actual_quantity string
+  fva_model_vs_naive string
+  fva_enriched_vs_model string
+  Note: 'gold · gold'
+}
+
+Table gold_inventory_capital_summary {
+  category string
+  abc_class string
+  sku_store_count string
+  total_inventory_value string
+  excess_inventory_value string
+  understock_margin_at_risk string
+  Note: 'gold · gold'
+}
+
+Table gold_inventory_health {
+  days_of_supply string [note: 'Units on hand divided by trailing average daily sales.']
+  days_of_supply_with_transit string
+  overstock_quantity string
+  understock_quantity string
+  inventory_value string
+  inventory_position_status string [note: 'Health status: overstock, healthy, at_risk, stockout.']
+  Note: 'gold · gold'
+}
+
+Table gold_inventory_policy_compliance {
+  product_id string
+  store_id string
+  units_on_hand_eod string
+  reorder_point_quantity string
+  max_quantity string
+  days_of_supply string
+  is_below_rop string
+  is_above_max string
+  inventory_position_status string
+  Note: 'gold · gold'
+}
+
+Table gold_inventory_productivity {
+  category string
+  abc_class string
+  sku_store_count string
+  trailing_units_sold string
+  trailing_cogs string
+  avg_inventory_value string [note: 'Mean of daily on-hand inventory value over the trailing window (not the period-end snapshot).']
+  inventory_turnover string [note: 'Annualized: trailing COGS scaled to a year / AVERAGE inventory value over the trailing window.']
+  weeks_of_cover string
+  sell_through_rate string
+  gmroi string [note: 'Annualized gross margin (realized net_revenue - COGS) / AVERAGE inventory cost over the trailing window.']
+  Note: 'gold · gold'
+}
+
+Table gold_lost_sales_summary {
+  category string
+  oos_cause string
+  fiscal_week_id string
+  total_lost_units string
+  total_lost_revenue string
+  oos_event_count string
+  Note: 'gold · gold'
+}
+
+Table gold_oos_current {
+  oos_event_sk string
+  oos_event_id string
+  product_id string
+  store_id string
+  product_name string
+  store_name string
+  oos_start_date_key string
+  oos_end_date_key string
+  oos_duration_days string
+  detection_method string
+  oos_cause string
+  oos_severity string
+  is_preventable string
+  units_on_hand_eod string
+  is_stocked_out_now string
+  lost_units_to_date string
+  lost_revenue_to_date string [note: 'Cumulative estimated lost revenue for the active OOS episode.']
+  abc_class string
+  open_recovery_actions string
+  Note: 'gold · gold'
+}
+
+Table gold_oos_preventability {
+  oos_event_id string
+  product_id string
+  store_id string
+  oos_start_date_key string
+  oos_cause string
+  units_on_hand_at_start string
+  reorder_point_quantity string
+  forecast_bias_pct_at_start string
+  stored_is_preventable string
+  preventability_class string
+  preventability_agrees string
+  Note: 'gold · gold'
+}
+
+Table gold_oos_rate {
+  store_id string
+  category string
+  fiscal_week_id string
+  total_sku_days string
+  stockout_sku_days string
+  oos_rate_pct string
+  Note: 'gold · gold'
+}
+
+Table gold_oos_recovery_priority {
+  oos_event_id string
+  product_id string
+  store_id string
+  oos_severity string
+  abc_class string
+  lost_revenue_to_date string
+  estimated_revenue_recovery string
+  estimated_margin_recovery string
+  recoverability_probability string
+  expected_margin_recovery string
+  action_type string
+  action_status string
+  recovery_priority_rank string
+  Note: 'gold · gold'
+}
+
+Table gold_order_forecast {
+  order_forecast_sk string
+  order_forecast_id string
+  planning_unit_sk string
+  planning_unit_id string
+  order_date_key string
+  need_by_date_key string
+  order_forecast_quantity string
+  order_type string
+  source_location_id string
+  destination_store_id string
+  product_id string
+  store_id string
+  demand_forecast_id string
+  inventory_policy_id string
+  Note: 'gold · gold'
+}
+
+Table gold_replenishment_queue {
+  inventory_recommendation_id string
+  planning_unit_id string
+  recommendation_date_key string
+  recommended_order_quantity string
+  recommended_order_date_key string
+  recommendation_reason string
+  recommendation_status string
+  abc_class string
+  inventory_position_status string
+  days_of_supply string
+  priority_rank string
+  Note: 'gold · gold'
+}
+
+Table gold_service_level_attainment {
+  store_id string
+  category string
+  fiscal_week_id string
+  total_sku_days string
+  stockout_sku_days string
+  units_sold string
+  lost_units string
+  attained_in_stock_rate string [note: 'Time-based availability: 1 - stockout SKU-days / total SKU-days.']
+  attained_fill_rate string [note: 'Demand-weighted (Type II) fill rate: units sold / (units sold + censoring-aware lost units).']
+  target_measure_type string
+  target_service_level_pct string [note: 'Target from the DEFAULT segment only (abc_class/xyz_class NULL); NOT the per-ABC/XYZ segment target. Segment-specific …']
+  gap_measure_type string
+  gap_is_approximate string [note: 'TRUE when service_level_gap_to_target differences a cycle_service_level target (per-cycle probability) against the …']
+  service_level_gap_to_target string [note: 'Attained minus target on the target measure type. Exact for fill_rate/in_stock_rate; for a cycle_service_level target …']
+  Note: 'gold · gold'
+}
+
+Ref: planning_unit.product_sk > product.product_sk
+Ref: planning_unit.store_sk > store.store_sk
+Ref: planning_unit.account_sk > account.account_sk
+Ref: planning_unit_segment.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: demand_forecast.model_run_sk > forecast_model_run.model_run_sk
+Ref: demand_forecast.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: forecast_component.demand_forecast_sk > demand_forecast.demand_forecast_sk
+Ref: forecast_adjustment.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: forecast_accuracy.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: order_forecast.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: order_forecast.demand_forecast_sk > demand_forecast.demand_forecast_sk
+Ref: order_forecast.inventory_policy_sk > inventory_policy.inventory_policy_sk
+Ref: order_forecast.destination_store_sk > store.store_sk
+Ref: inventory_policy.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: inventory_policy.service_level_target_sk > service_level_target.service_level_target_sk
+Ref: inventory_policy_calculation.inventory_policy_sk > inventory_policy.inventory_policy_sk
+Ref: inventory_recommendation.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: inventory_recommendation.inventory_policy_sk > inventory_policy.inventory_policy_sk
+Ref: oos_event.product_sk > product.product_sk
+Ref: oos_event.store_sk > store.store_sk
+Ref: lost_sales_estimate.oos_event_sk > oos_event.oos_event_sk
+Ref: demand_sensing_signal.planning_unit_sk > planning_unit.planning_unit_sk
+Ref: demand_sensing_signal.product_sk > product.product_sk
+Ref: demand_sensing_signal.store_sk > store.store_sk
+Ref: demand_sensing_signal.linked_oos_event_sk > oos_event.oos_event_sk
+Ref: oos_recovery_action.oos_event_sk > oos_event.oos_event_sk
+Ref: oos_recovery_action.inventory_recommendation_sk > inventory_recommendation.inventory_recommendation_sk
+Ref: oos_recovery_action.linked_po_line_sk > purchase_order_line.po_line_sk
+
+TableGroup smarter-demand-and-inventory-decisions [color: #3b4a59] { demand_forecast, demand_sensing_signal, forecast_accuracy, forecast_adjustment, forecast_component, forecast_model_run, inventory_policy, inventory_policy_calculation, inventory_recommendation, lost_sales_estimate, oos_event, oos_recovery_action, order_forecast, planning_unit, planning_unit_segment, service_level_target, service_level_z, gold_demand_forecast_weekly, gold_demand_sensing_queue, gold_effective_forecast, gold_forecast_accuracy, gold_forecast_value_added, gold_inventory_capital_summary, gold_inventory_health, gold_inventory_policy_compliance, gold_inventory_productivity, gold_lost_sales_summary, gold_oos_current, gold_oos_preventability, gold_oos_rate, gold_oos_recovery_priority, gold_order_forecast, gold_replenishment_queue, gold_service_level_attainment }
