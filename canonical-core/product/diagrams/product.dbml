@@ -1,0 +1,54 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_product { Note: 'core unit' }
+
+Table product {
+  product_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  product_id string [not null, note: 'Durable natural/business key for the product.']
+  gtin string [note: 'GS1 Global Trade Item Number (UPC/EAN). Not PII.']
+  sku string [note: 'Stock keeping unit code. Not PII.']
+  style_id string [note: 'Parent style/model this SKU is a variant of. SKUs sharing a style_id are variants (e.g. colour/size). NULL for …']
+  color string [note: 'Variant-defining attribute: colour (free text). NULL if not applicable.']
+  size string [note: 'Variant-defining attribute: size (free text, e.g. S/M/L, 500ml). NULL if not applicable.']
+  product_name string [note: 'Display name of the product.']
+  brand string [note: 'Brand name (free text).']
+  category string [note: 'Merchandising category (top level).']
+  subcategory string [note: 'Merchandising subcategory.']
+  department string [note: 'Store department the product belongs to.']
+  unit_of_measure string [note: 'Selling unit of measure. Allowed values: each, kg, g, l, ml, pack.']
+  list_price decimal(18,4) [note: 'Standard list (shelf) price, in the reporting/base currency (normalized at ingest). Unit-grain price: DECIMAL(18,4) …']
+  unit_cost decimal(18,4) [note: 'Standard unit cost (COGS), in the reporting/base currency. Basis for margin = revenue - units * unit_cost. A master …']
+  currency_code string [note: 'Reporting/base currency of ALL monetary columns, ISO 4217 alpha-3. Equals the deploy base_currency; the canonical core …']
+  transaction_currency_code string [note: 'Original sourcing currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  product_status string [note: 'Lifecycle status. Allowed values: active, inactive, discontinued.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table product_price {
+  product_price_sk bigint [pk, note: 'Surrogate key. Unique per price version.']
+  product_price_id string [not null, note: 'Durable business key (product_id|price_type|effective_from).']
+  product_sk bigint [note: 'FK to product.product_sk (foreign surrogate; nullable, not a PK). Resolved AS OF effective_from_date — the product SCD2 …']
+  product_id string [not null, note: 'Durable product business key. The priced product. Retained alongside product_sk; the declared UC FK is on product_sk …']
+  price_type string [note: 'What the amount represents. Allowed values: list, cost, promotional, contract.']
+  amount decimal(18,4) [note: 'Unit-grain price/cost (principle #9d), in the reporting/base currency.']
+  currency_code string [note: 'Reporting/base currency, ISO 4217 alpha-3. Equals the deploy base_currency; single-currency by construction.']
+  transaction_currency_code string [note: 'Original currency before normalization (lineage only), ISO 4217 alpha-3. Convert with fx_rate.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this price became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current price.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently effective price per (product, price_type).']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Ref: product_price.product_sk > product.product_sk
+
+TableGroup product [color: #3b4a59] { product, product_price }

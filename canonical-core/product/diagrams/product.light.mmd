@@ -1,0 +1,30 @@
+%%{init: {"theme":"default"}}%%
+erDiagram
+    product ||--o{ product_price : "product_sk"
+    product {
+        bigint product_sk PK
+        string product_id
+        string gtin
+        string sku
+        string style_id
+        string color
+        string size
+        string product_name
+        string brand
+        string category
+        string subcategory
+    }
+    product_price {
+        bigint product_price_sk PK
+        string product_price_id
+        bigint product_sk FK
+        string product_id
+        string price_type  "enum"
+        decimal amount
+        string currency_code
+        string transaction_currency_code
+        date effective_from_date
+        date effective_to_date
+        boolean is_current
+        timestamp created_timestamp
+    }
