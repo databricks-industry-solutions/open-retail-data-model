@@ -1,0 +1,54 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_equipment { Note: 'core unit' }
+
+Table equipment {
+  equipment_sk bigint [pk, note: 'Surrogate key. Unique per SCD2 version; the join/FK target.']
+  equipment_id string [not null, note: 'Durable natural/business key for the equipment asset.']
+  equipment_name string [not null, note: 'Display name of the equipment (e.g. "Walk-in Cooler A", "POS Terminal 3").']
+  equipment_type string [not null, note: 'Category of equipment. Allowed values: refrigeration, hvac, pos_terminal, self_checkout, oven, lighting, shelving …']
+  manufacturer string [note: 'Equipment manufacturer or brand.']
+  model_number string [note: 'Manufacturer model number.']
+  serial_number string [note: 'Unique serial number from the manufacturer.']
+  store_sk bigint [note: 'FK to store.store_sk (version-specific).']
+  store_id string [not null, note: 'Durable business key of the store where this equipment is installed.']
+  installation_zone string [note: 'Zone or area within the store. Allowed values: sales_floor, backroom, exterior, loading_dock, office, kitchen, pharmacy.']
+  install_date date [note: 'Date the equipment was installed or placed in service (ISO 8601).']
+  warranty_expiry_date date [note: 'Date the manufacturer warranty expires (ISO 8601).']
+  expected_lifespan_years int [note: 'Expected useful life of the equipment in years.']
+  equipment_status string [not null, note: 'Current operational status. Allowed values: operational, degraded, out_of_service, decommissioned.']
+  criticality string [not null, note: 'Impact level if the equipment fails. Allowed values: critical, high, medium, low.']
+  asset_tag string [note: 'Internal asset tag or barcode identifier.']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table equipment_reading {
+  equipment_reading_sk bigint [pk, note: 'Surrogate key.']
+  equipment_reading_id string [not null, note: 'Durable natural/business key (equipment_id|reading_type|sequence). Row grain is one sensor reading; sequence …']
+  equipment_sk bigint [note: 'FK to equipment.equipment_sk (version-specific).']
+  equipment_id string [not null, note: 'Durable equipment business key.']
+  reading_type string [not null, note: 'Type of sensor reading. Allowed values: temperature, humidity, power_kw, vibration, runtime_hours, error_code …']
+  reading_value double [note: 'Numeric value of the reading (units depend on reading_type).']
+  reading_unit string [note: 'Unit of measure (e.g. celsius, fahrenheit, kw, mm_s, hours, count, psi).']
+  error_code string [note: 'Equipment error or fault code (populated when reading_type = error_code).']
+  error_message string [note: 'Human-readable description of the error code.']
+  is_anomaly boolean [note: 'Whether this reading was flagged as anomalous by the ingestion pipeline.']
+  threshold_breached string [note: 'Which threshold was breached, if any. Allowed values: low, high, critical_low, critical_high.']
+  event_timestamp timestamp [not null, note: 'When the reading was captured at the sensor (UTC, ISO 8601).']
+  ingest_timestamp timestamp [note: 'When this reading was ingested into the lakehouse (UTC, ISO 8601).']
+  latency_seconds int [note: 'Seconds between event_timestamp and ingest_timestamp.']
+  record_source string [note: 'Originating system or IoT platform.']
+  load_timestamp timestamp [note: 'When this row was loaded (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Ref: equipment.store_sk > store.store_sk
+Ref: equipment_reading.equipment_sk > equipment.equipment_sk
+
+TableGroup equipment [color: #3b4a59] { equipment, equipment_reading }
