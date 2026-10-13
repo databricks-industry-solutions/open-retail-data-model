@@ -1,0 +1,46 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_calendar { Note: 'core unit' }
+
+Table fiscal_calendar {
+  date_sk bigint [pk, note: 'Surrogate key.']
+  date_key date [not null, note: 'The calendar date (ISO 8601). Natural key; join target for the sales fact.']
+  date_id string [not null, note: 'Durable STRING business key: the date rendered ISO 8601 (yyyy-MM-dd). Version-independent, stable across reloads; the …']
+  calendar_year int [note: 'Gregorian calendar year.']
+  calendar_month int [note: 'Gregorian month (1-12).']
+  calendar_day int [note: 'Day of month (1-31).']
+  day_of_week int [note: 'ISO day of week (1=Monday .. 7=Sunday).']
+  day_name string [note: 'Day name (monday .. sunday).']
+  is_weekend boolean [note: 'TRUE for Saturday/Sunday.']
+  is_holiday boolean [note: 'TRUE if a recognized retail holiday.']
+  fiscal_year int [note: 'NRF 4-5-4 fiscal year.']
+  fiscal_quarter int [note: 'NRF fiscal quarter (1-4).']
+  fiscal_period int [note: 'NRF fiscal period / retail month (1-12), following the 4-5-4 week pattern.']
+  fiscal_season string [note: 'Retail merchandising half-year season derived from fiscal_period: spring for periods 1-6 (fiscal H1), fall for periods …']
+  fiscal_week int [note: 'NRF fiscal week within the fiscal year (1-53).']
+  fiscal_week_id int [note: 'Week identifier = fiscal_year * 100 + fiscal_week (e.g. 202614). Week-level join key.']
+  fiscal_week_index int [note: 'Globally monotonic week counter across the whole calendar; use for trailing N-week windows.']
+  fiscal_week_start_date date [note: 'First date (Sunday, NRF convention) of the fiscal week.']
+  fiscal_week_end_date date [note: 'Last date (Saturday) of the fiscal week.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601). Required on reference tables (standard §8).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601). Required on reference tables (standard §8).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table fx_rate {
+  fx_rate_sk bigint [pk, note: 'Surrogate key.']
+  fx_rate_id string [not null, note: 'Durable business key (date_key|from|to).']
+  date_key date [not null, note: 'Rate date. Logical join key to fiscal_calendar.date_key (not a declared UC FK; ISO 8601).']
+  from_currency_code string [not null, note: 'Source currency, ISO 4217 alpha-3.']
+  to_currency_code string [not null, note: 'Target/reporting currency, ISO 4217 alpha-3 (the base_currency).']
+  rate decimal(18,8) [note: 'Multiply a from-currency amount by rate to get the to-currency amount. 1.0 when from = to.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601). Required on reference tables (standard §8).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601). Required on reference tables (standard §8).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+
+TableGroup calendar [color: #3b4a59] { fiscal_calendar, fx_rate }
