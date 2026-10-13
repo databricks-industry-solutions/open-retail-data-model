@@ -1,0 +1,14 @@
+%%{init: {"theme":"dark"}}%%
+erDiagram
+    supplier {
+        bigint supplier_sk PK
+        string supplier_id
+        string gln
+        string supplier_name
+        string supplier_type  "enum"
+        string country_code
+        string region
+        date onboarding_date
+        string supplier_status  "enum"
+        date effective_from_date
+    }
