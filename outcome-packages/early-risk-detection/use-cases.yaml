@@ -1,0 +1,13 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Use-case statuses confirmed with the use-case owners, 2026-10-07.
+use_cases:
+  - name: Real Time Disruption Detection
+    status: done
+    tables: [gold_control_tower, gold_shipment_current_state, gold_inventory_risk]
+  - name: Supplier Score & Monitoring
+    status: done
+    tables: [gold_supplier_scorecard]
+  - name: Procurement Risk Detection
+    status: done
+    tables: [gold_procurement_risk]
