@@ -1,0 +1,39 @@
+# Business use cases this outcome package enables (planning tier).
+# Names + status only; owners are intentionally excluded from the published model.
+# Customer 360 and Customer Lifetime Value statuses confirmed by their use-case owners on the outcome-map tracker, 2026-10-07.
+# Identity Resolution marked done on the scope accepted in ADR 0044, 2026-10-08.
+# CDP marked done by the maintainer, 2026-10-12; the maintainer's call stands in place of the
+# card owner's confirmation, 2026-10-13.
+use_cases:
+  - name: Customer 360
+    status: done
+    tables: [gold_unified_customer_360_current]
+  - name: Identity Resolution
+    status: done
+    # Scope per ADR 0044: the resolved key + match confidence (core identity_link, with
+    # householding), surfaced per profile in Customer 360. The full identity graph is deferred.
+    tables: [gold_unified_customer_360_current]
+  - name: CDP
+    status: done
+    # Marked done by the maintainer, 2026-10-12 (maintainer status call, accepted in place of
+    # the card owner's confirmation, 2026-10-13): the three gold views and the activation
+    # metric views are populated on the serving deploy from synthetic data.
+    # Unblocked by the activation layer (ADR 0026): the activation_destination catalog +
+    # activation_job + campaign_touch extension tables complete the CDP loop on top of the
+    # shipped targeting (ACU segment_membership) + gating. The `tables:` mapping names UCV's
+    # three CDP gold views, the Govern and Gate pieces of docs/cdp-composition.md: the
+    # cross-plane do-not-target set (ADR 0028),
+    # the net-permission gate, and the activation surface. The extension tables that feed
+    # them are listed in the README/glossary.
+    tables:
+      - gold_person_do_not_target_current
+      - gold_customer_activation_eligibility_current
+      - gold_activatable_audience_current
+  - name: Customer Lifetime Value
+    status: done
+    # Served by gold_customer_ltv (and its metric view mv_customer_lifetime_value) in the
+    # actionable-customer-understanding package, so the entry is a cross-package
+    # "<package>.<gold_view>" reference (ADR 0045). CLV is a UCV business outcome per the
+    # outcome map.
+    tables:
+      - actionable-customer-understanding.gold_customer_ltv
