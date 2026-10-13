@@ -1,0 +1,18 @@
+%%{init: {"theme":"dark"}}%%
+erDiagram
+    profile ||--o{ payment : "profile_sk"
+    payment {
+        bigint payment_sk PK
+        string payment_id
+        string order_id
+        bigint profile_sk FK
+        string profile_id
+        string payment_type  "enum"
+        string payment_method  "enum"
+        string payment_status  "enum"
+        decimal amount
+        string currency_code
+        string transaction_currency_code
+        timestamp event_timestamp
+        string record_source
+    }
