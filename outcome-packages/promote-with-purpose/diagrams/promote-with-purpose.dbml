@@ -1,0 +1,218 @@
+// GENERATED from the DDL by tools/gen_er_diagrams.py — do not edit by hand.
+Project ordm_promote-with-purpose { Note: 'outcome unit' }
+
+Table location_offer {
+  location_offer_sk bigint [pk, note: 'Surrogate key.']
+  location_offer_id string [not null, note: 'Durable natural/business key for the location offer.']
+  promotion_id string [note: 'Durable promotion business key this offer delivers (logical reference to promotion.promo_id).']
+  zone_sk bigint [note: 'FK to offer_zone.zone_sk — the zone whose trigger fires this offer.']
+  trigger_type string [note: 'What device signal fires the offer. Common values: geofence_enter, geofence_exit, dwell, beacon_proximity (enum …']
+  min_dwell_seconds int [note: 'Minimum dwell time in seconds; required only for trigger_type=dwell (asserted in checks.sql), NULL otherwise.']
+  daily_trigger_cap int [not null, note: 'Maximum number of times this offer may fire for one customer per day (> 0).']
+  suppression_window_hours int [not null, note: 'Hours after a delivery before the same offer may be delivered again to the same customer (>= 0).']
+  channel string [note: 'Delivery channel. Common values: push, sms, email, in_app (enum enforced in relationships.sql).']
+  offer_start_ts timestamp [not null, note: 'Offer availability window start (event-time, UTC).']
+  offer_end_ts timestamp [not null, note: 'Offer availability window end (event-time, UTC); must be after offer_start_ts.']
+  status string [note: 'Lifecycle state. Common values: draft, active, paused, ended (enum enforced in relationships.sql).']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'reference · silver'
+}
+
+Table offer_event {
+  offer_event_sk bigint [pk, note: 'Surrogate key.']
+  offer_event_id string [not null, note: 'Durable event key assigned by the emitting system (ULID/UUID); the idempotency key for replay and de-duplication.']
+  location_offer_sk bigint [not null, note: 'FK to location_offer.location_offer_sk — the offer that fired.']
+  customer_id string [not null, note: 'Pseudonymous customer key (logical reference to customer profile.profile_id). No PII, no device id, no location trail.']
+  store_id string [not null, note: 'Durable store business key where the event occurred (logical reference to store.store_id).']
+  event_ts timestamp [not null, note: 'When the event occurred (event-time, UTC, ISO 8601).']
+  event_type string [note: 'Event kind. Common values: triggered, suppressed, delivered, opened, redeemed (enum enforced in relationships.sql).']
+  suppression_reason string [note: 'Why a trigger was suppressed; set only when event_type=suppressed, NULL otherwise. Common values: no_consent …']
+  transaction_id string [note: 'Durable sales-transaction business key for redemption attribution (logical reference to transaction sales.sales_id) …']
+  consent_verified boolean [not null, note: 'TRUE when marketing consent was verified for this customer at event time; must be TRUE for every …']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'transactional · silver'
+}
+
+Table offer_zone {
+  zone_sk bigint [pk, note: 'Surrogate key.']
+  zone_id string [not null, note: 'Durable natural/business key for the zone.']
+  store_id string [note: 'Durable store business key this zone is anchored to (logical reference to store.store_id).']
+  zone_type string [note: 'Zone geometry kind. Common values: store_radius, polygon, beacon, mall_common_area (enum enforced in relationships.sql).']
+  radius_m int [note: 'Radius in metres for a store_radius zone; NULL for non-radial zones. When present, must be > 0.']
+  centroid_geohash7 string [note: '7-character geohash of the zone centroid (~150 m cell). Coarse BY DESIGN — the privacy floor; never a precise …']
+  effective_from_date date [not null, note: 'SCD2: inclusive start date this version became effective.']
+  effective_to_date date [note: 'SCD2: exclusive end date; NULL for the current version.']
+  is_current boolean [not null, note: 'SCD2: TRUE for the currently active version.']
+  created_timestamp timestamp [note: 'When the record was created in the source system (UTC, ISO 8601).']
+  source_updated_timestamp timestamp [note: 'When the record was last modified in the source system (UTC, ISO 8601).']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'When this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'master · silver'
+}
+
+Table promotion_scope {
+  scope_sk bigint [pk, note: 'Surrogate key.']
+  scope_id string [not null, note: 'Durable natural/business key for the scope row.']
+  promo_sk bigint [note: 'FK to promotion.promo_sk.']
+  promo_id string [not null, note: 'Durable promotion business key.']
+  product_sk bigint [note: 'FK to product.product_sk.']
+  product_id string [not null, note: 'Durable product business key.']
+  store_sk bigint [note: 'FK to store.store_sk.']
+  store_id string [not null, note: 'Durable store business key.']
+  record_source string [note: 'Originating system of record (vendor-neutral label).']
+  load_timestamp timestamp [note: 'Timestamp this row was loaded into the canonical core (UTC, ISO 8601).']
+  Note: 'association · silver'
+}
+
+Table gold_location_offer_performance {
+  location_offer_sk bigint [pk, not null, note: 'Offer surrogate (FK to location_offer.location_offer_sk); part of the grain PK.']
+  store_id string [pk, not null, note: 'Store business key; part of the grain PK.']
+  fiscal_week_id int [pk, not null, note: 'NRF 4-5-4 fiscal week; part of the grain PK.']
+  trigger_events bigint [note: 'Count of triggered events.']
+  suppressed_events bigint [note: 'Count of suppressed events.']
+  delivered_events bigint [note: 'Count of delivered events.']
+  opened_events bigint [note: 'Count of opened events.']
+  redemptions bigint [note: 'Count of redeemed events.']
+  unique_customers_reached bigint [note: 'Distinct pseudonymous customers with a delivered event.']
+  delivery_rate decimal(9,4) [note: 'delivered / (delivered + suppressed); bounded 0..1.']
+  open_rate decimal(9,4) [note: 'opened / delivered; bounded 0..1.']
+  redemption_rate decimal(9,4) [note: 'redemptions / delivered; bounded 0..1.']
+  suppression_rate decimal(9,4) [note: 'suppressed / (delivered + suppressed); bounded 0..1.']
+  attributed_sales_amount decimal(18,2) [note: 'Sum of transaction net_revenue attributed to redeemed events (base currency).']
+  Note: 'table · gold'
+}
+
+Table gold_promo_performance {
+  promo_id string [note: 'Promotion business key.']
+  promo_name string
+  promo_type string
+  funding_type string
+  funded_by string
+  start_date string
+  end_date string
+  scope_skus string [note: 'Distinct products in the promotion scope.']
+  scope_stores string [note: 'Distinct stores in the promotion scope.']
+  fiscal_weeks string [note: 'Distinct fiscal weeks the promotion ran.']
+  promoted_units string [note: 'Total promoted units.']
+  promoted_revenue string [note: 'Total promoted net revenue.']
+  baseline_units string [note: 'Total trailing-baseline units over the promo.']
+  planned_trade_spend string [note: 'Total planned trade spend.']
+  planned_lift_pct string
+  realized_lift_pct string [note: '100 x (promoted_units - baseline_units) / baseline_units.']
+  Note: 'gold · gold'
+}
+
+Table gold_promo_roi {
+  promo_id string [note: 'Promotion business key.']
+  promo_name string [note: 'Promotion name.']
+  promo_type string [note: 'Mechanic: TPR / FEATURE / DISPLAY / FEATURE_AND_DISPLAY / BOGO / COUPON / BUNDLE.']
+  funding_type string [note: 'OFF_INVOICE / BILL_BACK / SCAN_DOWN / LUMP_SUM.']
+  funded_by string [note: 'SUPPLIER / RETAILER / SHARED.']
+  start_date string
+  end_date string
+  promoted_units string [note: 'Units sold on promotion.']
+  promoted_revenue string [note: 'Net revenue on promotion.']
+  promoted_margin string [note: 'Gross margin on promotion.']
+  baseline_units string [note: 'Expected non-promoted units over the promo window (trailing-8-week baseline).']
+  baseline_revenue string [note: 'Baseline units valued at normal price.']
+  baseline_margin string [note: 'Baseline units valued at normal margin.']
+  incremental_units string [note: 'promoted_units - baseline_units (NOT clamped; negative = lost volume).']
+  incremental_revenue string [note: 'promoted_revenue - baseline_revenue.']
+  incremental_margin string [note: 'promoted_margin - baseline_margin.']
+  trade_spend string [note: 'Planned trade spend (realized actuals not modelled in v1).']
+  roi string [note: 'incremental_margin / NULLIF(trade_spend, 0); NULL-safe.']
+  planned_lift_pct string [note: 'Planned incremental unit lift %.']
+  realized_lift_pct string [note: '100 x incremental_units / baseline_units.']
+  cannibalization_units string [note: 'Lost units on substitute SKUs (same category, not on promo) during the window.']
+  cannibalization_margin string [note: 'Margin lost to cannibalization.']
+  forward_buy_units string [note: 'Lost units on promoted SKUs in the N weeks after the promo (pantry loading).']
+  forward_buy_margin string [note: 'Margin lost to forward buy.']
+  net_incremental_margin string [note: 'incremental_margin - cannibalization_margin - forward_buy_margin (negative = value destroyed).']
+  Note: 'gold · gold'
+}
+
+Table gold_promo_roi_by_category {
+  promo_id string [note: 'Promotion business key.']
+  promo_name string [note: 'Promotion name.']
+  promo_type string [note: 'Mechanic: TPR / FEATURE / DISPLAY / FEATURE_AND_DISPLAY / BOGO / COUPON / BUNDLE.']
+  funding_type string [note: 'OFF_INVOICE / BILL_BACK / SCAN_DOWN / LUMP_SUM.']
+  funded_by string [note: 'SUPPLIER / RETAILER / SHARED.']
+  start_date string [note: 'Promotion start date.']
+  end_date string [note: 'Promotion end date.']
+  category string [note: 'Product category — the drill grain of this view.']
+  promoted_units string [note: 'Units sold on promotion.']
+  promoted_revenue string [note: 'Net revenue on promotion.']
+  promoted_margin string [note: 'Gross margin on promotion.']
+  baseline_units string [note: 'Expected non-promoted units over the promo window (trailing-8-week baseline).']
+  baseline_revenue string [note: 'Baseline units valued at normal price.']
+  baseline_margin string [note: 'Baseline units valued at normal margin.']
+  incremental_units string [note: 'promoted_units - baseline_units (NOT clamped; negative = lost volume).']
+  incremental_revenue string [note: 'promoted_revenue - baseline_revenue.']
+  incremental_margin string [note: 'promoted_margin - baseline_margin.']
+  trade_spend string [note: 'Planned trade spend allocated to this category by its share of the promo scope rows (realized actuals not modelled in …']
+  roi string [note: 'incremental_margin / NULLIF(trade_spend, 0); NULL-safe.']
+  planned_lift_pct string [note: 'Planned incremental unit lift %.']
+  realized_lift_pct string [note: '100 x incremental_units / baseline_units.']
+  cannibalization_units string [note: 'Lost units on substitute SKUs (same category, not on promo) during the window.']
+  cannibalization_margin string [note: 'Margin lost to cannibalization.']
+  forward_buy_units string [note: 'Lost units on promoted SKUs in the N weeks after the promo (pantry loading).']
+  forward_buy_margin string [note: 'Margin lost to forward buy.']
+  net_incremental_margin string [note: 'incremental_margin - cannibalization_margin - forward_buy_margin (negative = value destroyed).']
+  Note: 'gold · gold'
+}
+
+Table gold_trade_promotion {
+  promo_id string
+  promo_name string
+  promo_type string
+  funding_type string
+  funded_by string
+  product_id string
+  product_name string
+  category string
+  subcategory string
+  brand string
+  store_id string
+  store_name string
+  store_format string
+  region string
+  fiscal_week_id string [note: 'Fiscal week identifier (fiscal_year*100 + fiscal_week).']
+  promoted_units string [note: 'Promoted units for this promo x product x store x week.']
+  promoted_revenue string [note: 'Promoted net revenue for this cell.']
+  planned_trade_spend string [note: 'Planned trade spend allocated to this cell (evenly across scope x weeks).']
+  planned_lift_pct string
+  baseline_units string [note: 'Trailing-8-week non-promoted mean units; NULL if < 4 weeks available.']
+  Note: 'gold · gold'
+}
+
+Table gold_weekly_baseline {
+  product_sk string [note: 'FK to product.product_sk (version-specific); resolve to the durable product_id before aggregating (§A.16).']
+  store_sk string [note: 'FK to store.store_sk (version-specific); resolve to the durable store_id before aggregating (§A.16).']
+  fiscal_week_index string [note: 'Globally monotonic week counter across the whole calendar; use for trailing N-week windows.']
+  actual_units string [note: 'Total units sold in the week (promoted and non-promoted).']
+  actual_revenue string [note: 'Total net revenue in the week (promoted and non-promoted).']
+  baseline_units string [note: 'Trailing-8-week non-promoted mean units; NULL if < 4 weeks available.']
+  Note: 'gold · gold'
+}
+
+Table gold_zone_engagement_weekly {
+  zone_id string [pk, not null, note: 'Durable zone business key; part of the grain PK.']
+  fiscal_week_id int [pk, not null, note: 'NRF 4-5-4 fiscal week; part of the grain PK.']
+  active_offers bigint [note: 'Distinct active location offers with events in this zone-week.']
+  trigger_events bigint [note: 'Count of triggered events in this zone-week.']
+  unique_customers bigint [note: 'Distinct pseudonymous customers engaged in this zone-week.']
+  conversion_rate decimal(9,4) [note: 'redemptions / triggers; NULL-safe; bounded 0..1.']
+  Note: 'table · gold'
+}
+
+Ref: promotion_scope.promo_sk > promotion.promo_sk
+Ref: promotion_scope.product_sk > product.product_sk
+Ref: promotion_scope.store_sk > store.store_sk
+Ref: location_offer.zone_sk > offer_zone.zone_sk
+Ref: offer_event.location_offer_sk > location_offer.location_offer_sk
+
+TableGroup promote-with-purpose [color: #3b4a59] { location_offer, offer_event, offer_zone, promotion_scope, gold_location_offer_performance, gold_promo_performance, gold_promo_roi, gold_promo_roi_by_category, gold_trade_promotion, gold_weekly_baseline, gold_zone_engagement_weekly }
