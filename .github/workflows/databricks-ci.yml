@@ -279,9 +279,12 @@ jobs:
     # the secrets and must never target an internal workspace. When no
     # workspace is configured the job is skipped, not failed, so the test +
     # standards gates stay the source of truth until a workspace is wired up.
+    # Dependabot PRs are same-repo but get only Dependabot secrets (no workspace
+    # token), so they skip too.
     if: >-
       vars.DATABRICKS_HOST != '' &&
-      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     timeout-minutes: 30
 
     # Workspace host comes from a repository variable (Settings > Variables >

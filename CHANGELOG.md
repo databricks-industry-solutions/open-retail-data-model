@@ -59,6 +59,18 @@ per-folder status lines are generated from it; ladder definitions are in
   notes, ADRs), so a reader can follow them from the raw glossary the site shows
   (`tools/gen_model_json.py`) (#179)
 
+### CI & automation
+
+- Dependency updates are automated in the working repository: weekly grouped updates for the
+  explorer's npm packages, the Python requirements (except the exactly pinned `sqlglot`) and the
+  GitHub Actions, plus security updates. They reach this repository with each publication
+  (#182).
+- Explorer dev dependencies: vite 5 to 8.3.4 and vitest 2 to 5.0.4, which also brings
+  `@vitest/mocker` 5.0.4, drops `tinypool`, and moves postcss to 8.5.30, nanoid to 3.3.20 and
+  source-map-js to 1.2.2 (the first automated security updates, folded into one change). The explorer
+  now needs Node 22.12 or later (`explorer/.nvmrc`)
+  (#182).
+
 ## [0.5] — 2026-10-13
 
 Use cases catch up with the model. All 41 declared use cases are done, and every use case
