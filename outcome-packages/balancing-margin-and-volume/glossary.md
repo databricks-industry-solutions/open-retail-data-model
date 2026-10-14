@@ -1,6 +1,6 @@
 # Balancing Margin and Volume - Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 | Term | Definition |
 |---|---|

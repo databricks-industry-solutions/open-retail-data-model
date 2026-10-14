@@ -1,6 +1,6 @@
 # Marketing Domain — Business Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 Follows the ORDM [data model standards](../../docs/data-model-standards.md).
 

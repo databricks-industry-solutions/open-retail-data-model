@@ -1,6 +1,6 @@
 # Canonical Core — Product
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 The conformed **Product** domain. Part of the ORDM [canonical core](../README.md).
 

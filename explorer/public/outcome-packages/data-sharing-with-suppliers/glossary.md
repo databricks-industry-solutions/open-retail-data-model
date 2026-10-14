@@ -1,8 +1,8 @@
 # Data Sharing with Suppliers — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-13
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-13
 
-Business terms for this package's four use cases — Category Growth, Media Measurement, Joint Demand Planning, and Data Monetization. Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md).
+Business terms for this package's four use cases — Category Growth, Media Measurement, Joint Demand Planning, and Data Monetization. Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Domain Brief — placement decision (Phase 0)
 
@@ -93,7 +93,7 @@ Turning the shared data itself into a revenue line: which data products a retail
 suppliers, who has **licensed** them and on what commercial terms, what they actually
 **consumed**, and what revenue that yielded — with the yield expressed against both the
 contract and the partner's wider retail-media spend. Closes the monetization/billing capability
-deferred in [ADR 0019](../../governance/decisions/0019-media-measurement-in-data-sharing.md).
+deferred in [ADR 0019](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/governance/decisions/0019-media-measurement-in-data-sharing.md).
 Where Media Measurement governs *who may see what* and Joint Demand Planning governs *what we
 plan together*, Data Monetization answers *what that shared data is worth*.
 

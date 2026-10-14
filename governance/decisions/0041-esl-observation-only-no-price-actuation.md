@@ -1,6 +1,6 @@
 # ADR 0041 — ESL is observation-only; price actuation is rejected
 
-**Status:** Accepted (2026-10-09; proposed 2026-08-21) by the maintainer, @Tagar, with the Connected Store Signals sign-off in #165 (acceptance record). Its amendment of ADR 0030 still awaits acknowledgement from ADR 0030's CSS-owner and Privacy scopes.
+**Status:** Accepted (2026-10-09; proposed 2026-08-21) by the maintainer, @Tagar, with the Connected Store Signals sign-off in #165 (acceptance record). ADR 0030's CSS-owner and Privacy scopes have acknowledged its amendment of ADR 0030, and the DPO review of the scope change is done (recorded as closed by the maintainer, 2026-10-13).
 
 ## Context
 
@@ -32,7 +32,8 @@ disclosure indicator and text remain observation evidence rather than pricing de
 The amendment is in force from this ADR's acceptance (2026-10-09) for the open model in staging. Because item 3 defers
 ADR 0030's privacy-relevant compliance fields, ADR 0030's CSS-owner and Privacy scopes must acknowledge it, and the
 formal DPO review that ADR 0030's Privacy approval requires on a scope change must happen, before Connected Store
-Signals is ✅ Published. Until then it is recorded as an open ✅ gate in `STATUS.md`. Accepting this ADR amends ADR 0030 to:
+Signals is ✅ Published. Both are done (recorded as closed by the maintainer, 2026-10-13), which closes the ✅ gate in
+`STATUS.md`. Accepting this ADR amends ADR 0030 to:
 
 1. amend ADR 0030's predicted ESL actuation-layer wording to an observation-only evidence layer;
 2. rename the proposed `esl_price_event` concept to the implemented

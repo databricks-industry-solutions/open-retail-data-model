@@ -7,6 +7,7 @@
 | [er-diagrams.md](er-diagrams.md) | How ER diagrams are generated from the DDL, drift-gated, and rendered light/dark |
 | [data-model-standards.md](data-model-standards.md) | The standard ORDM enforces (mandates, design principles, naming) |
 | [definition-of-done.md](definition-of-done.md) | The lifecycle stages and artifact tiers for domains and packages |
+| [ai-skills.md](ai-skills.md) | The ORDM modeling skill (Agent Skills format) and how to plug it into your AI tool |
 | [versioning-policy.md](versioning-policy.md) | Schema versioning and backward compatibility for published models |
 | [releasing.md](releasing.md) | How a numbered release is cut: the `VERSION` file, `make release`, and the post-merge tag |
 | [testing.md](testing.md) | What the tests and CI do, when they run, and how to run them |

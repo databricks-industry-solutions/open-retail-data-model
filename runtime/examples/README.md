@@ -5,6 +5,7 @@ Deployment templates and walkthroughs for adopting ORDM in a Databricks workspac
 | Folder | Purpose |
 |---|---|
 | `deploy-with-dab/` | The schema-bootstrap step (`00_bootstrap_schemas.sql`). The bundle config itself is the root [`databricks.yml`](../../databricks.yml) `deploy_ordm` job. |
+| `notebooks/` | `push_contracts_to_ontos.ipynb`: pushes the generated ODCS contracts to a catalog tool (optional; see [`docs/odcs-integration.md`](../../docs/odcs-integration.md)). |
 
 ## Deploying ORDM today
 

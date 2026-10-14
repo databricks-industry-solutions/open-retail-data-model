@@ -1,9 +1,9 @@
 # Connected Store Signals — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-07
 
 Business terms for the Connected Store Signals outcome package. Vendor-neutral; follows the
-ORDM [data model standards](../../docs/data-model-standards.md).
+ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 Two things about this domain that the term list alone will not convey. First, **footfall
 vendors do not agree on what footfall means** — the same field name carries at least four

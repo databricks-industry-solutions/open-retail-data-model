@@ -1,6 +1,6 @@
 # AI-Assisted Store Associates — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-07
 
 Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md). This package covers two capabilities on one schema. The **Next Best Action (NBA)** engine for the store floor: it normalizes disparate real-time triggers into
 a single prioritized task queue routed to the right associate, then closes the loop by capturing the

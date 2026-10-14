@@ -36,8 +36,8 @@ runs:
       # Pinned to a COMMIT SHA (not the mutable @main): this composite runs in the same job that
       # holds DEPLOY_NOTEBOOK_TOKEN and writes it to ~/.databrickscfg, so a retargeted/compromised
       # upstream main would execute with the deploy token in scope (AI review #108 M1). SHA is
-      # v1.10.0 of databricks/setup-cli; bump the SHA + comment together to upgrade.
-      uses: databricks/setup-cli@8821c27b1fe57472264eeb6e50c1f31d69552f28  # v1.10.0
+      # v1.20.0 of databricks/setup-cli; bump the SHA + comment together to upgrade.
+      uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7  # v1.20.0
 
     - name: Configure Databricks CLI authentication
       shell: bash

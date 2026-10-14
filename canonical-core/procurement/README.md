@@ -1,6 +1,6 @@
 # Canonical Core — Procurement
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 The conformed **Procurement** domain (purchase orders). Part of the ORDM [canonical core](../README.md).
 

@@ -13,7 +13,10 @@ instance of the Industry Data Model. It lets you navigate the model visually:
 - **Per-table detail** — columns with types, primary/foreign keys, PII flags, and enum values,
   plus which outcome packages consume which core domains.
 - **Links** — each package and domain panel links its glossary and ODCS data contract (served with
-  this site) and its source folder on GitHub (which needs access to the ORDM source repository).
+  this site) and its source folder on GitHub (which needs access to the ORDM source repository). The
+  site shows a glossary as raw Markdown; its references to repository docs the site does not serve
+  (the standard, design notes, ADRs) are absolute source-repo URLs (the same access as the GitHub link),
+  so they can be followed from the text.
 
 ## About this repository
 

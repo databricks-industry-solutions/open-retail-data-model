@@ -1,6 +1,6 @@
 # Smarter Demand and Inventory Decisions — Business Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 ## Tables & views
 

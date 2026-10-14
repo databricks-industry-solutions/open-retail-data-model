@@ -1,6 +1,6 @@
 # Outcome Package — Early Risk Detection
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 
 ## Business outcome
 
@@ -49,7 +49,6 @@ A supply-chain operations team sees a **real-time control tower** that unifies d
 | `relationships.sql` | UC PK/FK declarations for extension tables |
 | `checks.sql` | Data-quality assertions |
 | `glossary.md` | Business terms |
-| `notebook-templates/` | Reusable notebooks |
 
 ## Builds on (canonical core)
 

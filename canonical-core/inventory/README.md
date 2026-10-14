@@ -1,6 +1,6 @@
 # Canonical Core — Inventory
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 The conformed **Inventory** domain. Part of the ORDM [canonical core](../README.md).
 

@@ -22,20 +22,75 @@ per-folder status lines are generated from it; ladder definitions are in
      data model, ### Outcome packages, ### Standards, governance & ADRs, ### CI &
      automation, ### Data contracts & synthetic data). -->
 
+### Repository layout
+
+- Follow-ups to the layout change: the package READMEs and `governance/README.md` no longer list
+  the deleted `notebook-templates/` and `meeting-notes/` folders, `runtime/examples/README.md`
+  lists `notebooks/`, and the per-PR workspace sync uploads only what the job reads
+  (`runtime/synthetic-data`, `runtime/data-quality` and the deploy bootstrap SQL) instead of
+  all of `runtime/` (#179)
+- Model Explorer: the glossary copies under `explorer/public/` carry absolute source-repo URLs
+  instead of repo-relative paths for files the site does not serve (the data-model standard, design
+  notes, ADRs), so a reader can follow them from the raw glossary the site shows
+  (`tools/gen_model_json.py`) (#179)
+
+### Standards, governance & ADRs
+
+- **An AI skill for any tool.** `ordm-data-modeling`, the skill that authors or adapts
+  ORDM-conformant models, is published in the open Agent Skills format, in `.agents/skills/` and
+  `.claude/skills/`, so Claude Code, GitHub Copilot, OpenAI Codex and other tools that support Agent
+  Skills pick it up. [`docs/ai-skills.md`](docs/ai-skills.md) says how to plug it in (#180).
+- The initial-release self-review exception is off now that 0.5 is public. The self-reviewed
+  deliverables 0.5 published stay ✅ while 0.5 is the current release; before the next release,
+  each needs a second, independent sign-off or goes back to 🟢, and `gen_status.py --check`
+  enforces it once `VERSION` moves past 0.5. `STATUS.md` records that `transaction`, `order` and
+  `inventory` were published without the Lakebase binding the Definition of Done expects of the
+  transactional spine; it is deferred until its generator exists. The `connected-store-signals` ✅
+  gate is closed: ADR 0030's CSS-owner and Privacy scopes acknowledged ADR 0041's amendment and the
+  DPO review is done, as the maintainer recorded on 2026-10-13 (ADRs 0030 and 0041 updated)
+  (#181)
+
 ### CI & automation
 
-- **Curated publication with contributor credit.** The public repository is built from the working repository by a curated sync: one commit per canonical-core domain and outcome package, authored by the people who built it (the maintainer only where they are the sole contributor), with every other contributor as a co-author. The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from the published model.
+- `tools/gen_status.py` also keeps the Status column of `canonical-core/README.md` and
+  `outcome-packages/README.md` in step with `STATUS.md`: `--write` refreshes it and `--check`
+  fails on a stale cell (#181)
+- Dependency upgrades, folded from the first batch of Dependabot PRs: GitHub Actions
+  `actions/setup-node` v7, `actions/upload-artifact` v7, `actions/download-artifact` v8,
+  `actions/deploy-pages` v5 and `databricks/setup-cli` v1.20.0 (`checkout`, `setup-python`,
+  `setup-java` and `upload-pages-artifact` follow in a later batch); explorer
+  `@playwright/test` 1.64.0 and `cytoscape` 3.34.3. TypeScript 7 and jsdom 30 are left for a
+  follow-up: TypeScript 7 rejects the side-effect CSS import, and jsdom 30 makes
+  `window.document` read-only, which one explorer test relies on. The Python requirements stay
+  lower bounds: Dependabot raises one only when a release falls outside its range
+  (`versioning-strategy: increase-if-necessary`), and Python vulnerabilities are handled from
+  Dependabot alerts (#204).
+- Dependency updates are automated in the working repository: weekly grouped updates for the
+  explorer's npm packages, the Python requirements (except the exactly pinned `sqlglot`) and the
+  GitHub Actions. They reach this repository with each publication
+  (#182).
+- Explorer dev dependencies: vite 5 to 8.3.4 and vitest 2 to 5.0.4, which also brings
+  `@vitest/mocker` 5.0.4, drops `tinypool`, and moves postcss to 8.5.30, nanoid to 3.3.20 and
+  source-map-js to 1.2.2 (folded into one change). The explorer now needs Node 22.12 or later
+  (`explorer/.nvmrc`)
+  (#182).
+- **Public Model Explorer.** The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from this repository, so it shows only the published model and its source links resolve (#180).
+- **Each change credited to its author.** After the first publication, this repository is updated one change at a time: every change made in the working repository becomes one commit here, authored by the person who made it, with everyone else who worked on it as a co-author (#180).
 
-### Outcome packages
+## [0.5] — 2026-10-13
 
-- **Every outcome package is 🟢 Review complete.** `data-sharing-with-suppliers` is signed off
-  (#177), a self-review disclosed in
-  `REVIEWERS.md`; #165 had left it out until the Media Measurement fix (#163) merged. No `TODO(owner)`
-  is left in any `use-cases.yaml`: the maintainer confirmed Realized Margin & Revenue Leakage done (it
-  has no card owner), accepted the CDP status call in place of the card owner's confirmation,
-  confirmed the `commerce-media-networks` and `balancing-margin-and-volume` `tables:` mappings, and
-  recorded who confirmed the `smarter-demand-and-inventory-decisions` and `connected-store-signals`
-  use cases (#178).
+Use cases catch up with the model. All 41 declared use cases are done, and every use case
+has governed KPIs as UC Metric Views. Seven became done in this release: Identity Resolution,
+CDP, Market Analysis, Assortment Optimization, Realized Margin & Revenue Leakage, Associates
+Best Next Actions and Digital Assistant Selling Tools, with populated gold views and metric
+views on the demo deploy. Ten more deliverables are 🟢 Review complete, so all 15
+canonical-core domains are. The Model Explorer follows lineage across packages, and a use case
+can map to another package's gold view. The model version now has one source, `VERSION`, and
+`make release` cuts a release. All file headers move to **0.5**, the first release without a
+`-beta` label.
+
+Published to the public repository as v0.5 on 2026-10-13: every canonical-core domain and
+outcome package is ✅ Published, each as its own commit authored by the people who built it.
 
 ### Repository layout
 
@@ -52,22 +107,18 @@ per-folder status lines are generated from it; ladder definitions are in
   core domains and six empty `notebook-templates/` folders, plus every `.gitkeep` and the two
   working notes under `docs/superpowers/`. Sample rows
   come from the generators; the docs no longer list a `samples/` folder.
-- The review skill is marked staging-only in `docs/claude-skills.md`.
-
-## [0.5] — 2026-10-13
-
-Use cases catch up with the model. All 41 declared use cases are done, and every use case
-has governed KPIs as UC Metric Views. Seven became done in this release: Identity Resolution,
-CDP, Market Analysis, Assortment Optimization, Realized Margin & Revenue Leakage, Associates
-Best Next Actions and Digital Assistant Selling Tools, with populated gold views and metric
-views on the demo deploy. Ten more deliverables are 🟢 Review complete, so all 15
-canonical-core domains are. The Model Explorer follows lineage across packages, and a use case
-can map to another package's gold view. The model version now has one source, `VERSION`, and
-`make release` cuts a release. All file headers move to **0.5**, the first release without a
-`-beta` label.
+- The review skill, which backs the maintainers' AI review, is not published.
 
 ### Outcome packages
 
+- **Every outcome package reached 🟢 Review complete** (and is ✅ Published in this release). `data-sharing-with-suppliers` is signed off
+  (#177), a self-review disclosed in
+  `REVIEWERS.md`; #165 had left it out until the Media Measurement fix (#163) merged. No `TODO(owner)`
+  is left in any `use-cases.yaml`: the maintainer confirmed Realized Margin & Revenue Leakage done (it
+  has no card owner), accepted the CDP status call in place of the card owner's confirmation,
+  confirmed the `commerce-media-networks` and `balancing-margin-and-volume` `tables:` mappings, and
+  recorded who confirmed the `smarter-demand-and-inventory-decisions` and `connected-store-signals`
+  use cases (#178).
 - **Governed KPIs for every use case.** The use cases that had none now have UC Metric Views, each
   checked against the deployed synthetic data:
   - **agentic-commerce:** `mv_intent_discovery_result_performance` (Result CTR, Add-to-Cart Rate,
@@ -434,7 +485,7 @@ Governance decisions are recorded as ADRs (`governance/decisions/`, currently 00
 - **Agentic advisory AI PR review** + DoD status, via Claude Code on the Databricks gateway (#19)
 - Durable AI-review capture to a log branch (Delta-queryable) (#32)
 - Advisory PR-branch-freshness check (sticky "behind main" comment) (#48)
-- **Grounded, bidirectional model-coverage reviewer** (ADR 0014, 0015) (#71, #72)
+- **Grounded, bidirectional model-coverage reviewer** (#71, #72)
 - Generated, drift-proof surfaces: README status tables from `STATUS.md` (`gen_status.py`, #62) and the auto-generated Contributors grid (`gen_contributors.py`, #64)
 
 ### Data contracts & synthetic data

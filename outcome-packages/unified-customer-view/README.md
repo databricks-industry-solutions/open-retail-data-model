@@ -1,6 +1,6 @@
 # Outcome Package — Unified Customer View
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 
 ## Business outcome
 
@@ -69,7 +69,6 @@ The layout is the same in every outcome package. One file per table / per metric
 | `metric-views/<metric>.sql` | One UC Metric View per file (measures, dimensions, joins) |
 | `comments.sql` | Synonyms, display names, glossary terms for Genie / AI-BI |
 | `sample-queries.sql` | Example queries |
-| `notebook-templates/` | Reusable notebooks |
 
 ## Builds on (canonical core)
 

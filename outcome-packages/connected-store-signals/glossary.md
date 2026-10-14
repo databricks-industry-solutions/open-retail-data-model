@@ -1,6 +1,6 @@
 # Connected Store Signals — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-07
 
 Business terms for the Connected Store Signals outcome package. Vendor-neutral; follows the
 ORDM [data model standards](../../docs/data-model-standards.md).

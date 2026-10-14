@@ -1,8 +1,8 @@
 # Customer Domain — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-07-10
+> Status: ✅ Published (0.5) · Last reviewed: 2026-07-10
 
-Business terms for the ORDM canonical-core **Customer** domain (Unity Catalog schema). Definitions are vendor-neutral and follow the ORDM [data model principles](../../docs/data-model-standards.md).
+Business terms for the ORDM canonical-core **Customer** domain (Unity Catalog schema). Definitions are vendor-neutral and follow the ORDM [data model principles](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Tables
 
@@ -25,8 +25,8 @@ Business terms for the ORDM canonical-core **Customer** domain (Unity Catalog sc
 - **Audit block** — every mutable entity carries `created_timestamp` and `source_updated_timestamp` (source-system instants) alongside `load_timestamp` (pipeline instant). All timestamps are stored in **UTC** (principle #9b).
 - **Consent is centralized** — marketing and processing permissions exist **only** in `consent`, never as flags on `profile`/`account`/`contact`/`channel_preference` (principle #5).
 - **Resolve consent as-of jurisdiction** — the current-consent grain is `(profile, consent_type, jurisdiction_code)`, not `(profile, consent_type)`. A customer can hold different current consent per regime (GDPR-EU vs CCPA/CPRA-US). Consumers (activation, Unified Customer View, …) **must** filter by the applicable `jurisdiction_code` (with `is_current = TRUE`) or they may see multiple current rows and pick the wrong one.
-- **Consent vs. preference** — `consent` answers "am I legally permitted to contact/process?" (lawful basis, opt-in/opt-out, jurisdiction). `channel_preference` answers "how does the customer prefer to be contacted?" (frequency, topic, format). `is_subscribed = false` is a **soft** targeting opt-out (a preference the customer expressed), **not** a legal withdrawal — that is a `consent` state. A preference neither grants what consent withheld nor legally overrides consent; a consumer combines both (contactable = consent granted AND preference allows). See [`docs/design/customer-identity/consent-and-preferences-notes.md`](../../docs/design/customer-identity/consent-and-preferences-notes.md).
-- **Identity is resolved upstream** — `identity_link` is the thin conformed projection of an identity-resolution process; the full graph (nodes/edges, merge/split, suppression) is deferred to [`docs/design/customer-identity/`](../../docs/design/customer-identity/), not the core.
+- **Consent vs. preference** — `consent` answers "am I legally permitted to contact/process?" (lawful basis, opt-in/opt-out, jurisdiction). `channel_preference` answers "how does the customer prefer to be contacted?" (frequency, topic, format). `is_subscribed = false` is a **soft** targeting opt-out (a preference the customer expressed), **not** a legal withdrawal — that is a `consent` state. A preference neither grants what consent withheld nor legally overrides consent; a consumer combines both (contactable = consent granted AND preference allows). See [`docs/design/customer-identity/consent-and-preferences-notes.md`](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/design/customer-identity/consent-and-preferences-notes.md).
+- **Identity is resolved upstream** — `identity_link` is the thin conformed projection of an identity-resolution process; the full graph (nodes/edges, merge/split, suppression) is deferred to [`docs/design/customer-identity/`](https://github.com/databricks-industry-solutions/open-retail-data-model/tree/main/docs/design/customer-identity), not the core.
 - **No derived columns on masters** — lifetime value, order counts, churn/CLTV scores, last-purchase dates are computed in outcome-package metric views, not stored here (principle #4).
 
 ## Selected terms

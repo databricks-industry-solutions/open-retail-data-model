@@ -146,7 +146,9 @@ def parse_status_text(text: str) -> dict[str, str]:
 def render_badge(status: dict[str, str]) -> str:
     done = sum(1 for key, _ in CORE_LAYOUT if status.get(key) in DONE_EMOJI)
     total = len(CORE_LAYOUT)
-    url = (f"https://img.shields.io/badge/canonical_core-{done}%2F{total}_review--complete-brightgreen")
+    published = sum(1 for key, _ in CORE_LAYOUT if status.get(key) == "✅")
+    label = "published" if published == total else "review--complete"
+    url = (f"https://img.shields.io/badge/canonical_core-{done}%2F{total}_{label}-brightgreen")
     return f"[![Canonical core]({url})](STATUS.md)"
 
 
@@ -456,6 +458,49 @@ def generate_package_glossary_status(status_text: dict[str, str]) -> int:
     return count
 
 
+# The layer READMEs carry a hand-laid-out table with a Status cell per row. --write refreshes that
+# cell from STATUS.md and --check reports a stale one, so the layer pages cannot drift from it.
+LAYER_READMES = (REPO_ROOT / "canonical-core" / "README.md", REPO_ROOT / "outcome-packages" / "README.md")
+_LAYER_HEADER = re.compile(r"^\|[^|]*\|\s*Status\s*\|")
+_LAYER_ROW = re.compile(r"^(\|\s*\[[^\]]*\]\(([a-z0-9-]+)/\)\s*\|)([^|]*)(\|.*)$")
+
+
+def _sync_layer_table(text: str, status_text: dict[str, str]) -> tuple[str, list[str]]:
+    """Return text with each row's Status cell (the one after the linked name) set from
+    STATUS.md, plus the keys that changed. Only rows of a table whose header's second column
+    is Status are touched. A column-aligned cell (padded with more than one
+    space) keeps its width where the new text fits."""
+    out, stale, in_status_table = [], [], False
+    for line in text.splitlines(keepends=True):
+        body = line.rstrip("\n")
+        if not body.startswith("|"):
+            in_status_table = False
+        elif not in_status_table and _LAYER_HEADER.match(body):
+            in_status_table = True
+        m = _LAYER_ROW.match(body) if in_status_table else None
+        if m and m.group(2) in status_text and m.group(3).strip() != status_text[m.group(2)]:
+            width = len(m.group(3)) if m.group(3).endswith("  ") else 0
+            cell = f" {status_text[m.group(2)]} ".ljust(width)
+            line = m.group(1) + cell + m.group(4) + line[len(body):]
+            stale.append(m.group(2))
+        out.append(line)
+    return "".join(out), stale
+
+
+def generate_layer_readme_status(status_text: dict[str, str]) -> int:
+    """Refresh the Status cells in canonical-core/README.md and outcome-packages/README.md.
+
+    Returns number of files changed.
+    """
+    count = 0
+    for path in LAYER_READMES:
+        new_text, stale = _sync_layer_table(path.read_text(), status_text)
+        if stale:
+            path.write_text(new_text)
+            count += 1
+    return count
+
+
 def validate_layout(status: dict[str, str]) -> list[str]:
     """Return a list of drift problems between STATUS.md and LAYOUT (empty = ok)."""
     problems = []
@@ -572,16 +617,56 @@ def validate_signoffs(status: dict[str, str], reviewers: dict[str, tuple[str, st
     return problems
 
 
-# TODO(maintainer, at the initial public release): set INITIAL_PUBLICATION_SELF_REVIEW = False.
 # GOVERNANCE.md interim rule, initial public release only: a self-reviewed deliverable (Owner =
-# Reviewer) may be ✅ Published on the maintainer's single sign-off. Set to False right after the
-# initial release ships; from then on ✅ needs a second, independent sign-off and the check below
-# enforces it again.
-INITIAL_PUBLICATION_SELF_REVIEW = True
+# Reviewer) could be ✅ Published on the maintainer's single sign-off. The initial release (0.5,
+# 2026-10-13) has shipped, so the exception is off: a NEW ✅ needs a second, independent sign-off
+# and the check below enforces it. INITIAL_RELEASE_PUBLISHED lists every deliverable that release
+# published (the check only ever flags the self-reviewed ones, Owner = Reviewer), and they are exempt
+# only while VERSION is still INITIAL_RELEASE. Once tools/release.py bumps VERSION past it, a patch
+# included, each self-reviewed one needs its second sign-off (or goes back to 🟢) before --check
+# passes again.
+INITIAL_PUBLICATION_SELF_REVIEW = False
+INITIAL_RELEASE = "0.5"
+INITIAL_RELEASE_PUBLISHED = frozenset({
+    "actionable-customer-understanding",
+    "agentic-commerce",
+    "ai-assisted-store-associates",
+    "balancing-margin-and-volume",
+    "calendar",
+    "commerce-media-networks",
+    "connected-store-signals",
+    "customer",
+    "data-sharing-with-suppliers",
+    "early-risk-detection",
+    "equipment",
+    "interaction",
+    "inventory",
+    "labor",
+    "logistics",
+    "marketing",
+    "order",
+    "payment",
+    "predictive-operations",
+    "procurement",
+    "product",
+    "promote-with-purpose",
+    "smarter-demand-and-inventory-decisions",
+    "store",
+    "supplier",
+    "transaction",
+    "unified-customer-view",
+})
+
+
+def self_review_exempt(version: str | None = None) -> frozenset[str]:
+    """Rows the initial-release exception still covers: the ones it published, and only while the
+    model version (default: VERSION) is that release. Empty from the next release on."""
+    version = MODEL_VERSION if version is None else version
+    return INITIAL_RELEASE_PUBLISHED if version == INITIAL_RELEASE else frozenset()
 
 
 def validate_self_review(status: dict[str, str], reviewers: dict[str, tuple[str, str]],
-                         owners: dict[str, str]) -> list[str]:
+                         owners: dict[str, str], exempt: frozenset[str] = frozenset()) -> list[str]:
     """✅ rows whose Owner is also the Reviewer but that record only one sign-off (empty = ok).
 
     GOVERNANCE.md: a self-reviewed deliverable (Owner = Reviewer) can reach 🟢 on its own
@@ -591,7 +676,7 @@ def validate_self_review(status: dict[str, str], reviewers: dict[str, tuple[str,
     names = dict(CORE_LAYOUT) | {k: n for _, rows in OUTCOME_LAYOUT for k, n, _ in rows}
     problems = []
     for key, emoji in status.items():
-        if emoji != "✅":
+        if emoji != "✅" or key in exempt:
             continue
         name = names.get(key, key)
         if name not in reviewers:
@@ -651,6 +736,12 @@ def collect_check_problems(status: dict[str, str], status_text_map: dict[str, st
         sections.append((f"Missing, duplicated or stale status lines in {len(stale_files)} files. "
                          "Edit STATUS.md, then run: python tools/gen_status.py --write", stale_files))
 
+    stale_layer = [f"{path.relative_to(REPO_ROOT)}: {key}" for path in LAYER_READMES
+                   for key in _sync_layer_table(path.read_text(), status_text_map)[1]]
+    if stale_layer:
+        sections.append(("Layer README status cells disagree with STATUS.md. "
+                         "Run: python tools/gen_status.py --write", stale_layer))
+
     unsigned = validate_signoffs(status, parse_reviewers(reviewers_text))
     if unsigned:
         sections.append(("Review-complete rows in STATUS.md need a recorded sign-off in REVIEWERS.md: "
@@ -658,7 +749,8 @@ def collect_check_problems(status: dict[str, str], status_text_map: dict[str, st
                          "(docs/definition-of-done.md). Record the sign-off or lower the status:",
                          unsigned))
     self_reviewed = [] if INITIAL_PUBLICATION_SELF_REVIEW else validate_self_review(
-        status, parse_reviewers(reviewers_text), parse_owners(reviewers_text))
+        status, parse_reviewers(reviewers_text), parse_owners(reviewers_text),
+        exempt=self_review_exempt())
     if self_reviewed:
         sections.append(("Self-reviewed rows need a second, independent sign-off before ✅ Published "
                          "(GOVERNANCE.md). Record it in REVIEWERS.md or lower the status:",
@@ -703,7 +795,8 @@ def main(argv: list[str] | None = None) -> int:
         dg_count = generate_domain_glossary_status(status_text_map)
         pr_count = generate_package_readme_status(status_text_map)
         pg_count = generate_package_glossary_status(status_text_map)
-        total_updated = dr_count + dg_count + pr_count + pg_count
+        layer_count = generate_layer_readme_status(status_text_map)
+        total_updated = dr_count + dg_count + pr_count + pg_count + layer_count
         if total_updated:
             print(f"Updated {total_updated} domain/package status lines")
         return 0

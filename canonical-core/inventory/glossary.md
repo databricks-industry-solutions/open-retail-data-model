@@ -1,6 +1,6 @@
 # Inventory Domain Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 Business terms and metrics used within the Inventory domain. Follows the ORDM [data model standards](../../docs/data-model-standards.md).
 

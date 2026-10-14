@@ -1,8 +1,8 @@
 # Marketing Domain — Business Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
-Follows the ORDM [data model standards](../../docs/data-model-standards.md).
+Follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Tables
 

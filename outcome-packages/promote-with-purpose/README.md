@@ -1,6 +1,6 @@
 # Outcome Package — Promote with Purpose
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 
 ## Business outcome
 
@@ -42,7 +42,7 @@ The layout is the same in every outcome package. One file per table / per metric
 | `checks.sql` · `glossary.md` | Data-quality checks · business glossary | ✅ present |
 | `metric-views/<metric>.sql` | One UC Metric View per file (measures, dimensions, joins) | ✅ `mv_location_offer_performance`, `mv_zone_engagement`, `mv_promo_roi` |
 | `comments.sql` | Synonyms, display names, glossary terms for Genie / AI-BI | ✅ present |
-| `sample-queries.sql` · `notebook-templates/` | Example queries · reusable notebooks | ✅ `sample-queries.sql` (notebook templates ⚪ planned) |
+| `sample-queries.sql` | Example queries | ✅ |
 
 ## Builds on (canonical core)
 

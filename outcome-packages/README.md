@@ -6,15 +6,15 @@ See [outcome-map.md](../docs/outcome-map.md) for how these map to the retail bus
 
 | Outcome package                                                                | Status              |
 | ------------------------------------------------------------------------------ | ------------------- |
-| [Promote with Purpose](promote-with-purpose/)                                  | 🟢 Review complete   |
-| [Actionable Customer Understanding](actionable-customer-understanding/)        | 🟢 Review complete   |
-| [Early Risk Detection](early-risk-detection/)                                  | 🟢 Review complete   |
-| [Data Sharing with Suppliers](data-sharing-with-suppliers/)                    | 🟢 Review complete   |
-| [Unified Customer View](unified-customer-view/)                                | 🟢 Review complete   |
-| [Agentic Commerce](agentic-commerce/)                                          | 🟢 Review complete   |
-| [Commerce Media Networks](commerce-media-networks/)                            | 🟢 Review complete   |
-| [Balancing Margin and Volume](balancing-margin-and-volume/)                    | 🟢 Review complete   |
-| [Smarter Demand and Inventory Decisions](smarter-demand-and-inventory-decisions/) | 🟢 Review complete   |
-| [Connected Store Signals](connected-store-signals/)                            | 🟢 Review complete   |
-| [Predictive Operations](predictive-operations/)                                | 🟢 Review complete   |
-| [AI-Assisted Store Associates](ai-assisted-store-associates/)                  | 🟢 Review complete   |
+| [Promote with Purpose](promote-with-purpose/)                                  | ✅ Published         |
+| [Actionable Customer Understanding](actionable-customer-understanding/)        | ✅ Published         |
+| [Early Risk Detection](early-risk-detection/)                                  | ✅ Published         |
+| [Data Sharing with Suppliers](data-sharing-with-suppliers/)                    | ✅ Published         |
+| [Unified Customer View](unified-customer-view/)                                | ✅ Published         |
+| [Agentic Commerce](agentic-commerce/)                                          | ✅ Published         |
+| [Commerce Media Networks](commerce-media-networks/)                            | ✅ Published         |
+| [Balancing Margin and Volume](balancing-margin-and-volume/)                    | ✅ Published         |
+| [Smarter Demand and Inventory Decisions](smarter-demand-and-inventory-decisions/) | ✅ Published         |
+| [Connected Store Signals](connected-store-signals/)                            | ✅ Published         |
+| [Predictive Operations](predictive-operations/)                                | ✅ Published         |
+| [AI-Assisted Store Associates](ai-assisted-store-associates/)                  | ✅ Published         |

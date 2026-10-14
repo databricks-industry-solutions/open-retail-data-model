@@ -1,6 +1,6 @@
 # Predictive Operations — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-07
 
 Business terms for the Predictive Operations outcome package (In-Store Equipment Maintenance, Store Performance, and Workforce Optimization). Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md).
 

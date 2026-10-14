@@ -156,6 +156,8 @@ The two most common rejection causes to avoid: misfiling outcome (gold) content 
 
 Ping the domain owner or reviewer in `REVIEWERS.md`, the canonical-core owner for placement and promotion calls, and maintainers for merge and publication questions. Discussion belongs in Issues, not in committed files.
 
-Reference links: [`docs/data-model-standards.md`](docs/data-model-standards.md) (the standard), [`docs/architecture.md`](docs/architecture.md), [`GOVERNANCE.md`](GOVERNANCE.md), [`REVIEWERS.md`](REVIEWERS.md), [`STATUS.md`](STATUS.md), [`governance/decisions/`](governance/decisions/), and the issue and PR templates.
+An AI skill makes this easier: `ordm-data-modeling` authors or adapts a conformant model. It uses the open Agent Skills format, is in [`.agents/skills/`](.agents/skills/) and [`.claude/skills/`](.claude/skills/), and is available as soon as you open this repo in Claude Code, GitHub Copilot or OpenAI Codex. See [`docs/ai-skills.md`](docs/ai-skills.md) to plug it into your own or a customer repo.
+
+Reference links: [`docs/data-model-standards.md`](docs/data-model-standards.md) (the standard), [`docs/ai-skills.md`](docs/ai-skills.md) (the AI skill), [`docs/architecture.md`](docs/architecture.md), [`GOVERNANCE.md`](GOVERNANCE.md), [`REVIEWERS.md`](REVIEWERS.md), [`STATUS.md`](STATUS.md), [`governance/decisions/`](governance/decisions/), and the issue and PR templates.
 
 The process is intentionally light while the group is small. Jump in, and we add structure as volume grows.

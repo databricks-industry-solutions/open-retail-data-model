@@ -1,8 +1,8 @@
 # Logistics — Business Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
-Business terms for the logistics domain. Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md).
+Business terms for the logistics domain. Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Tables
 

@@ -93,7 +93,7 @@ on hover), filter/search, Matrix and Graph views, and drill-down (landing → pe
 with per-column PII accents, FK/PK column highlighting, use-case grouping that reveals the core each use
 case consumes, a navigator minimap, and click-through to each table's glossary term and ODCS contract —
 ORDM ships an **interactive explorer**: a self-contained static SPA (Cytoscape.js, all-MIT deps) generated
-from `explorer/public/model.json` and deployed to a public GitHub Pages site. Run it locally:
+from `explorer/public/model.json` and deployed to a public GitHub Pages site. Run it locally (Node 22.12 or later; `explorer/.nvmrc` pins Node 22):
 
 ```bash
 cd explorer && npm ci && npm run dev

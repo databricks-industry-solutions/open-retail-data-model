@@ -1,6 +1,6 @@
 # Canonical Core — Marketing
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 The conformed **Marketing** domain. Part of the ORDM [canonical core](../README.md). It holds the conformed **promotion** dimension (a dimension of the POS `sales` fact — Kimball's Date · Product · Store · Promotion), consumed by the Promote with Purpose (trade promotion) outcome.
 
