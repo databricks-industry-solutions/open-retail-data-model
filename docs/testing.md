@@ -67,7 +67,7 @@ make check                                       # every generated artifact is i
 
 `make check` runs the artifact-drift gates (`check-odcs`/`check-er`/`check-model`/`check-svg`/`check-status`, plus the matrix) and `check-version` (every version stamp equals `VERSION`) that CI also runs; run **`make regen`** after any model change to regenerate and commit them (and `make regen-svg` if you touched an ER diagram - that render needs Node + mermaid-cli, though the `check-svg` gate itself is pure-python). See [CONTRIBUTING](../CONTRIBUTING.md) for the full source-of-truth flow.
 
-The two ORDM Claude Code skills help here too: `ordm-data-model-review` pre-checks your change against the standard before you open the PR, and `ordm-data-modeling` authors conformant DDL in the first place. See `docs/claude-skills.md`.
+The ORDM modeling skill helps here too: `ordm-data-modeling` authors conformant DDL in the first place. See [`docs/ai-skills.md`](ai-skills.md).
 
 ## Adding a new check
 

@@ -36,6 +36,10 @@ per-folder status lines are generated from it; ladder definitions are in
 
 ### Standards, governance & ADRs
 
+- **An AI skill for any tool.** `ordm-data-modeling`, the skill that authors or adapts
+  ORDM-conformant models, is published in the open Agent Skills format, in `.agents/skills/` and
+  `.claude/skills/`, so Claude Code, GitHub Copilot, OpenAI Codex and other tools that support Agent
+  Skills pick it up. [`docs/ai-skills.md`](docs/ai-skills.md) says how to plug it in (#180).
 - The initial-release self-review exception is off now that 0.5 is public. The self-reviewed
   deliverables 0.5 published stay ✅ while 0.5 is the current release; before the next release,
   each needs a second, independent sign-off or goes back to 🟢, and `gen_status.py --check`
@@ -70,6 +74,8 @@ per-folder status lines are generated from it; ladder definitions are in
   source-map-js to 1.2.2 (folded into one change). The explorer now needs Node 22.12 or later
   (`explorer/.nvmrc`)
   (#182).
+- **Public Model Explorer.** The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from this repository, so it shows only the published model and its source links resolve (#180).
+- **Each change credited to its author.** After the first publication, this repository is updated one change at a time: every change made in the working repository becomes one commit here, authored by the person who made it, with everyone else who worked on it as a co-author (#180).
 
 ## [0.5] — 2026-10-13
 
@@ -101,7 +107,7 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   core domains and six empty `notebook-templates/` folders, plus every `.gitkeep` and the two
   working notes under `docs/superpowers/`. Sample rows
   come from the generators; the docs no longer list a `samples/` folder.
-- The review skill is marked staging-only in `docs/claude-skills.md`.
+- The review skill, which backs the maintainers' AI review, is not published.
 
 ### Outcome packages
 

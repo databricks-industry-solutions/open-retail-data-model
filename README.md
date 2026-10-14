@@ -157,7 +157,7 @@ Most retailers don't start from a clean slate. The **Vibe Modeling Agent** is a 
 - [ER diagrams](docs/er-diagrams.md) — how the diagrams are generated from the DDL, kept in sync, and rendered light/dark
 - [Model explorer](https://open-retail-data-model.github.io/model-explorer/) (interactive, browser-based): navigate the canonical core and outcome packages, drill into columns/keys/PII, and follow use-case to core lineage. Built from the DDL; [source in `explorer/`](explorer/)
 - [Testing and CI](docs/testing.md) — what the gates do and how to run them locally
-- Claude Code skills — modeling and review skills, and how to plug them in
+- [AI skills](docs/ai-skills.md): the ORDM modeling skill for Claude Code, GitHub Copilot, OpenAI Codex and other tools that support Agent Skills, and how to plug it in
 - [Adapting ORDM with the Vibe Modeling Agent](docs/vibe-modeling-integration.md)
 - [Status](STATUS.md) · [Reviewers](REVIEWERS.md) · [Governance](GOVERNANCE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Contributors](#contributors) · [FAQ](docs/faq.md)
 
