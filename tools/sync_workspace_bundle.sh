@@ -7,9 +7,10 @@
 # import-dir .` uploaded the WHOLE checkout one file at a time (~1,050 files incl. the
 # explorer, contracts, diagrams and docs) and took ~3 minutes before the job could start.
 #
-# This uploads only what the job reads (the model SQL, generators, tools, DQ runner and
-# config, minus diagrams) and does it with bounded parallelism. Every python_file path the job
-# spec names is unchanged under the synced folder, so the job and the PR comment link still work.
+# This uploads only what the job reads (the model SQL, the generators, tools, the DQ runner,
+# the bootstrap SQL and config, minus diagrams) and does it with bounded parallelism. Every
+# python_file path the job spec names is unchanged under the synced folder, so the job and
+# the PR comment link still work.
 # Notebook-source files (e.g. notebook-templates/*.sql) may land at a different browsable path than
 # import-dir gave them; the job does not run them. Measured: 568 files in ~30s.
 #
@@ -25,10 +26,12 @@ PAR="${2:-16}"
 CLEAN="${3:-}"
 
 # What the job reads. Keep in sync with the job spec's python files and their inputs
-# (tools/apply_model_ddl.py reads canonical-core, outcome-packages, runtime/examples, standards and
-# databricks.yml; generate_all reads runtime/synthetic-data; run_checks reads the checks.sql files).
-PATHS=(canonical-core outcome-packages runtime tools standards
-       databricks.yml requirements-dev.txt)
+# (tools/apply_model_ddl.py reads canonical-core, outcome-packages, the bootstrap SQL in
+# runtime/examples/deploy-with-dab, standards and databricks.yml; generate_all reads
+# runtime/synthetic-data (generators and seeds.yaml); run_checks in runtime/data-quality reads the
+# checks.sql files).
+PATHS=(canonical-core outcome-packages runtime/synthetic-data runtime/data-quality
+       runtime/examples/deploy-with-dab tools standards databricks.yml requirements-dev.txt)
 
 STAGE="$(mktemp -d)"
 FAILED="$(mktemp)"

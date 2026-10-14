@@ -2,7 +2,7 @@
 
 > Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
 
-Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md). This package covers two capabilities on one schema. The **Next Best Action (NBA)** engine for the store floor: it normalizes disparate real-time triggers into
+Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md). This package covers two capabilities on one schema. The **Next Best Action (NBA)** engine for the store floor: it normalizes disparate real-time triggers into
 a single prioritized task queue routed to the right associate, then closes the loop by capturing the
 response and the real-world outcome. It **builds on** the canonical core rather than redefining it — customer,
 product, and store context are foreign keys into `customer.profile` / `product.product` / `store.store`, and

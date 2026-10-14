@@ -105,7 +105,6 @@ The layout is the same in every outcome package. One file per table / per metric
 | `metric-views/<metric>.sql` | One UC Metric View per file (`CREATE … WITH METRICS LANGUAGE YAML`) |
 | `comments.sql` | Synonyms, display names, glossary terms for Genie / AI-BI |
 | `sample-queries.sql` | Example queries |
-| `notebook-templates/` | Reusable notebooks |
 
 ## Builds on (canonical core)
 

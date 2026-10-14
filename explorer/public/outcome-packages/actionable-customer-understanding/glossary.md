@@ -2,7 +2,7 @@
 
 > Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
 
-Business terms for Customer Lifetime Value, Behavioral Segmentation and Market Analysis. Vendor-neutral; follows the ORDM [data model principles](../../docs/data-model-standards.md).
+Business terms for Customer Lifetime Value, Behavioral Segmentation and Market Analysis. Vendor-neutral; follows the ORDM [data model principles](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Tables & view
 

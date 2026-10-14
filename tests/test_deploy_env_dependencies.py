@@ -373,10 +373,21 @@ def test_lean_pr_workspace_sync_covers_the_job_python_files():
 def test_lean_pr_workspace_sync_includes_the_repo_root_marker_and_data_inputs():
     """Every lean job entry point finds the repo root by walking up to the first directory that
     holds databricks.yml (tools/apply_model_ddl.py, runtime/data-quality/run_checks.py). If the sync drops
-    it, every glob resolves against the wrong root and the job can pass vacuously. runtime/examples/ is
-    read by apply_model_ddl. Neither is a python import, so the import-closure test above can't
-    see them."""
+    it, every glob resolves against the wrong root and the job can pass vacuously. The bootstrap
+    SQL in runtime/examples/deploy-with-dab/ is read by apply_model_ddl. Neither is a python
+    import, so the import-closure test above can't see them."""
     paths = {p.rstrip("/") for p in _lean_sync_paths()}
-    missing = {"databricks.yml", "runtime"} - paths
+    src = open(os.path.join(REPO, "tools", "apply_model_ddl.py")).read()
+    m = re.search(r'^BOOTSTRAP = os\.path\.join\(REPO_ROOT, (.*)\)$', src, re.MULTILINE)
+    assert m, "could not find BOOTSTRAP = os.path.join(REPO_ROOT, ...) in tools/apply_model_ddl.py"
+    bootstrap_dir = "/".join(re.findall(r'"([^"]+)"', m.group(1))[:-1])
+    # runtime/synthetic-data/seeds.yaml is read by path (_common.load_domain_config), not imported;
+    # without it the generators fall back to empty seeds and volumes on the workspace.
+    seeds = "runtime/synthetic-data/seeds.yaml"
+    if not any(seeds == p or seeds.startswith(p + "/") for p in paths):
+        missing_seeds = {seeds}
+    else:
+        missing_seeds = set()
+    missing = ({"databricks.yml", bootstrap_dir} - paths) | missing_seeds
     assert not missing, ("tools/sync_workspace_bundle.sh PATHS must include: "
                          + ", ".join(sorted(missing)))

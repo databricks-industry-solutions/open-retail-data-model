@@ -2,7 +2,7 @@
 
 > Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
 
-Business terms for the equipment domain. Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md).
+Business terms for the equipment domain. Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 
 ## Tables
 

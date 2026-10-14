@@ -2,7 +2,7 @@
 
 > Status: 🟢 Review complete (0.5)
 
-Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md). The retail-media
+Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md). The retail-media
 FACTS + metrics built on this package's co-located retail-media dimensions (advertiser, campaign, ad_group,
 creative, placement, experiment, experiment_cell, delivery_channel, keyword — gold; ADR 0021) + silver marketing
 dimensions (promotion, audience per ADR 0022) and core product/store/profile and the sales facts.

@@ -9,7 +9,6 @@ import glob
 import json
 import os
 import re
-import shutil
 import sys
 from typing import NamedTuple
 
@@ -21,7 +20,7 @@ from tools.ordm_ddl.parser import (
     build_silver_schema,
     infer_all_gold_types,
 )
-from tools.ordm_ddl.emitters.json_model import JsonModelEmitter
+from tools.ordm_ddl.emitters.json_model import SOURCE_TREE_URL, JsonModelEmitter
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PUBLIC = os.path.join(ROOT, "explorer", "public")
@@ -262,6 +261,53 @@ def _read_bytes(path: str) -> bytes:
         return fh.read()
 
 
+# A Markdown inline link: [text](target) with no whitespace in the target. Titled links
+# ([x](path "t")), angle-bracket targets and reference-style definitions are not matched;
+# Links inside code spans or fenced blocks are matched (and rewritten) like any other. The
+# glossaries use none of these today. tests/test_explorer_public_assets.py reuses this
+# pattern and is_external_target(), so the guard and the rewriter cannot drift apart.
+_MD_LINK = re.compile(r"(\]\()([^)\s]+)(\))")
+# Targets the rewrite never touches: a URL scheme, an in-page anchor, a root-absolute path.
+_EXTERNAL_TARGET = re.compile(r"^[a-z][a-z0-9+.-]*:|^#|^/")
+
+
+def is_external_target(target: str) -> bool:
+    return bool(_EXTERNAL_TARGET.match(target))
+
+
+def staged_bytes(src: str, rel: str, staged: set[str]) -> bytes:
+    """The bytes the explorer serves for a staged asset.
+
+    Contracts are copied as-is. A glossary is copied with one change: a relative link
+    whose target is NOT itself staged (e.g. ../../docs/data-model-standards.md, a design
+    note, an ADR) would resolve under explorer/public/ to a file the site does not serve,
+    so it is rewritten to the target's absolute URL in the source repo (the same base as
+    the panel's GitHub link). Links between staged files, anchors and absolute URLs are
+    left alone.
+    """
+    data = _read_bytes(src)
+    if not rel.endswith(".md"):
+        return data
+    base = os.path.dirname(rel)
+    blob_url = SOURCE_TREE_URL.replace("/tree/", "/blob/", 1)
+
+    def fix(m: re.Match) -> str:
+        target = m.group(2)
+        if is_external_target(target):
+            return m.group(0)
+        path, sep, frag = target.partition("#")
+        repo_rel = os.path.normpath(os.path.join(base, path)).replace(os.sep, "/")
+        if repo_rel.startswith("..") or repo_rel in staged:
+            return m.group(0)
+        abs_path = os.path.join(ROOT, repo_rel)
+        if not os.path.exists(abs_path):
+            return m.group(0)  # a dead link stays visible to the repo's own link checks
+        url_base = SOURCE_TREE_URL if os.path.isdir(abs_path) else blob_url
+        return m.group(1) + f"{url_base}/{repo_rel}" + (sep + frag if sep else "") + m.group(3)
+
+    return _MD_LINK.sub(fix, data.decode("utf-8")).encode("utf-8")
+
+
 def build_model() -> dict:
     parser, jm = DdlParser(), JsonModelEmitter()
     units = []
@@ -456,10 +502,12 @@ def main() -> int:
     orphans = staged_orphans(expected)
 
     stale = have != content
-    # An asset is stale if its staged copy is missing or differs from the source...
+    staged = {rel for _, rel in assets}
+    # An asset is stale if its staged copy is missing or differs from what staging
+    # would write (the source, with glossary links out of the site made absolute)...
     for src, rel in assets:
         dest = os.path.join(PUBLIC, rel)
-        if not os.path.exists(dest) or _read_bytes(dest) != _read_bytes(src):
+        if not os.path.exists(dest) or _read_bytes(dest) != staged_bytes(src, rel, staged):
             stale = True
             break
     # ...or if a staged copy lingers whose source the model no longer references (a
@@ -478,7 +526,8 @@ def main() -> int:
         for src, rel in assets:
             dest = os.path.join(PUBLIC, rel)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
-            shutil.copyfile(src, dest)
+            with open(dest, "wb") as fh:
+                fh.write(staged_bytes(src, rel, staged))
         for path in orphans:  # prune staged copies the model no longer references
             os.remove(path)
         return 0

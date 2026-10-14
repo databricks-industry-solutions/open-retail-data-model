@@ -2,7 +2,7 @@
 
 > Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
 
-Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md). Built entirely
+Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md). Built entirely
 on the thin customer core — no product/transaction/campaign data.
 
 ## Tables & views
@@ -82,4 +82,4 @@ The suppression ledger; a
 `segment_membership`, and `gold_activatable_audience_current` is the activation join. The **activation layer**
 is now BUILT too, ADR 0026: `activation_destination`, `activation_job`, and `campaign_touch` — shipped as
 schema + DQ contract, adopter-owned producers like `customer_profile_snapshot`.) See
-[`docs/design/customer-identity/`](../../docs/design/customer-identity/).
+[`docs/design/customer-identity/`](https://github.com/databricks-industry-solutions/open-retail-data-model/tree/main/docs/design/customer-identity).

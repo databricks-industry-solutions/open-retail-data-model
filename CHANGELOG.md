@@ -22,10 +22,6 @@ per-folder status lines are generated from it; ladder definitions are in
      data model, ### Outcome packages, ### Standards, governance & ADRs, ### CI &
      automation, ### Data contracts & synthetic data). -->
 
-### CI & automation
-
-- **Curated publication with contributor credit.** The public repository is built from the working repository by a curated sync: one commit per canonical-core domain and outcome package, authored by the people who built it (the maintainer only where they are the sole contributor), with every other contributor as a co-author. The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from the published model.
-
 ### Outcome packages
 
 - **Every outcome package is 🟢 Review complete.** `data-sharing-with-suppliers` is signed off
@@ -53,6 +49,15 @@ per-folder status lines are generated from it; ladder definitions are in
   working notes under `docs/superpowers/`. Sample rows
   come from the generators; the docs no longer list a `samples/` folder.
 - The review skill is marked staging-only in `docs/claude-skills.md`.
+- Follow-ups to the layout change: the package READMEs and `governance/README.md` no longer list
+  the deleted `notebook-templates/` and `meeting-notes/` folders, `runtime/examples/README.md`
+  lists `notebooks/`, and the per-PR workspace sync uploads only what the job reads
+  (`runtime/synthetic-data`, `runtime/data-quality` and the deploy bootstrap SQL) instead of
+  all of `runtime/` (#179)
+- Model Explorer: the glossary copies under `explorer/public/` carry absolute source-repo URLs
+  instead of repo-relative paths for files the site does not serve (the data-model standard, design
+  notes, ADRs), so a reader can follow them from the raw glossary the site shows
+  (`tools/gen_model_json.py`) (#179)
 
 ## [0.5] — 2026-10-13
 
@@ -434,7 +439,7 @@ Governance decisions are recorded as ADRs (`governance/decisions/`, currently 00
 - **Agentic advisory AI PR review** + DoD status, via Claude Code on the Databricks gateway (#19)
 - Durable AI-review capture to a log branch (Delta-queryable) (#32)
 - Advisory PR-branch-freshness check (sticky "behind main" comment) (#48)
-- **Grounded, bidirectional model-coverage reviewer** (ADR 0014, 0015) (#71, #72)
+- **Grounded, bidirectional model-coverage reviewer** (#71, #72)
 - Generated, drift-proof surfaces: README status tables from `STATUS.md` (`gen_status.py`, #62) and the auto-generated Contributors grid (`gen_contributors.py`, #64)
 
 ### Data contracts & synthetic data
