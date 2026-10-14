@@ -1,6 +1,6 @@
 # ADR 0030 — In-store sensing signals are never an upstream dependency of pricing
 
-**Status:** Accepted (2026-07-31) — all four scopes in the corrective-review approval record are signed off (CSS owner, CMN owner, Maintainers, Privacy). Amended 2026-10-09 by [ADR 0041](0041-esl-observation-only-no-price-actuation.md): the ESL layer is observation-only, `esl_price_event` is implemented as `esl_price_observation`, and the pricing-declaration fields in item 3 are deferred to a future pricing-owned surface. The invariant itself is unchanged. The amendment is accepted by the maintainer; this ADR's CSS-owner and Privacy scopes have not yet acknowledged it (record).
+**Status:** Accepted (2026-07-31) — all four scopes in the corrective-review approval record are signed off (CSS owner, CMN owner, Maintainers, Privacy). Amended 2026-10-09 by [ADR 0041](0041-esl-observation-only-no-price-actuation.md): the ESL layer is observation-only, `esl_price_event` is implemented as `esl_price_observation`, and the pricing-declaration fields in item 3 are deferred to a future pricing-owned surface. The invariant itself is unchanged. The amendment is accepted by the maintainer (record); this ADR's CSS-owner and Privacy scopes have acknowledged it and the DPO review of the scope change is done (recorded as closed by the maintainer, 2026-10-13).
 
 ## Context
 

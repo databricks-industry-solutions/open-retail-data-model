@@ -8,6 +8,8 @@ sync (so a stale README fails CI, exactly like the conformance matrix).
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -513,7 +515,40 @@ def test_initial_publication_flag_gates_the_self_review_check(monkeypatch):
     monkeypatch.setattr(gen_status, "INITIAL_PUBLICATION_SELF_REVIEW", True)
     assert self_review_sections() == []
     monkeypatch.setattr(gen_status, "INITIAL_PUBLICATION_SELF_REVIEW", False)
+    # published in the initial release under the exception, and VERSION is still that release
+    assert "interaction" in gen_status.INITIAL_RELEASE_PUBLISHED
+    monkeypatch.setattr(gen_status, "MODEL_VERSION", gen_status.INITIAL_RELEASE)
+    assert self_review_sections() == []
+    # a deliverable NOT published in that release needs the second sign-off again
+    monkeypatch.setattr(gen_status, "INITIAL_RELEASE_PUBLISHED", frozenset())
     assert len(self_review_sections()) == 1
+
+
+def test_initial_release_exemption_ends_with_the_next_release(monkeypatch):
+    """The exemption covers the initial release only: once VERSION moves past it, a self-reviewed
+    row it published needs its second sign-off like any other."""
+    status, status_text, readme, reviewers = _repo_check_inputs()
+    status = dict(status, interaction="✅")
+    monkeypatch.setattr(gen_status, "INITIAL_PUBLICATION_SELF_REVIEW", False)
+    assert gen_status.self_review_exempt(gen_status.INITIAL_RELEASE) == gen_status.INITIAL_RELEASE_PUBLISHED
+    assert gen_status.self_review_exempt("0.6") == frozenset()
+    monkeypatch.setattr(gen_status, "MODEL_VERSION", "0.6")
+    items = [i for h, its in gen_status.collect_check_problems(status, status_text, readme, reviewers)
+             if h.startswith("Self-reviewed rows") for i in its]
+    assert any(i.startswith("interaction is ✅") for i in items)
+
+
+def test_initial_release_exempt_list_matches_published_rows():
+    """While VERSION is the initial release, the exempt list is exactly what it published: every
+    key is a real STATUS.md row and still ✅. A later ✅ must not be added here (it needs a second
+    sign-off instead)."""
+    if gen_status.MODEL_VERSION != gen_status.INITIAL_RELEASE:
+        pytest.skip("the initial-release exemption has expired, so the list no longer gates anything")
+    status, *_ = _repo_check_inputs()
+    assert gen_status.INITIAL_RELEASE_PUBLISHED <= set(status), "exempt key is not a STATUS.md row"
+    demoted = sorted(k for k in gen_status.INITIAL_RELEASE_PUBLISHED if status[k] != "✅")
+    assert not demoted, (f"{demoted} left ✅: remove them from INITIAL_RELEASE_PUBLISHED; a "
+                         "self-reviewed one needs a second sign-off ('#A, #B') to be ✅ again")
 
 
 def test_self_reviewed_row_needs_a_second_signoff_for_published():
@@ -560,7 +595,8 @@ def test_check_reports_every_problem_in_one_run():
     assert any(h.startswith("Review-complete rows in STATUS.md need a recorded sign-off") for h in headings)
     items = [i for _, its in sections for i in its]
     assert "canonical-core/store/README.md: stale status line" in items
-    assert any(i.startswith("payment is 🟢 in STATUS.md but has no recorded sign-off") for i in items)
+    assert any(i.startswith("payment is ") and "in STATUS.md but has no recorded sign-off" in i
+               for i in items)
 
 
 def test_a_status_note_on_a_following_line_or_below_survives_write(tmp_path):
@@ -572,3 +608,36 @@ def test_a_status_note_on_a_following_line_or_below_survives_write(tmp_path):
         assert gen_status._update_status_line_in_file(f, "customer", status)
         assert f.read_text() == "# T\n\n> Status: 🟢 Review complete (" + V + ")\n" + note + "\nBody.\n"
         assert gen_status._status_line_problem(f, "customer", status) == ""
+
+
+def test_render_badge_says_published_when_every_core_domain_is():
+    all_published = {key: "✅" for key, _ in gen_status.CORE_LAYOUT}
+    n = len(gen_status.CORE_LAYOUT)
+    assert f"{n}%2F{n}_published" in gen_status.render_badge(all_published)
+    mixed = dict(all_published, customer="🟢")
+    assert f"{n}%2F{n}_review--complete" in gen_status.render_badge(mixed)
+
+
+def test_layer_readme_status_cells_follow_status_md():
+    text = ("| Domain | Status | Reviewer |\n|---|---|---|\n"
+            "| [Customer](customer/) | 🟢 Review complete | R |\n"
+            "| [Store](store/) | ✅ Published | R |\n"
+            "| [Promote with Purpose](promote-with-purpose/)   | 🟢 Review complete   |\n")
+    status = {"customer": "✅ Published", "store": "✅ Published", "promote-with-purpose": "✅ Published"}
+    new, stale = gen_status._sync_layer_table(text, status)
+    assert stale == ["customer", "promote-with-purpose"]
+    lines = new.splitlines()
+    assert lines[2] == "| [Customer](customer/) | ✅ Published | R |"
+    assert lines[3] == "| [Store](store/) | ✅ Published | R |"
+    # a column-aligned cell keeps its width
+    assert lines[4] == "| [Promote with Purpose](promote-with-purpose/)   | ✅ Published         |"
+    assert gen_status._sync_layer_table(new, status) == (new, [])
+
+
+def test_layer_readme_sync_skips_tables_without_a_status_column():
+    text = ("| Domain | Description |\n|---|---|\n| [Customer](customer/) | People and accounts |\n\n"
+            "| Domain | Status |\n|---|---|\n| [Customer](customer/) | 🟢 Review complete |\n")
+    new, stale = gen_status._sync_layer_table(text, {"customer": "✅ Published"})
+    assert stale == ["customer"]
+    assert "| [Customer](customer/) | People and accounts |" in new
+    assert "| [Customer](customer/) | ✅ Published |" in new

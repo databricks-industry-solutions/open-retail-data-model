@@ -22,33 +22,8 @@ per-folder status lines are generated from it; ladder definitions are in
      data model, ### Outcome packages, ### Standards, governance & ADRs, ### CI &
      automation, ### Data contracts & synthetic data). -->
 
-### Outcome packages
-
-- **Every outcome package is 🟢 Review complete.** `data-sharing-with-suppliers` is signed off
-  (#177), a self-review disclosed in
-  `REVIEWERS.md`; #165 had left it out until the Media Measurement fix (#163) merged. No `TODO(owner)`
-  is left in any `use-cases.yaml`: the maintainer confirmed Realized Margin & Revenue Leakage done (it
-  has no card owner), accepted the CDP status call in place of the card owner's confirmation,
-  confirmed the `commerce-media-networks` and `balancing-margin-and-volume` `tables:` mappings, and
-  recorded who confirmed the `smarter-demand-and-inventory-decisions` and `connected-store-signals`
-  use cases (#178).
-
 ### Repository layout
 
-- Fewer top-level folders (18 to 11). What runs on a workspace moves under `runtime/`
-  (`runtime/synthetic-data/`, `runtime/data-quality/`, `runtime/examples/`, with the contracts
-  notebook in `runtime/examples/notebooks/` and the bundle cleanup script in
-  `runtime/examples/deploy-with-dab/`). The design notes move to `docs/design/`, and the
-  overview diagram to `docs/diagrams/`. The bundle, CI, the per-PR deploy, the tests and every
-  link follow the new paths.
-  The bundle cleanup script and the contracts notebook, staging-only before, now publish with
-  `runtime/examples/` (maintainer decision, 2026-10-13).
-- Placeholder-only folders are gone: `dashboards/`, `scripts/`, `tools/validators/`,
-  `governance/meeting-notes/`, `synthetic-data/samples/`, the empty `samples/` folders in nine
-  core domains and six empty `notebook-templates/` folders, plus every `.gitkeep` and the two
-  working notes under `docs/superpowers/`. Sample rows
-  come from the generators; the docs no longer list a `samples/` folder.
-- The review skill is marked staging-only in `docs/claude-skills.md`.
 - Follow-ups to the layout change: the package READMEs and `governance/README.md` no longer list
   the deleted `notebook-templates/` and `meeting-notes/` folders, `runtime/examples/README.md`
   lists `notebooks/`, and the per-PR workspace sync uploads only what the job reads
@@ -59,8 +34,23 @@ per-folder status lines are generated from it; ladder definitions are in
   notes, ADRs), so a reader can follow them from the raw glossary the site shows
   (`tools/gen_model_json.py`) (#179)
 
+### Standards, governance & ADRs
+
+- The initial-release self-review exception is off now that 0.5 is public. The self-reviewed
+  deliverables 0.5 published stay ✅ while 0.5 is the current release; before the next release,
+  each needs a second, independent sign-off or goes back to 🟢, and `gen_status.py --check`
+  enforces it once `VERSION` moves past 0.5. `STATUS.md` records that `transaction`, `order` and
+  `inventory` were published without the Lakebase binding the Definition of Done expects of the
+  transactional spine; it is deferred until its generator exists. The `connected-store-signals` ✅
+  gate is closed: ADR 0030's CSS-owner and Privacy scopes acknowledged ADR 0041's amendment and the
+  DPO review is done, as the maintainer recorded on 2026-10-13 (ADRs 0030 and 0041 updated)
+  (#181)
+
 ### CI & automation
 
+- `tools/gen_status.py` also keeps the Status column of `canonical-core/README.md` and
+  `outcome-packages/README.md` in step with `STATUS.md`: `--write` refreshes it and `--check`
+  fails on a stale cell (#181)
 - Dependency updates are automated in the working repository: weekly grouped updates for the
   explorer's npm packages, the Python requirements (except the exactly pinned `sqlglot`) and the
   GitHub Actions, plus security updates. They reach this repository with each publication
@@ -83,8 +73,36 @@ can map to another package's gold view. The model version now has one source, `V
 `make release` cuts a release. All file headers move to **0.5**, the first release without a
 `-beta` label.
 
+Published to the public repository as v0.5 on 2026-10-13: every canonical-core domain and
+outcome package is ✅ Published, each as its own commit authored by the people who built it.
+
+### Repository layout
+
+- Fewer top-level folders (18 to 11). What runs on a workspace moves under `runtime/`
+  (`runtime/synthetic-data/`, `runtime/data-quality/`, `runtime/examples/`, with the contracts
+  notebook in `runtime/examples/notebooks/` and the bundle cleanup script in
+  `runtime/examples/deploy-with-dab/`). The design notes move to `docs/design/`, and the
+  overview diagram to `docs/diagrams/`. The bundle, CI, the per-PR deploy, the tests and every
+  link follow the new paths.
+  The bundle cleanup script and the contracts notebook, staging-only before, now publish with
+  `runtime/examples/` (maintainer decision, 2026-10-13).
+- Placeholder-only folders are gone: `dashboards/`, `scripts/`, `tools/validators/`,
+  `governance/meeting-notes/`, `synthetic-data/samples/`, the empty `samples/` folders in nine
+  core domains and six empty `notebook-templates/` folders, plus every `.gitkeep` and the two
+  working notes under `docs/superpowers/`. Sample rows
+  come from the generators; the docs no longer list a `samples/` folder.
+- The review skill is marked staging-only in `docs/claude-skills.md`.
+
 ### Outcome packages
 
+- **Every outcome package reached 🟢 Review complete** (and is ✅ Published in this release). `data-sharing-with-suppliers` is signed off
+  (#177), a self-review disclosed in
+  `REVIEWERS.md`; #165 had left it out until the Media Measurement fix (#163) merged. No `TODO(owner)`
+  is left in any `use-cases.yaml`: the maintainer confirmed Realized Margin & Revenue Leakage done (it
+  has no card owner), accepted the CDP status call in place of the card owner's confirmation,
+  confirmed the `commerce-media-networks` and `balancing-margin-and-volume` `tables:` mappings, and
+  recorded who confirmed the `smarter-demand-and-inventory-decisions` and `connected-store-signals`
+  use cases (#178).
 - **Governed KPIs for every use case.** The use cases that had none now have UC Metric Views, each
   checked against the deployed synthetic data:
   - **agentic-commerce:** `mv_intent_discovery_result_performance` (Result CTR, Add-to-Cart Rate,

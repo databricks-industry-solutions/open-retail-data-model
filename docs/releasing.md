@@ -66,7 +66,12 @@ patch release uses the third part, for example `0.5.1`.
    `make regen` then refreshes the derived copies, such as the explorer glossary mirrors.
 4. Add a short summary paragraph under the new release heading, as earlier releases have.
 5. Run `pytest -q` and `make check`, then open the release PR against `main`. Use one PR per
-   release; it notifies the whole reviewer team.
+   release; it notifies the whole reviewer team. The first bump past 0.5, a patch such as 0.5.1
+   included, ends the initial-release self-review exemption, so `make check` fails for each
+   self-reviewed ✅ row until its second, independent sign-off is recorded in `REVIEWERS.md`
+   (`#A, #B`) or the row goes back to 🟢 ([GOVERNANCE.md](../GOVERNANCE.md)). Recheck, too, the
+   Lakebase binding 0.5 published the transactional spine without (the note in `STATUS.md`),
+   which no check enforces.
 
 If the PR merges on a later day, set the heading date to the merge date before merging.
 

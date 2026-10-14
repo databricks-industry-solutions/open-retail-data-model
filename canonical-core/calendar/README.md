@@ -1,6 +1,6 @@
 # Canonical Core — Calendar
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 The conformed **Calendar** domain — the shared fiscal calendar and FX-rate reference dimensions. Part of the ORDM [canonical core](../README.md).
 

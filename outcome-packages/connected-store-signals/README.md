@@ -1,6 +1,6 @@
 # Outcome Package — Connected Store Signals
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 
 ## Business outcome
 
@@ -10,8 +10,8 @@ actually working, whether refrigerated stock stayed in range, where serialized i
 was last observed, whether products are available and correctly presented on the shelf, and
 whether displayed prices match the price of record. Four use cases share one model:
 all four (**Foot Traffic Analysis**, **IoT Sensor Monitoring**, **RFID Tracking** and
-**Smart Shelf**) are done. The domain-reviewer sign-off is recorded in #165, so the package is
-🟢 Review complete; that package artifact status is independent of the use-case completion axis.
+**Smart Shelf**) are done. The domain-reviewer sign-off is recorded in #165, so the package reached
+🟢 Review complete and was ✅ Published in 0.5; that package artifact status is independent of the use-case completion axis.
 
 The package is **aggregate-only by construction**. There is no person-level tier, and there
 is no privately-held one either: the never-publish list — MAC address hashed or otherwise,

@@ -1,6 +1,6 @@
 # Outcome Package — Data Sharing with Suppliers
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 
 ## Business outcome
 

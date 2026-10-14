@@ -1,6 +1,6 @@
 # Commerce Media Networks — Business Glossary
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 Vendor-neutral; follows the ORDM [data model standards](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md). The retail-media
 FACTS + metrics built on this package's co-located retail-media dimensions (advertiser, campaign, ad_group,

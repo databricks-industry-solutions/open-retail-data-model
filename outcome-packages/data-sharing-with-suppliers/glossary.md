@@ -1,6 +1,6 @@
 # Data Sharing with Suppliers — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-13
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-13
 
 Business terms for this package's four use cases — Category Growth, Media Measurement, Joint Demand Planning, and Data Monetization. Vendor-neutral; follows the ORDM [data model standards](../../docs/data-model-standards.md).
 

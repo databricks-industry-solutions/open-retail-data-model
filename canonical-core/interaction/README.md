@@ -1,6 +1,6 @@
 # Canonical Core — Interaction
 
-> Status: 🟢 Review complete (0.5)
+> Status: ✅ Published (0.5)
 
 ## Overview
 

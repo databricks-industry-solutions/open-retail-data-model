@@ -1,6 +1,6 @@
 # Promote with Purpose — Business Glossary
 
-> Status: 🟢 Review complete (0.5) · Last reviewed: 2026-10-07
+> Status: ✅ Published (0.5) · Last reviewed: 2026-10-07
 
 Business terms for the Trade Promotion and Location-Based Offers use cases. Vendor-neutral; follows the ORDM [data model principles](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md).
 

@@ -1,8 +1,8 @@
 # Outcome Package — Agentic Commerce
 
-> Status: 🟢 Review complete (0.5) · Marketplace listing: planned
+> Status: ✅ Published (0.5) · Marketplace listing: planned
 >
-> MUST tier is complete for all three use cases. The domain-reviewer sign-off is recorded in #165, so the package is 🟢 Review complete (CONTRIBUTING §9). Intent Product Discovery and Conversational Shopping Assistant now include UC Metric Views; together with A2A metric views, the SHOULD tier is complete.
+> MUST tier is complete for all three use cases. The domain-reviewer sign-off is recorded in #165, so the package reached 🟢 Review complete (CONTRIBUTING §9) and was ✅ Published in 0.5. Intent Product Discovery and Conversational Shopping Assistant now include UC Metric Views; together with A2A metric views, the SHOULD tier is complete.
 
 ## Scope
 
