@@ -157,6 +157,7 @@ Most retailers don't start from a clean slate. The **Vibe Modeling Agent** is a 
 - [ER diagrams](docs/er-diagrams.md) — how the diagrams are generated from the DDL, kept in sync, and rendered light/dark
 - [Model explorer](https://open-retail-data-model.github.io/model-explorer/) (interactive, browser-based): navigate the canonical core and outcome packages, drill into columns/keys/PII, and follow use-case to core lineage. Built from the DDL; [source in `explorer/`](explorer/)
 - [Testing and CI](docs/testing.md) — what the gates do and how to run them locally
+- Claude Code skills — modeling and review skills, and how to plug them in
 - [Adapting ORDM with the Vibe Modeling Agent](docs/vibe-modeling-integration.md)
 - [Status](STATUS.md) · [Reviewers](REVIEWERS.md) · [Governance](GOVERNANCE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Contributors](#contributors) · [FAQ](docs/faq.md)
 
@@ -184,11 +185,11 @@ Thanks to everyone who has shaped ORDM. Credit is **repo-wide, not per domain**.
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/vibewisely"><img src="https://github.com/vibewisely.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@vibewisely</b></sub></a></td>
+    <td align="center"><a href="https://github.com/jam-dbx"><img src="https://github.com/jam-dbx.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@jam-dbx</b></sub></a></td>
     <td align="center"><a href="https://github.com/shubhamp051991"><img src="https://github.com/shubhamp051991.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@shubhamp051991</b></sub></a></td>
     <td align="center"><a href="https://github.com/PatrickLeahey"><img src="https://github.com/PatrickLeahey.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@PatrickLeahey</b></sub></a></td>
-    <td align="center"><a href="https://github.com/jam-dbx"><img src="https://github.com/jam-dbx.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@jam-dbx</b></sub></a></td>
-    <td align="center"><a href="https://github.com/adityajain03-png"><img src="https://github.com/adityajain03-png.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@adityajain03-png</b></sub></a></td>
     <td align="center"><a href="https://github.com/mjsturwold"><img src="https://github.com/mjsturwold.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@mjsturwold</b></sub></a></td>
+    <td align="center"><a href="https://github.com/adityajain03-png"><img src="https://github.com/adityajain03-png.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@adityajain03-png</b></sub></a></td>
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/Tagar"><img src="https://github.com/Tagar.png?size=100" width="80" height="80" alt=""/><br/><sub><b>@Tagar</b></sub></a></td>
