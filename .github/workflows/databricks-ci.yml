@@ -111,7 +111,7 @@ jobs:
         # tools/ci_test_durations.py turns these into tests/ci_test_durations.json, which
         # balances the shards.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-${{ matrix.shard }}
           path: junit-*.xml
@@ -168,7 +168,7 @@ jobs:
         # docs/er-diagrams.md.
         run: make regen-ci
       - name: Set up Node (for the mermaid-cli SVG renderer)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
       - name: Render diagram SVGs (incremental)
@@ -307,7 +307,7 @@ jobs:
           python-version: '3.11'
 
       - name: Set up Databricks CLI
-        uses: databricks/setup-cli@8821c27b1fe57472264eeb6e50c1f31d69552f28  # v1.10.0
+        uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7  # v1.20.0
 
       - name: Configure Databricks CLI authentication
         run: |

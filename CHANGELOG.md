@@ -51,14 +51,24 @@ per-folder status lines are generated from it; ladder definitions are in
 - `tools/gen_status.py` also keeps the Status column of `canonical-core/README.md` and
   `outcome-packages/README.md` in step with `STATUS.md`: `--write` refreshes it and `--check`
   fails on a stale cell (#181)
+- Dependency upgrades, folded from the first batch of Dependabot PRs: GitHub Actions
+  `actions/setup-node` v7, `actions/upload-artifact` v7, `actions/download-artifact` v8,
+  `actions/deploy-pages` v5 and `databricks/setup-cli` v1.20.0 (`checkout`, `setup-python`,
+  `setup-java` and `upload-pages-artifact` follow in a later batch); explorer
+  `@playwright/test` 1.64.0 and `cytoscape` 3.34.3. TypeScript 7 and jsdom 30 are left for a
+  follow-up: TypeScript 7 rejects the side-effect CSS import, and jsdom 30 makes
+  `window.document` read-only, which one explorer test relies on. The Python requirements stay
+  lower bounds: Dependabot raises one only when a release falls outside its range
+  (`versioning-strategy: increase-if-necessary`), and Python vulnerabilities are handled from
+  Dependabot alerts (#204).
 - Dependency updates are automated in the working repository: weekly grouped updates for the
   explorer's npm packages, the Python requirements (except the exactly pinned `sqlglot`) and the
-  GitHub Actions, plus security updates. They reach this repository with each publication
+  GitHub Actions. They reach this repository with each publication
   (#182).
 - Explorer dev dependencies: vite 5 to 8.3.4 and vitest 2 to 5.0.4, which also brings
   `@vitest/mocker` 5.0.4, drops `tinypool`, and moves postcss to 8.5.30, nanoid to 3.3.20 and
-  source-map-js to 1.2.2 (the first automated security updates, folded into one change). The explorer
-  now needs Node 22.12 or later (`explorer/.nvmrc`)
+  source-map-js to 1.2.2 (folded into one change). The explorer now needs Node 22.12 or later
+  (`explorer/.nvmrc`)
   (#182).
 
 ## [0.5] — 2026-10-13
