@@ -52,6 +52,12 @@ per-folder status lines are generated from it; ladder definitions are in
 
 ### CI & automation
 
+- The AI PR reviewer spends its spare budget on verification. Before writing, it re-reads the lines
+  it cites and greps for other copies of any statement the PR changes, and it posts nothing itself:
+  its final message is the review. The turn cap goes from 75 to 120 (the 30-minute cap stays the
+  bound). Each completed run logs its turn count and each run its duration, which the review
+  record keeps as `num_turns` and `agent_duration_ms` (record schema 2)
+  (#212)
 - GitHub Actions upgrades: `actions/checkout` v7, `actions/setup-python` v7, `actions/setup-java`
   v6, `actions/upload-pages-artifact` v5, `dorny/paths-filter` v4 and
   `stefanzweifel/git-auto-commit-action` v7.2.0 (pinned SHA), plus the SHA-pinned actions in the
