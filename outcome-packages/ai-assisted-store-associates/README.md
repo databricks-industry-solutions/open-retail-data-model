@@ -221,7 +221,7 @@ writes actions, responses and outcomes anchored to the UTC run date (override wi
   `gold_action_outcome_funnel_daily` and `mv_associate_action_performance`;
 - an **open queue** slice of 2 to 5 actions per associate generated in the 12 hours before the run date,
   with no terminal response. About 70% are persistent tasks (no decay) that stay open 7 to 30 days;
-  the rest decay and expire 2 to 7 days out. The daily deploy regenerates the slice, and even without
+  the rest decay and expire 2 to 7 days out. Each deploy regenerates the slice, and even without
   a redeploy `gold_associate_action_queue_current` keeps rows for about a week.
 
 Actions route only to associates of the same store; about 10% stay unrouted and expire unanswered. The

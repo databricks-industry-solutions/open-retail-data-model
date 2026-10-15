@@ -1,6 +1,6 @@
 # ADR 0028 — Hash surrogate keys for high-volume gold event facts
 
-**Status:** Proposed (2026-07-28)
+**Status:** Accepted (2026-10-15; proposed 2026-07-28) by the maintainer, @Tagar (#213); implemented in `connected-store-signals`.
 
 ## Context
 
@@ -37,6 +37,13 @@ by hash rather than IDENTITY:
 | Interval aggregates (`sensor_report_interval`) | `xxhash64(<durable _id>)` |
 | Raw event facts (`rfid_read_event`, `shelf_reading`, `esl_price_event`) | `xxhash64(<durable _id>)` |
 
+Implemented as: the master `electronic_shelf_label` shipped as `esl_label`; the event facts
+`shelf_reading` and `esl_price_event` shipped as `shelf_state_observation` (ADR 0039) and
+`esl_price_observation` (ADR 0041). The hash-keyed tables under this record are
+`sensor_report_interval`, `rfid_read_event`, `shelf_state_observation` and
+`esl_price_observation`; `tagged_item` is hash-keyed under ADR 0035. Each has a
+`*_sk_collision` check in `outcome-packages/connected-store-signals/checks.sql`.
+
 The durable `<stem>_id STRING NOT NULL` and the named `pk_<table>` constraint are unchanged. Only the
 *derivation* of `_sk` differs, so joins, FK declarations, and the SCD2 join contract (ADR 0025) are
 unaffected.
@@ -47,7 +54,7 @@ and a recomputable key is what makes restatement idempotent. A monotonic IDENTIT
 on every recomputation of the same logical row.
 
 This is legal without amending ADR 0004 because `PK-CONTRACT` is CI-enforced **canonical-core-only**
-(`standards/rules.yaml:53-63`). The deviation is scoped to gold outcome-package facts and does not
+(`PK-CONTRACT` in `standards/rules.yaml`). The deviation is scoped to gold outcome-package facts and does not
 weaken the core.
 
 ## Consequences
