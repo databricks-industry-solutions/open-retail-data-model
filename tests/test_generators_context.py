@@ -122,3 +122,21 @@ def test_per_token_override_applies_when_no_single_schema(monkeypatch):
         assert ctx.schemas["risk"] and ctx.schemas["risk"] != "custom_mk"
     finally:
         monkeypatch.delenv("MARKETING_SCHEMA", raising=False)
+
+
+
+def test_synthetic_data_readme_lists_every_registered_generator():
+    """runtime/synthetic-data/README.md's generator table mirrors the registry exactly, so a new
+    generator cannot ship undocumented and a removed one cannot linger."""
+    import re as _re
+    from pathlib import Path as _P
+    readme = (_P(__file__).resolve().parents[1] / "runtime" / "synthetic-data" / "README.md").read_text()
+    block = readme.split("<!-- GENERATORS:START", 1)[1].split("<!-- GENERATORS:END -->", 1)[0]
+    rows = _re.findall(r"^\| `([a-z_]+)\.py` \| ([^|]*) \| ([^|]*) \|$", block, _re.M)
+    import _registry  # noqa: E402  (generators/ is on sys.path above)
+
+    def cell(keys):
+        return ", ".join(f"`{k}`" for k in sorted(keys)) or "-"
+
+    expected = [(g.name, cell(g.provides), cell(g.depends_on)) for g in _registry.GENERATORS]
+    assert rows == expected, "regenerate the GENERATORS table from generators/_registry.py"

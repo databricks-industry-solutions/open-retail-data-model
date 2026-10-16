@@ -33,7 +33,8 @@ The `deploy_ordm` job (root [`databricks.yml`](../../databricks.yml)) chains, in
 
    **Warehouse concurrency tip (empirically confirmed):** a SQL warehouse admits ~10 concurrent queries **per cluster**, so effective parallelism is bounded by cluster **count**, not warehouse **size** — a bigger warehouse size buys ~zero extra concurrency for these metadata-bound DDL/comment ops (a `COMMENT ON COLUMN` is a near-zero-compute metadata commit; and comments on tables and materialized views are still one statement per column, so that remaining comments phase is many tiny statements whose lever is concurrency; plain gold views take their comments on the CREATE, which cut the model's 1,213 comment statements to 223). **Set `min_num_clusters >= 3`, not just `max`**: the apply/DQ phases are short bursts and autoscale is laggy (adds clusters over minutes), so a warehouse left at `min=1` never scales up mid-burst and extra workers just deepen the queue (measured: 32 workers on a `min=1` warehouse was *slower* than 16). Pre-warm the clusters and **match** `--max_workers` / `--max_parallel` to them (~24 for 3 clusters); going above the admit ceiling is counter-productive. The bundle ships a **fail-safe `16`** (safe on any warehouse, including an un-scaled `min=1` one the bundle can't enforce); opt **up** to ~24 only after you've pre-warmed to `min_num_clusters >= 3`. Keep the size **Small** unless a compute-heavy phase (gold / metric views) proves it needs more. Auto-stop returns it to `min` afterward. Tune this on the warehouse you pass as `warehouse_id` (the bundle does not own a warehouse resource).
 2. **Populate** — the [synthetic-data generators](../synthetic-data/) (on Spark) for the domains that ship one.
-3. **Validate** — [`runtime/data-quality/run_checks.py`](../data-quality/run_checks.py) (on Spark, report-only in the demo deploy).
+3. **Refresh gold** — `refresh_gold_tables` runs [`tools/apply_model_ddl.py`](../../tools/apply_model_ddl.py) once more for the physical gold snapshot tables, so they hold this run's synthetic rows rather than the empty snapshot taken during the DDL step.
+4. **Validate** — [`runtime/data-quality/run_checks.py`](../data-quality/run_checks.py) (on Spark, report-only in the demo deploy).
 
 Each `.py` reads `--catalog`/`--warehouse` (and any `${*_schema}` override) via `get_param`, so the same files run as a bundle task, a notebook, or locally. Preview the DDL without a workspace: `python3 tools/apply_model_ddl.py --catalog <cat> --dry_run true`.
 
@@ -41,10 +42,10 @@ Each `.py` reads `--catalog`/`--warehouse` (and any `${*_schema}` override) via 
 
 ## Tearing it down
 
-To remove everything the bundle deployed, run the teardown helper from the repo root:
+To remove everything the bundle deployed, run the teardown helper (it acts on this repository's bundle wherever you run it from):
 
 ```bash
 ./runtime/examples/deploy-with-dab/cleanup.sh -p <your-profile>
 ```
 
-It wraps `databricks bundle destroy` with a confirmation prompt and cleans up the bundle's artifacts. Pass the same profile you deployed with.
+It shows `databricks bundle summary`, asks for confirmation, then runs `databricks bundle destroy`. Pass the same profile you deployed with (`-p`), and the target with `-t` if you deployed a non-default one: destroy acts on whatever workspace that profile points at.

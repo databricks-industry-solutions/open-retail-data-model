@@ -9,10 +9,10 @@ labels: review
 
 **Reviewer:**
 
-**Checklist (all MUST tier items present per [definition-of-done.md](../../docs/definition-of-done.md))**
+**Checklist (all MUST tier items present per [definition-of-done.md](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/definition-of-done.md))**
 - [ ] Correct & sensible schema (types, keys, relationships, layer integrity)
 - [ ] Vendor-neutral; no proprietary/customer content
-- [ ] Follows [data model principles](../../docs/data-model-standards.md)
+- [ ] Follows [data model principles](https://github.com/databricks-industry-solutions/open-retail-data-model/blob/main/docs/data-model-standards.md)
 - [ ] Comments and identifiers accurate and useful
 - [ ] Synthetic data only — no real or customer-derived data
 - [ ] MUST tier complete (see definition-of-done.md: table DDL + PK contract + audit block + tags + relationships + checks + glossary + samples + docs-sync)

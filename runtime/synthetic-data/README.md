@@ -33,18 +33,44 @@ python3 runtime/synthetic-data/generators/customer.py --catalog <cat> --customer
 
 The same flags become notebook widgets (`catalog`, `customer_schema`, `num_profiles`, `mode`, …) when the file is attached as a notebook task, or env vars (`CATALOG`, `CUSTOMER_SCHEMA`, …).
 
-Parameters accepted by each generator (all optional except `catalog`):
+What each generator writes and reads (all parameters are optional except `catalog`):
 
-| Generator                   | `--catalog` | Schema overrides                                                                                                          | Volume overrides                                             | Other                                 |
-| --------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------- |
-| `customer.py`             | required      | `customer_schema`                                                                                                       | `num_profiles`, `num_accounts`                           | `seed`, `mode`, `base_currency` |
-| `trade_promotion.py`      | required      | `product_schema`, `store_schema`, `calendar_schema`, `transaction_schema`, `marketing_schema`, `promo_schema` | `products`, `stores`, `promotions`, `calendar_weeks` | `mode`, `base_currency`           |
-| `supplier_monitoring.py`  | required      | `supplier_schema`, `procurement_schema`, `product_schema`, `store_schema`, `calendar_schema`                    | `suppliers`, `lines_per_supplier`                        | `mode`, `base_currency`           |
-| `inventory.py`            | required      | `inventory_schema`, `product_schema`, `store_schema`, `calendar_schema`                                             | `num_records`, `trailing_days`                             | `seed`, `mode`                    |
-| `customer_ltv.py`         | required      | `customer_schema`, `product_schema`, `store_schema`, `calendar_schema`, `order_schema`, `payment_schema`, `bmv_schema` | (from `seeds.yaml`); invokes `_market_analysis.py` for sparse observations, unmatched items and benchmark restatements | `mode`, `base_currency` |
-| `logistics.py`            | required      | `logistics_schema`, `supplier_schema`, `product_schema`, `store_schema`                                           | (from`seeds.yaml`)                                         | `mode`                              |
-| `early_risk_detection.py` | required      | `risk_schema`, `logistics_schema`                                                                                     | (from`seeds.yaml`)                                         | `mode`                              |
-| `ai_assisted_store_associates.py` | required | `aasa_schema`, `labor_schema`, `customer_schema`, `product_schema`, `store_schema` | `action_history_days`, `actions_per_store_day`, `open_actions_per_associate_max` | `seed`, `mode` (overwrite only for the action tables), `aasa_anchor_date`, `base_currency` |
+<!-- GENERATORS:START (mirrors generators/_registry.py; tests/test_generators_context.py keeps them in sync) -->
+| Generator | Writes (schema keys) | Reads (schema keys, written by an earlier generator) |
+| --- | --- | --- |
+| `customer.py` | `customer` | - |
+| `trade_promotion.py` | `calendar`, `marketing`, `product`, `promo`, `store`, `transaction` | - |
+| `balancing_margin_and_volume.py` | `bmv` | `calendar`, `inventory`, `product`, `store`, `transaction` |
+| `supplier_monitoring.py` | `procurement`, `supplier` | `calendar`, `product`, `store` |
+| `inventory.py` | `inventory` | `calendar`, `product`, `store` |
+| `customer_ltv.py` | `acu`, `order`, `payment` | `bmv`, `calendar`, `customer`, `marketing`, `product`, `promo`, `store` |
+| `logistics.py` | `logistics` | `procurement`, `product`, `store`, `supplier` |
+| `early_risk_detection.py` | `risk` | `logistics`, `product` |
+| `equipment.py` | `equipment` | `store` |
+| `labor.py` | `labor` | `store` |
+| `predictive_operations.py` | `predops` | `equipment`, `labor`, `store` |
+| `connected_store_signals.py` | `css` | `calendar`, `equipment`, `inventory`, `logistics`, `product`, `store` |
+| `commerce_media_networks.py` | `cmn` | `css`, `customer`, `order`, `product`, `store`, `supplier` |
+| `data_sharing_with_suppliers.py` | `dss` | `cmn`, `product`, `supplier` |
+| `smarter_demand_and_inventory_decisions.py` | `sdi` | `inventory`, `product`, `store`, `transaction` |
+| `interaction.py` | `interaction` | `calendar`, `customer`, `product`, `store` |
+| `agentic_commerce.py` | `ac` | `customer`, `inventory`, `order`, `product`, `store` |
+| `ai_assisted_store_associates.py` | `aasa` | `customer`, `inventory`, `labor`, `product`, `store` |
+| `unified_customer_view.py` | `ucv` | `customer`, `marketing` |
+<!-- GENERATORS:END -->
+
+Every generator requires `--catalog` and accepts a `--<key>_schema` override for each schema key it writes or reads (for example `--customer_schema`), `--base_currency` where it writes money, and `--mode` (below). Some money columns are labelled `USD` whatever `--base_currency` says: all of them in `labor.py`, `interaction.py`, `balancing_margin_and_volume.py` and `connected_store_signals.py`; the mandate limits and negotiation prices in `agentic_commerce.py`; and the context-event prices in `ai_assisted_store_associates.py`. Two exceptions to `--mode`: `unified_customer_view.py` always overwrites, and `ai_assisted_store_associates.py` always overwrites its associate and action tables while its context-event, fulfillment-status and lookup-audit tables follow `--mode`. The table lists the generators that take volume or other flags, plus `customer_ltv.py`, whose volumes come only from [`seeds.yaml`](seeds.yaml) but which needs a note; every generator not listed takes its volumes only from `seeds.yaml`.
+
+| Generator | Volume overrides (else `seeds.yaml`) | Generator-specific flags |
+| --- | --- | --- |
+| `customer.py` | `num_profiles`, `num_accounts` | `seed` |
+| `trade_promotion.py` | `products`, `stores`, `promotions`, `calendar_weeks` | - |
+| `supplier_monitoring.py` | `suppliers`, `lines_per_supplier` | - |
+| `inventory.py` | `num_records`, `trailing_days` | `seed` |
+| `customer_ltv.py` | (from `seeds.yaml`); invokes `_market_analysis.py` for sparse observations, unmatched items and benchmark restatements | - |
+| `ai_assisted_store_associates.py` | (from `seeds.yaml`, including `seed`) | `aasa_anchor_date` |
+| `smarter_demand_and_inventory_decisions.py` | (from `seeds.yaml`) | `seed` |
+
 
 `mode` (default `overwrite`) controls the write into each target table: `overwrite` (idempotent full reload) or `append`. (The shared `_write` helper also supports `merge`, but the shipped generators do not set merge keys, so running a generator with `--mode merge` raises `ValueError` — use `overwrite` or `append`.) Schema-override flags default to the matching `${*_schema}` variable in `databricks.yml`, resolved at run time by the shared `tools/ordm_config` resolver (a hardcoded fallback is used only if `databricks.yml` cannot be read); volume flags that a generator does not expose come from `seeds.yaml`.
 
@@ -56,17 +82,7 @@ Row counts and fanout live in [`seeds.yaml`](seeds.yaml), one block per domain u
 
 Several generators read masters written by an earlier one, so order is not arbitrary — a reader that runs before its master lands writes into empty tables and silently produces nothing. An `overwrite` that lands 0 rows prints a loud `[ordm] WARNING … likely an upstream master is unpopulated; check generator ordering`. The `deploy_ordm` job wires the tasks to respect these dependencies, and standalone runs must too — any valid topological order works (see below):
 
-This is a dependency DAG, not a strict chain. The parenthetical reads/writes below name tables/domains informally for readability; the authoritative, machine-checkable keys are each generator's `provides`/`depends_on` in [`generators/_registry.py`](generators/_registry.py) (and `tests/test_generators_registry.py` asserts each generator only touches schema keys it declares). Each generator and what it reads (blank = no dependency):
-
-```
-customer               (no deps)
-trade_promotion        (no deps; writes product / store / calendar / promotion / sales)
-supplier_monitoring    reads product, store, calendar   (from trade_promotion); writes supplier + procurement
-inventory              reads product, store, calendar   (from trade_promotion)
-customer_ltv           reads customer, product, store, calendar, BMV competitor identity; writes ACU customer + Market Analysis rows
-logistics              reads supplier (from supplier_monitoring), product, store
-early_risk_detection   reads logistics.shipment
-```
+This is a dependency DAG, not a strict chain: the Reads column of the table above is each generator's dependencies, taken from the registry.
 
 A valid run order is any topological sort. The current registry places `balancing_margin_and_volume` before `customer_ltv` because the latter invokes the Market Analysis helper and reads BMV competitor identity; `agentic_commerce` then follows `customer_ltv` because it reads the order schema. The exact order remains derived from `_registry.py`, not hand-maintained here.
 

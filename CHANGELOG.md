@@ -28,18 +28,18 @@ per-folder status lines are generated from it; ladder definitions are in
   the deleted `notebook-templates/` and `meeting-notes/` folders, `runtime/examples/README.md`
   lists `notebooks/`, and the per-PR workspace sync uploads only what the job reads
   (`runtime/synthetic-data`, `runtime/data-quality` and the deploy bootstrap SQL) instead of
-  all of `runtime/` (#179)
+  all of `runtime/` (pre-publication record 179)
 - Model Explorer: the glossary copies under `explorer/public/` carry absolute source-repo URLs
   instead of repo-relative paths for files the site does not serve (the data-model standard, design
   notes, ADRs), so a reader can follow them from the raw glossary the site shows
-  (`tools/gen_model_json.py`) (#179)
+  (`tools/gen_model_json.py`) (pre-publication record 179)
 
 ### Standards, governance & ADRs
 
 - **An AI skill for any tool.** `ordm-data-modeling`, the skill that authors or adapts
   ORDM-conformant models, is published in the open Agent Skills format, in `.agents/skills/` and
   `.claude/skills/`, so Claude Code, GitHub Copilot, OpenAI Codex and other tools that support Agent
-  Skills pick it up. [`docs/ai-skills.md`](docs/ai-skills.md) says how to plug it in (#180).
+  Skills pick it up. [`docs/ai-skills.md`](docs/ai-skills.md) says how to plug it in (pre-publication record 180).
 - The initial-release self-review exception is off now that 0.5 is public. The self-reviewed
   deliverables 0.5 published stay ✅ while 0.5 is the current release; before the next release,
   each needs a second, independent sign-off or goes back to 🟢, and `gen_status.py --check`
@@ -48,16 +48,11 @@ per-folder status lines are generated from it; ladder definitions are in
   transactional spine; it is deferred until its generator exists. The `connected-store-signals` ✅
   gate is closed: ADR 0030's CSS-owner and Privacy scopes acknowledged ADR 0041's amendment and the
   DPO review is done, as the maintainer recorded on 2026-10-13 (ADRs 0030 and 0041 updated)
-  (#181)
+  (pre-publication record 181)
+- ADR 0028 (hash surrogate keys for high-volume gold facts) is Accepted; it was implemented in `connected-store-signals` while still marked Proposed. `governance/decisions/README.md` now indexes every decision record with its status. (pre-publication record 213)
 
 ### CI & automation
 
-- The AI PR reviewer spends its spare budget on verification. Before writing, it re-reads the lines
-  it cites and greps for other copies of any statement the PR changes, and it posts nothing itself:
-  its final message is the review. The turn cap goes from 75 to 120 (the 30-minute cap stays the
-  bound). Each completed run logs its turn count and each run its duration, which the review
-  record keeps as `num_turns` and `agent_duration_ms` (record schema 2)
-  (#212)
 - GitHub Actions upgrades: `actions/checkout` v7, `actions/setup-python` v7, `actions/setup-java`
   v6, `actions/upload-pages-artifact` v5, `dorny/paths-filter` v4 and
   `stefanzweifel/git-auto-commit-action` v7.2.0 (pinned SHA), plus the SHA-pinned actions in the
@@ -67,10 +62,10 @@ per-folder status lines are generated from it; ladder definitions are in
   workflows only run when dispatched, so their next run is the first on these versions. Dependabot now
   opens one pull request a month for every dependency (one multi-ecosystem group across npm,
   pip and GitHub Actions, majors included); the TypeScript and jsdom majors are skipped until
-  their follow-up (#211).
+  their follow-up (pre-publication record 211).
 - `tools/gen_status.py` also keeps the Status column of `canonical-core/README.md` and
   `outcome-packages/README.md` in step with `STATUS.md`: `--write` refreshes it and `--check`
-  fails on a stale cell (#181)
+  fails on a stale cell (pre-publication record 181)
 - Dependency upgrades, folded from the first batch of Dependabot PRs: GitHub Actions
   `actions/setup-node` v7, `actions/upload-artifact` v7, `actions/download-artifact` v8,
   `actions/deploy-pages` v5 and `databricks/setup-cli` v1.20.0 (`checkout`, `setup-python`,
@@ -80,18 +75,23 @@ per-folder status lines are generated from it; ladder definitions are in
   `window.document` read-only, which one explorer test relies on. The Python requirements stay
   lower bounds: Dependabot raises one only when a release falls outside its range
   (`versioning-strategy: increase-if-necessary`), and Python vulnerabilities are handled from
-  Dependabot alerts (#204).
+  Dependabot alerts (pre-publication record 204).
 - Dependency updates are automated in the working repository: weekly grouped updates for the
   explorer's npm packages, the Python requirements (except the exactly pinned `sqlglot`) and the
   GitHub Actions. They reach this repository with each publication
-  (#182).
+  (pre-publication record 182).
 - Explorer dev dependencies: vite 5 to 8.3.4 and vitest 2 to 5.0.4, which also brings
   `@vitest/mocker` 5.0.4, drops `tinypool`, and moves postcss to 8.5.30, nanoid to 3.3.20 and
   source-map-js to 1.2.2 (folded into one change). The explorer now needs Node 22.12 or later
   (`explorer/.nvmrc`)
-  (#182).
-- **Public Model Explorer.** The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from this repository, so it shows only the published model and its source links resolve (#180).
-- **Each change credited to its author.** After the first publication, this repository is updated one change at a time: every change made in the working repository becomes one commit here, authored by the person who made it, with everyone else who worked on it as a co-author (#180).
+  (pre-publication record 182).
+- **Public Model Explorer.** The public Model Explorer (https://open-retail-data-model.github.io/model-explorer/) is built from this repository, so it shows only the published model and its source links resolve (pre-publication record 180).
+- **Each change credited to its author.** After the first publication, this repository is updated one change at a time: every change made in the working repository becomes one commit here, authored by the person who made it, with everyone else who worked on it as a co-author (pre-publication record 180).
+- `runtime/examples/deploy-with-dab/cleanup.sh` honors `-p <profile>` and `-t <target>` and always acts on this repository's bundle (it changes to the repository root and checks the bundle name). It used to ignore `-p` and run `databricks bundle destroy` on the CLI's default profile, whatever workspace that pointed at. (pre-publication record 213)
+
+### Data contracts & synthetic data
+
+- The synthetic-data README lists every registered generator with what it writes and reads, kept equal to the registry by a test, plus the volume and other flags the generators take. (pre-publication record 213)
 
 ## [0.5] — 2026-10-13
 
@@ -128,13 +128,13 @@ outcome package is ✅ Published, each as its own commit authored by the people 
 ### Outcome packages
 
 - **Every outcome package reached 🟢 Review complete** (and is ✅ Published in this release). `data-sharing-with-suppliers` is signed off
-  (#177), a self-review disclosed in
-  `REVIEWERS.md`; #165 had left it out until the Media Measurement fix (#163) merged. No `TODO(owner)`
+  (pre-publication record 177), a self-review disclosed in
+  `REVIEWERS.md`; pre-publication record 165 had left it out until the Media Measurement fix (pre-publication record 163) merged. No `TODO(owner)`
   is left in any `use-cases.yaml`: the maintainer confirmed Realized Margin & Revenue Leakage done (it
   has no card owner), accepted the CDP status call in place of the card owner's confirmation,
   confirmed the `commerce-media-networks` and `balancing-margin-and-volume` `tables:` mappings, and
   recorded who confirmed the `smarter-demand-and-inventory-decisions` and `connected-store-signals`
-  use cases (#178).
+  use cases (pre-publication record 178).
 - **Governed KPIs for every use case.** The use cases that had none now have UC Metric Views, each
   checked against the deployed synthetic data:
   - **agentic-commerce:** `mv_intent_discovery_result_performance` (Result CTR, Add-to-Cart Rate,
@@ -151,31 +151,31 @@ outcome package is ✅ Published, each as its own commit authored by the people 
     to `gold_customer_ltv` across packages.
   - **data-sharing-with-suppliers:** `mv_category_growth` for Category Growth (revenue, units, margin,
     the four growth effects, period-over-period and year-over-year growth as SUM/SUM ratios, promo
-    contribution). The gold view's per-row shares stay on `gold_category_growth`. (#172)
+    contribution). The gold view's per-row shares stay on `gold_category_growth`. (pre-publication record 172)
 - **data-sharing-with-suppliers:** `gold_category_growth` no longer reports a price effect for a
   category's first period. With no prior period the price component fell back to the full average
   price, so `price_effect` equalled that period's whole revenue and inflated any roll-up of the
   effects; now `price_effect` and `mix_effect` are `NULL` there, like `delta_revenue` and the other two
-  effects (#172)
+  effects (pre-publication record 172)
 - **unified-customer-view:** CDP is done. This is a maintainer status call (2026-10-12); the tracker
   card owner's confirmation is not recorded. Synthetic
   activation destinations, publish runs and campaign touches (`activation_destination`,
   `activation_job`, `campaign_touch`) now load in the demo deploy, so the activation metric views
-  return rows (#172)
+  return rows (pre-publication record 172)
 - **ai-assisted-store-associates:** `checks.sql` adds data-quality checks for the Best Next Actions
   and Digital Assistant Selling Tools gold views (`gold_associate_action_queue_current`,
-  `gold_action_outcome_funnel_daily`): grain, allowed values, ranges and currency pairing (#172)
+  `gold_action_outcome_funnel_daily`): grain, allowed values, ranges and currency pairing (pre-publication record 172)
 - **ai-assisted-store-associates:** Associates Best Next Actions and Digital Assistant Selling Tools now
   have demo data. The generator writes `associate` (projected from `labor.employee`), `suggested_action`,
   `action_response_log` and `outcome_resolution`, anchored to the run date: a 14-day history that feeds
   the outcome funnel and an open slice that keeps the action queue populated, so both gold views and
   `mv_associate_action_performance` return rows. The tables stay adopter-owned
-  (#170)
+  (pre-publication record 170)
 - **ai-assisted-store-associates:** Associates Best Next Actions and Digital Assistant Selling Tools are
   done, so all three AASA use cases are done. Both gold views and `mv_associate_action_performance` are
   populated on the serving deploy. This was a maintainer status call; both tracker cards have since been
   set to Done
-  (#171)
+  (pre-publication record 171)
 - **balancing-margin-and-volume:** Assortment Optimization is done. The four model outputs
   of `gold_assortment_optimization` that were `NULL` placeholders are now computed by
   heuristic estimators in SQL: `space_elasticity` (per category, cross-store and
@@ -186,7 +186,7 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   substitute affinities. `avg_space_elasticity`, `total_projected_volume_lift`,
   `total_projected_margin_lift_lc` and `total_cannibalization_drag_lc` return to the
   assortment metric views. New DQ checks cover the elasticity range, projection signs and
-  the transfer share (#167)
+  the transfer share (pre-publication record 167)
 - **balancing-margin-and-volume:** Realized Margin & Revenue Leakage is done.
   `gold_realized_margin` (product x store x sale day, sale-cohort basis) computes booked
   revenue, realized revenue (settled sales minus refunds/chargebacks/adjustments), and revenue
@@ -194,30 +194,30 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   `mv_realized_margin` exposes realized-margin KPIs (margin %, leakage and reversal rates,
   channel contribution) as ratio-of-sums measures. `mv_payment_actuals` surfaces
   payment-event-date (cash basis) leakage rates. New grain, identity, currency and
-  conservation DQ checks (#168)
+  conservation DQ checks (pre-publication record 168)
 - **unified-customer-view:** Identity Resolution is done, on the scope recorded in
   [ADR 0044](governance/decisions/0044-identity-resolution-thin-core-scope.md) (Accepted):
   ORDM models the output of identity resolution (`customer.identity_link`, householding
   through `customer.household`, and the per-profile `active_identifier_count` and
   `resolved_identity_confidence` in `gold_unified_customer_360_current`), not the matching
   engine. The identity graph, merge/split log and match-rule catalog are deferred to a future
-  package (#164)
+  package (pre-publication record 164)
 - **data-sharing-with-suppliers:** `gold_supplier_media_report` (and
   `mv_supplier_media_report` on top of it) is readable on Databricks again: the
   most-specific-entitlement rule is an anti-join instead of a correlated subquery in the
   join condition. DSWS sample query 1 and Predictive Operations sample query 8 fixed
-  (#163)
+  (pre-publication record 163)
 
 ### Model Explorer
 
 - The README's Explorer screenshot (`docs/images/explorer.png`) is re-captured from the current model:
-  every use case of the 12 packages shows done (#172)
+  every use case of the 12 packages shows done (pre-publication record 172)
 - A use case can map to another package's gold view with a qualified `<package>.<gold_view>` entry in
   `tables:` (validated like a local name). unified-customer-view's Customer Lifetime Value now maps to
   actionable-customer-understanding's `gold_customer_ltv`: its panel row links to that view, its
   consumed domains come from that view's lineage, and actionable-customer-understanding bands the view
   under "Customer Lifetime Value (unified-customer-view)" and lists it under "Also serves", so no gold
-  view is left in "Not mapped to a use case" (#172)
+  view is left in "Not mapped to a use case" (pre-publication record 172)
 - The unified-customer-view CDP use case maps all three of its gold views
   (`gold_person_do_not_target_current`, `gold_customer_activation_eligibility_current`,
   `gold_activatable_audience_current`, the Govern and Gate pieces of
@@ -225,20 +225,20 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   eligibility gate no longer sit in the "Not mapped to a use case" band. commerce-media-networks,
   whose four use cases had no `tables:` mapping at all, gets a provisional one, pending its
   owner's confirmation: each use case lists the gold views whose source facts conform that use
-  case's brief (#169)
+  case's brief (pre-publication record 169)
 - The package and table side panels add a **GitHub** link to the unit's source folder, next to
   Glossary and Contract (`source_url` in `model.json`)
-  (#169)
+  (pre-publication record 169)
 - Gold-view lineage follows references into other outcome packages and through chains of
   ingredient tables. A gold view reading another package's gold view or ingredient table (e.g.
   data-sharing-with-suppliers `gold_supplier_media_report` over commerce-media-networks
   `campaign_day`), or an ingredient whose core link is more than one FK away (e.g. `campaign` ->
   `advertiser` -> `supplier`), used to lose the core tables behind it, so its L1 lineage, its use
   cases' domain chips and its package's L0 edges were incomplete
-  (#169)
+  (pre-publication record 169)
 - The explorer README lists all 15 core domains, and an e2e test that pointed at a renamed table
   (so it passed without checking anything) uses a real one and fails if the card is missing
-  (#169)
+  (pre-publication record 169)
 
 ### Standards, governance & ADRs
 
@@ -247,15 +247,15 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   discloses every Owner = Reviewer row as a self-review. For the initial public release only, a
   self-reviewed deliverable may be Published on the maintainer's disclosed sign-off; from the next release a second, independent sign-off is required again
   (`INITIAL_PUBLICATION_SELF_REVIEW` in `tools/gen_status.py`)
-  (#166)
+  (pre-publication record 166)
 - **Batch sign-off.** Ten deliverables move to 🟢 Review complete, signed off in
-  #165: the labor,
+  pre-publication record 165: the labor,
   equipment and interaction core domains (the core badge reaches 15/15) and seven outcome
   packages. ADRs 0035–0041 are Accepted (0041 amends ADR 0030's ESL wording); Market Analysis is done, so
   ADR 0042 is Accepted; GOVERNANCE.md records the self-review rule (a disclosed
   self-review reaches 🟢; ✅ needs a second reviewer, except in the initial public release);
   the stale Calendar status in the canonical-core README is fixed
-  (#166)
+  (pre-publication record 166)
 
 ### Data contracts & synthetic data
 
@@ -267,7 +267,7 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   of a fixed 2024, with a dense trailing window so the latest sales day has a position. A
   long-tail slow-mover tier and a thin-margin tail of SKUs give the assortment DROP and
   EXPAND rules real candidates; previously every synthetic row was KEEP
-  (#167)
+  (pre-publication record 167)
 - Payment synthetic data (customer_ltv generator): refund probability now depends on store
   refund tier (deterministic by store_id hash: HIGH 2.0x, NORMAL 1.0x, LOW 0.5x of base rate;
   20%/60%/20% store distribution). Adjustments carry order_id on 80% of rows
@@ -275,29 +275,29 @@ outcome package is ✅ Published, each as its own commit authored by the people 
   Refunds, chargebacks and adjustments are now drawn only from orders whose sale was captured
   or settled; previously about 10% of reversals landed on authorization-only orders and drove
   realized revenue below zero. A full chargeback is no longer drawn on an order that was
-  already partially refunded (#168)
+  already partially refunded (pre-publication record 168)
 
 ### CI & automation
 
 - `tests/test_metric_view_sources.py` checks every metric view's `source:` against the tables and
   views it reads, and its fields and measures against what the source exposes, so a missing column
-  fails in CI instead of at CREATE time on the workspace (#172)
+  fails in CI instead of at CREATE time on the workspace (pre-publication record 172)
 - The `unit + spark tests` job runs as 4 parallel shards (whole test files per shard, balanced on
   measured CI time per file, `tests/ci_test_durations.json`, refreshed with
   `tools/ci_test_durations.py`), each on every runner core via `pytest-xdist`, with the
   pip cache on. `tests/test_gen_model_json.py` builds the model once per process instead of once
   per test. The conformance gate, the drift guard and the repo-writing `writes_repo` tests run in
   shard 1, and a `test-summary` job keeps one "unit + spark tests" check
-  (#174).
+  (pre-publication record 174).
 - A cluster-free guard rejects subquery predicates inside `JOIN ... ON` across all SQL,
-  including metric-view source queries (#163)
+  including metric-view source queries (pre-publication record 163)
 - **Release tooling.** The model version has one source, the new `VERSION` file.
   `tools/release.py` (`make release NEW_VERSION=...`) rewrites it and every version stamp
   (file headers, notebook titles, `> Status:` lines) in one pass, cuts `[Unreleased]` to the
   dated release, and refuses a version that is not newer, an empty `[Unreleased]`, or merged
   PRs with no entry. `make check-version` (also a CI step) fails when any stamp disagrees
   with `VERSION`. The release steps, including the post-merge tag and GitHub Release, are in
-  [`docs/releasing.md`](docs/releasing.md) (#173)
+  [`docs/releasing.md`](docs/releasing.md) (pre-publication record 173)
 
 ## [0.2-beta] — 2026-10-07
 
@@ -312,7 +312,7 @@ Markdown file was re-checked against the code. All file headers move to **0.2-be
 - `supplier.supplier_type` gets its enum CHECK (`chk_supplier_type`); "ADR 0034"
   citations that meant the labor ADR now cite ADR 0043; stale `audience` text in Commerce
   Media Networks now says it is a silver marketing dimension (ADR 0022)
-  (#141)
+  (pre-publication record 141)
 
 ### Outcome packages
 
@@ -321,9 +321,9 @@ Markdown file was re-checked against the code. All file headers move to **0.2-be
   notebook template) evaluated from readings against the configured rule; synthetic
   excursions so the views populate; every gold column documented and typed;
   `mv_phantom_stock_candidates` and `mv_oos_episodes`; Foot Traffic Analysis and IoT Sensor
-  Monitoring move to done, so 4/4 use cases are done (#144)
+  Monitoring move to done, so 4/4 use cases are done (pre-publication record 144)
 - **predictive-operations:** workforce forecast-accuracy column reference fixed, which
-  unblocked the daily deploy (#139)
+  unblocked the daily deploy (pre-publication record 139)
 
 ### Standards, governance & ADRs
 
@@ -331,22 +331,22 @@ Markdown file was re-checked against the code. All file headers move to **0.2-be
   package's `use-cases.yaml` (cards) are the only hand-edited status sources; the README
   badge and tables plus every per-folder "> Status:" line are generated and drift-gated.
   🟢 Review complete now needs an assigned Reviewer **and** a linked Sign-off issue in
-  `REVIEWERS.md`, which `tools/gen_status.py --check` enforces (#143)
+  `REVIEWERS.md`, which `tools/gen_status.py --check` enforces (pre-publication record 143)
 - Docs and the AI-review skill match what CI actually enforces: enforced vs planned
-  rules, the hard gate, workflow list, ODCS drift check, domain counts (#142)
+  rules, the hard gate, workflow list, ODCS drift check, domain counts (pre-publication record 142)
 - Documentation refresh across the repository's Markdown files (stale counts, table
   lists, links, deferred-vs-shipped claims), a current Model Explorer screenshot, and the
-  0.2-beta version bump (#162)
+  0.2-beta version bump (pre-publication record 162)
 
 ### CI & automation
 
-- **Faster lean per-PR deploy gate**: one Python dependency install, a parallel sync of only the files the workspace job runs (`tools/sync_workspace_bundle.sh`), per-table constraint units, and a 40-minute cap. **Deploy behavior change (daily deploy too):** plain gold views now get their column comments inline on `CREATE OR REPLACE VIEW` (falling back to separate `COMMENT ON COLUMN` statements if the warehouse rejects the column list), so 37 columns with no comment of their own now inherit the upstream view's comment instead of the base table's. Deploy logs count each inlined view as one applied statement, so applied counts drop by roughly the number of inlined comments; nothing is missing (#145)
+- **Faster lean per-PR deploy gate**: one Python dependency install, a parallel sync of only the files the workspace job runs (`tools/sync_workspace_bundle.sh`), per-table constraint units, and a 40-minute cap. **Deploy behavior change (daily deploy too):** plain gold views now get their column comments inline on `CREATE OR REPLACE VIEW` (falling back to separate `COMMENT ON COLUMN` statements if the warehouse rejects the column list), so 37 columns with no comment of their own now inherit the upstream view's comment instead of the base table's. Deploy logs count each inlined view as one applied statement, so applied counts drop by roughly the number of inlined comments; nothing is missing (pre-publication record 145)
 
 ### Data contracts & synthetic data
 
 - ODCS contracts now include **UC metric views**: fields and measures from the
   `WITH METRICS` YAML, typed by inferring from each `source:`, with `businessName` and
-  synonyms (#140)
+  synonyms (pre-publication record 140)
 
 ## [0.1-beta] — 2026-09-03
 
@@ -359,43 +359,43 @@ to the contributors below — this is a team effort. 🙌
 ### Highlights
 
 - **A 13-domain canonical core under one contract.** The initial baseline
-  (#2, [@a0x8o](https://github.com/a0x8o))
+  (pre-publication record 2, [@a0x8o](https://github.com/a0x8o))
   established the conformed core, first gold views, data-quality checks, synthetic data,
   and tests. The promotion dimension was promoted into a first-class marketing domain
-  (#9), and customer-identity
-  (#60, [@chloecheau-k](https://github.com/chloecheau-k)),
-  inventory (#15, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03)),
-  equipment (#76, [@sreekanthmunigati](https://github.com/sreekanthmunigati)),
-  and calendar (#46) domains
+  (pre-publication record 9), and customer-identity
+  (pre-publication record 60, [@chloecheau-k](https://github.com/chloecheau-k)),
+  inventory (pre-publication record 15, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03)),
+  equipment (pre-publication record 76, [@sreekanthmunigati](https://github.com/sreekanthmunigati)),
+  and calendar (pre-publication record 46) domains
   followed — all conforming to a single primary-key contract, key-naming standard, and
   governed-tag convention.
 - **12 outcome packages across 4 retail themes.** Real, consumable gold layers landed
-  for early-risk-detection (#29, [@sreekanthmunigati](https://github.com/sreekanthmunigati)),
-  balancing-margin-and-volume (#31, #80, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03)),
-  commerce-media-networks / retail media (#66, [@chloecheau-k](https://github.com/chloecheau-k)),
-  unified-customer-view (#67, [@chloecheau-k](https://github.com/chloecheau-k)),
-  and smarter-demand-and-inventory-decisions (#85, [@vibewisely](https://github.com/vibewisely)).
+  for early-risk-detection (pre-publication record 29, [@sreekanthmunigati](https://github.com/sreekanthmunigati)),
+  balancing-margin-and-volume (pre-publication record 31, pre-publication record 80, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03)),
+  commerce-media-networks / retail media (pre-publication record 66, [@chloecheau-k](https://github.com/chloecheau-k)),
+  unified-customer-view (pre-publication record 67, [@chloecheau-k](https://github.com/chloecheau-k)),
+  and smarter-demand-and-inventory-decisions (pre-publication record 85, [@vibewisely](https://github.com/vibewisely)).
   In-Store Equipment Maintenance was consolidated into predictive-operations as a use
   case rather than a standalone package, settling the catalog at 12
-  (#83).
+  (pre-publication record 83).
 - **An interactive Model Explorer.** A browser-based explorer, generated from the DDL,
   lets you navigate the core and outcome packages, drill into columns / keys / PII, and
   follow use-case-to-core lineage — including a layered value-chain view
-  (#57) and an L1
-  consumes-silver lineage overlay (#61).
+  (pre-publication record 57) and an L1
+  consumes-silver lineage overlay (pre-publication record 61).
 - **Agentic, drift-proof CI.** An advisory Claude Code PR reviewer runs in CI
-  (#19), now grounded,
-  bidirectional, and self-pacing (#71,
-  #72), with a durable review
-  log (#32).
+  (pre-publication record 19), now grounded,
+  bidirectional, and self-pacing (pre-publication record 71,
+  pre-publication record 72), with a durable review
+  log (pre-publication record 32).
   Standards-conformance gates, a PR base-guard, doc/status anti-drift locks, and
   branch-freshness checks keep generated artifacts and docs from ever drifting.
 - **Governed data contracts and generators that scale.** An optional ODCS v3.1.0
   contract generator emits data contracts from the DDL
-  (#41), and a uniform
-  generators-v2 layer (#43)
+  (pre-publication record 41), and a uniform
+  generators-v2 layer (pre-publication record 43)
   with dbldatagen as the default engine scales synthetic data to 1 TB+
-  (#81).
+  (pre-publication record 81).
 
 ### Contributors
 
@@ -411,13 +411,13 @@ tested, and refined along the way. The auto-generated grid in the
 
 ### Canonical core & data model
 
-- Initial baseline — domains, outcome gold views, DQ, synthetic data, and tests (#2, [@a0x8o](https://github.com/a0x8o))
-- Promote the promotion dimension into a canonical-core **marketing** domain (#9)
-- Canonical entities schema + **inventory** domain and use-case specifics (#15, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03))
-- **Calendar** MUST-tier parity + date-stemmed keys (`date_sk` / `date_id` / `date_key`) (#46)
-- **FK-completeness** standard + `product_price` → product surrogate FK (#58)
-- Thin **customer-identity** core slice + design harvest (#60, [@chloecheau-k](https://github.com/chloecheau-k))
-- **Equipment** domain (#76, [@sreekanthmunigati](https://github.com/sreekanthmunigati)) — remains a canonical-core domain; only its In-Store Equipment Maintenance outcome package was later folded into predictive-operations (#83)
+- Initial baseline — domains, outcome gold views, DQ, synthetic data, and tests (pre-publication record 2, [@a0x8o](https://github.com/a0x8o))
+- Promote the promotion dimension into a canonical-core **marketing** domain (pre-publication record 9)
+- Canonical entities schema + **inventory** domain and use-case specifics (pre-publication record 15, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03))
+- **Calendar** MUST-tier parity + date-stemmed keys (`date_sk` / `date_id` / `date_key`) (pre-publication record 46)
+- **FK-completeness** standard + `product_price` → product surrogate FK (pre-publication record 58)
+- Thin **customer-identity** core slice + design harvest (pre-publication record 60, [@chloecheau-k](https://github.com/chloecheau-k))
+- **Equipment** domain (pre-publication record 76, [@sreekanthmunigati](https://github.com/sreekanthmunigati)) — remains a canonical-core domain; only its In-Store Equipment Maintenance outcome package was later folded into predictive-operations (pre-publication record 83)
 - **Interaction** domain ([ADR 0029](governance/decisions/0029-conformed-interaction-touchpoint-fact.md)): the conformed **omnichannel customer-interaction fact** `interaction.touchpoint` (14th canonical-core domain) — one append-only, streaming-ready fact for every observed customer touch, online (page/product/search/cart/checkout/app/session) and offline (store visit, call-center, kiosk, offline-marketing, phone), anonymous-first on a hashed device key and stitched to `profile` via `identity_link`. The time-series event class of the two-class CDP shape and the single source of truth for the raw touch *occurrence*; `commerce-media-networks.conversion_event` is re-chartered as the paid-attribution *measurement* projection. Ships a seeded generator and one demonstrating consumer (ACU `gold_customer_behavioral_attributes` gains channel-mix + engagement/intent traits from it, filling the gap that view documented).
 
 ### Outcome packages
@@ -433,82 +433,82 @@ tested, and refined along the way. The auto-generated grid in the
   [0041](governance/decisions/0041-esl-observation-only-no-price-actuation.md) record the
   dedicated positional fact, CSS/BMV expected-state boundary, and observation-only ESL
   stance; all remain Proposed pending maintainer review
-  (#132, [@saurabhshukla-db](https://github.com/saurabhshukla-db)).
+  (pre-publication record 132, [@saurabhshukla-db](https://github.com/saurabhshukla-db)).
 
 - **connected-store-signals — RFID Tracking:** adds the hash-keyed serialized-item registry,
   append-only read events, bounded count sessions, item presence, basis-aware inventory
   reconciliation, count coverage, receiving evidence, OOS/exit seams, RFID fleet health,
   three metric views, deterministic synthetic journeys, and `sensor_device.is_mobile_platform`
-  (#130, [@saurabhshukla-db](https://github.com/saurabhshukla-db)).
+  (pre-publication record 130, [@saurabhshukla-db](https://github.com/saurabhshukla-db)).
 - **connected-store-signals — IoT Sensor Monitoring:** the sense → evaluate → act → log
   automation loop (`actuator_capability`, `evaluation_rule`, `automation_action`,
-  `execution_log`), its response gold view and metric view (#131, [@jam-dbx](https://github.com/jam-dbx)).
+  `execution_log`), its response gold view and metric view (pre-publication record 131, [@jam-dbx](https://github.com/jam-dbx)).
 - **labor** canonical-core domain with **predictive-operations — Workforce Optimization**,
   plus **promote-with-purpose — Location-Based Offers** and **data-sharing-with-suppliers —
-  Data Monetization** use cases (#133, [@a0x8o](https://github.com/a0x8o)).
+  Data Monetization** use cases (pre-publication record 133, [@a0x8o](https://github.com/a0x8o)).
 - **ai-assisted-store-associates — Real-Time Data Access:** the associate lookup contract
   (inventory, price/promotion, order status, operational context, freshness) on the labor
-  core (#134, [@a0x8o](https://github.com/a0x8o)).
+  core (pre-publication record 134, [@a0x8o](https://github.com/a0x8o)).
 - **ai-assisted-store-associates — Associates Best Next Actions:** next-best-action engine
-  schema, action queue and outcome funnel (#136, #137,
+  schema, action queue and outcome funnel (pre-publication record 136, pre-publication record 137,
   [@jam-dbx](https://github.com/jam-dbx)).
 - **promote-with-purpose — Location-Based Offers:** synthetic data for the location-offer
-  tables and a use-case test module (#121), UC metric views and gold-view column
-  comments (#122), and PK/audit-standard conformance for the offer tables
-  (#123) ([@a0x8o](https://github.com/a0x8o)).
+  tables and a use-case test module (pre-publication record 121), UC metric views and gold-view column
+  comments (pre-publication record 122), and PK/audit-standard conformance for the offer tables
+  (pre-publication record 123) ([@a0x8o](https://github.com/a0x8o)).
 - **actionable-customer-understanding — Product Affinity:** market-basket association rules
-  and per-customer product affinity (#138, [@jam-dbx](https://github.com/jam-dbx)).
+  and per-customer product affinity (pre-publication record 138, [@jam-dbx](https://github.com/jam-dbx)).
 
-- **early-risk-detection**: real-time disruption-detection spine (#29, [@sreekanthmunigati](https://github.com/sreekanthmunigati); review fixes #69)
-- **balancing-margin-and-volume**: package + assortment optimization and metric views (#31, #80, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03))
-- **commerce-media-networks** (retail media): gold layer + shared marketing audience (#66, [@chloecheau-k](https://github.com/chloecheau-k))
-- **unified-customer-view**: customer 360 + activation-eligibility on the identity core (#67, [@chloecheau-k](https://github.com/chloecheau-k))
-- **smarter-demand-and-inventory-decisions**: demand forecasting, inventory optimization, and out-of-stocks across 16 tables + 15 gold views (#85, [@vibewisely](https://github.com/vibewisely))
+- **early-risk-detection**: real-time disruption-detection spine (pre-publication record 29, [@sreekanthmunigati](https://github.com/sreekanthmunigati); review fixes pre-publication record 69)
+- **balancing-margin-and-volume**: package + assortment optimization and metric views (pre-publication record 31, pre-publication record 80, [@ojasvi-goyal-03](https://github.com/ojasvi-goyal-03))
+- **commerce-media-networks** (retail media): gold layer + shared marketing audience (pre-publication record 66, [@chloecheau-k](https://github.com/chloecheau-k))
+- **unified-customer-view**: customer 360 + activation-eligibility on the identity core (pre-publication record 67, [@chloecheau-k](https://github.com/chloecheau-k))
+- **smarter-demand-and-inventory-decisions**: demand forecasting, inventory optimization, and out-of-stocks across 16 tables + 15 gold views (pre-publication record 85, [@vibewisely](https://github.com/vibewisely))
 - **actionable-customer-understanding**: Behavioral Segmentation — a wide, agent-discoverable customer trait surface (`gold_customer_behavioral_attributes`) + append-only `segment_membership` over the shared `marketing.audience` definition catalog (ADR 0022), unblocking CDP marketing activation. Consent / preference / targeting stay three separate planes; the net gate is applied only in UCV's `gold_activatable_audience_current`. Also fixed `gold_customer_ltv` RFM/value-tier bucketing from population `NTILE` to stable fixed thresholds (reproducible across refreshes). Note for downstream consumers: `data-sharing-with-suppliers` `gold_category_growth` reads `ltv.value_tier` for its `value_share_platinum/gold/silver/bronze` splits, so those shares shift from the prior population-relative quartiles to absolute-CLV bands — retune the cutoffs (documented in `gold_customer_ltv.sql`) per deployment.
-- **actionable-customer-understanding — Market Analysis PR 1** (#135): adds durable-competitor, fiscal-period `gold_competitive_position` and reaggregation-safe `mv_competitive_position`; publishes additive components for metric rollups, valid price pairs/products, matched units, comparable promo populations, stock-flag populations, observation counts, currency and explicit proxy bases. The price indices remain observation-level means of price relatives rather than ratios of aggregate price totals. Compliance tests enforce no person-level sources and no Market Analysis → pricing lineage. The use case remains `in-progress` until PR 2 completes the observation-native assortment/distribution, market-share/share-of-shelf and detection-lag surfaces ([@saurabhshukla-db](https://github.com/saurabhshukla-db)).
-- **actionable-customer-understanding — Market Analysis PR 2** (#135): adds append-only competitor promotion/assortment observations, a Type-1 competitor-item match registry, restatement-aware market benchmarks, deterministic synthetic scenarios, observation-native competitive-position KPIs, and separate ratio-of-sums market-share gold/metric surfaces. Review hardening moves promotion SOV to shared observation coverage, constrains overlap to observed active products, publishes excluded inactive matches/listed channels and dimension-specific detection means, labels match failure separately from distribution gaps, and adds a registry-driven licensed-data no-redistribution wall. CI follow-up removes a period-vs-channel count false positive, narrows the email PII detector to exempt only the `email_app` promotion counter, keeps retired durable competitors valid for historical observations, and makes total-category benchmark cells denominator-only rather than served subjects. The antitrust wall scans price, margin, offer, elasticity, cost and promotion surface names. The use case remains `in-progress` pending six-KPI Databricks validation and @Tagar/BMV-owner review; deferred KPI arms are recorded in the package README/use-case/ADR ([@saurabhshukla-db](https://github.com/saurabhshukla-db)).
-- Fold In-Store Equipment Maintenance into **predictive-operations** — settles the catalog at 12 packages (#83)
-- **CDP activation compliance follow-ups** (#95, [@Tagar](https://github.com/Tagar); [ADR 0028](governance/decisions/0028-cross-plane-do-not-target-and-multi-purpose-gate.md)): closed the GDPR Art.21 cross-plane do-not-target gap with a shared `gold_person_do_not_target_current` view consulted by the owned gate (CI-enforced on the gate + UCV activation surface) and, on any paid/non-owned reverse-ETL plane, by an adopter-obligation activation contract on `segment_membership`; generalized the activation gate to derive purpose from the full consent-type set (marketing / personalization / analytics / retail_media / data_sale) instead of marketing-only; added a distinct `data_sale` consent type + gate purpose for the CCPA/CPRA do-not-sell opt-out (kept separate from `third_party_sharing`/do-not-share, per the two-signal "Do Not Sell or Share" requirement); added the missing `consent` SCD2 integrity DQ checks; added `activation_job` delete-propagation + run-lifecycle + gate-provenance telemetry columns; reconciled the customer-identity design notes with ADR 0027; disambiguated the three meanings of "suppression"; and added [`docs/cdp-composition.md`](docs/cdp-composition.md). Vendor-neutralized the ADR prose.
+- **actionable-customer-understanding — Market Analysis PR 1** (pre-publication record 135): adds durable-competitor, fiscal-period `gold_competitive_position` and reaggregation-safe `mv_competitive_position`; publishes additive components for metric rollups, valid price pairs/products, matched units, comparable promo populations, stock-flag populations, observation counts, currency and explicit proxy bases. The price indices remain observation-level means of price relatives rather than ratios of aggregate price totals. Compliance tests enforce no person-level sources and no Market Analysis → pricing lineage. The use case remains `in-progress` until PR 2 completes the observation-native assortment/distribution, market-share/share-of-shelf and detection-lag surfaces ([@saurabhshukla-db](https://github.com/saurabhshukla-db)).
+- **actionable-customer-understanding — Market Analysis PR 2** (pre-publication record 135): adds append-only competitor promotion/assortment observations, a Type-1 competitor-item match registry, restatement-aware market benchmarks, deterministic synthetic scenarios, observation-native competitive-position KPIs, and separate ratio-of-sums market-share gold/metric surfaces. Review hardening moves promotion SOV to shared observation coverage, constrains overlap to observed active products, publishes excluded inactive matches/listed channels and dimension-specific detection means, labels match failure separately from distribution gaps, and adds a registry-driven licensed-data no-redistribution wall. CI follow-up removes a period-vs-channel count false positive, narrows the email PII detector to exempt only the `email_app` promotion counter, keeps retired durable competitors valid for historical observations, and makes total-category benchmark cells denominator-only rather than served subjects. The antitrust wall scans price, margin, offer, elasticity, cost and promotion surface names. The use case remains `in-progress` pending six-KPI Databricks validation and @Tagar/BMV-owner review; deferred KPI arms are recorded in the package README/use-case/ADR ([@saurabhshukla-db](https://github.com/saurabhshukla-db)).
+- Fold In-Store Equipment Maintenance into **predictive-operations** — settles the catalog at 12 packages (pre-publication record 83)
+- **CDP activation compliance follow-ups** (pre-publication record 95, [@Tagar](https://github.com/Tagar); [ADR 0028](governance/decisions/0028-cross-plane-do-not-target-and-multi-purpose-gate.md)): closed the GDPR Art.21 cross-plane do-not-target gap with a shared `gold_person_do_not_target_current` view consulted by the owned gate (CI-enforced on the gate + UCV activation surface) and, on any paid/non-owned reverse-ETL plane, by an adopter-obligation activation contract on `segment_membership`; generalized the activation gate to derive purpose from the full consent-type set (marketing / personalization / analytics / retail_media / data_sale) instead of marketing-only; added a distinct `data_sale` consent type + gate purpose for the CCPA/CPRA do-not-sell opt-out (kept separate from `third_party_sharing`/do-not-share, per the two-signal "Do Not Sell or Share" requirement); added the missing `consent` SCD2 integrity DQ checks; added `activation_job` delete-propagation + run-lifecycle + gate-provenance telemetry columns; reconciled the customer-identity design notes with ADR 0027; disambiguated the three meanings of "suppression"; and added [`docs/cdp-composition.md`](docs/cdp-composition.md). Vendor-neutralized the ADR prose.
 
 ### Model Explorer
 
-- ER-diagram visualizer — generated dual-theme diagrams from the DDL (#53)
-- Comment tooltips + column/key/PII drill-in (#55)
-- **Layered value-chain redesign** + filters/search/back/theme fixes and integration tests (#57)
-- **L1 consumes-silver lineage overlay** + gold-view type/column hardening (#61)
+- ER-diagram visualizer — generated dual-theme diagrams from the DDL (pre-publication record 53)
+- Comment tooltips + column/key/PII drill-in (pre-publication record 55)
+- **Layered value-chain redesign** + filters/search/back/theme fixes and integration tests (pre-publication record 57)
+- **L1 consumes-silver lineage overlay** + gold-view type/column hardening (pre-publication record 61)
 
 ### Standards, governance & ADRs
 
 Governance decisions are recorded as ADRs (`governance/decisions/`, currently 0001–0033; 0008 intentionally unused).
 
-- Single data-model standard, expanded CONTRIBUTING, and the initial decision ADRs (#3)
-- `dbx_data_type` tag on every table, enforced in CI (#10)
-- **Definition of Done** + status-ladder definitions (ADR 0007) (#18)
-- Clustering-key selection guidance (§B) + a review-rubric check (#35)
-- UC Domains as an optional, derived governance overlay (ADR 0009) (#40)
-- Governed-tag & semantic conventions aligned with Databricks native features (ADR 0010) (#47)
-- Key-stem naming by grain/role + documented intentional deviations (ADR 0011) (#49)
-- Two-axis status — package build status **and** use-case delivery — plus the 🔵 Nearing-complete tier (#77, #82)
-- **Schema versioning & deprecation policy** — breaking-change classification, semver bump mechanics, the 90-day deprecation window, and the Lakebase dual-binding rule; wired into CONTRIBUTING §6a, the publication process, and ADR 0005 (#106)
+- Single data-model standard, expanded CONTRIBUTING, and the initial decision ADRs (pre-publication record 3)
+- `dbx_data_type` tag on every table, enforced in CI (pre-publication record 10)
+- **Definition of Done** + status-ladder definitions (ADR 0007) (pre-publication record 18)
+- Clustering-key selection guidance (§B) + a review-rubric check (pre-publication record 35)
+- UC Domains as an optional, derived governance overlay (ADR 0009) (pre-publication record 40)
+- Governed-tag & semantic conventions aligned with Databricks native features (ADR 0010) (pre-publication record 47)
+- Key-stem naming by grain/role + documented intentional deviations (ADR 0011) (pre-publication record 49)
+- Two-axis status — package build status **and** use-case delivery — plus the 🔵 Nearing-complete tier (pre-publication record 77, pre-publication record 82)
+- **Schema versioning & deprecation policy** — breaking-change classification, semver bump mechanics, the 90-day deprecation window, and the Lakebase dual-binding rule; wired into CONTRIBUTING §6a, the publication process, and ADR 0005 (pre-publication record 106)
 
 ### CI & automation
 
 - Tooling to push the generated ODCS contracts to an external data-contract catalog (CLI +
-  notebook) (#128, [@mjsturwold](https://github.com/mjsturwold))
-- ORDM Claude Code **modeling and review skills** (#4)
-- Standards-conformance gates + docs/CI anti-drift lock (#5)
-- PR **base-guard** + doc-sync enforcement (#17)
-- **Agentic advisory AI PR review** + DoD status, via Claude Code on the Databricks gateway (#19)
-- Durable AI-review capture to a log branch (Delta-queryable) (#32)
-- Advisory PR-branch-freshness check (sticky "behind main" comment) (#48)
-- **Grounded, bidirectional model-coverage reviewer** (#71, #72)
-- Generated, drift-proof surfaces: README status tables from `STATUS.md` (`gen_status.py`, #62) and the auto-generated Contributors grid (`gen_contributors.py`, #64)
+  notebook) (pre-publication record 128, [@mjsturwold](https://github.com/mjsturwold))
+- ORDM Claude Code **modeling and review skills** (pre-publication record 4)
+- Standards-conformance gates + docs/CI anti-drift lock (pre-publication record 5)
+- PR **base-guard** + doc-sync enforcement (pre-publication record 17)
+- **Agentic advisory AI PR review** + DoD status, via Claude Code on the Databricks gateway (pre-publication record 19)
+- Durable AI-review capture to a log branch (Delta-queryable) (pre-publication record 32)
+- Advisory PR-branch-freshness check (sticky "behind main" comment) (pre-publication record 48)
+- **Grounded, bidirectional model-coverage reviewer** (pre-publication record 71, pre-publication record 72)
+- Generated, drift-proof surfaces: README status tables from `STATUS.md` (`gen_status.py`, pre-publication record 62) and the auto-generated Contributors grid (`gen_contributors.py`, pre-publication record 64)
 
 ### Data contracts & synthetic data
 
-- Optional **ODCS v3.1.0** data-contract generator (#41)
-- **generators-v2**: uniform `run(ctx)` + `generate_all` on one serverless task + shared layer (#43)
-- Make **dbldatagen** the default generator engine — scales to 1 TB+ (#81)
+- Optional **ODCS v3.1.0** data-contract generator (pre-publication record 41)
+- **generators-v2**: uniform `run(ctx)` + `generate_all` on one serverless task + shared layer (pre-publication record 43)
+- Make **dbldatagen** the default generator engine — scales to 1 TB+ (pre-publication record 81)
 - Payment synthetic data (customer_ltv generator): full enum-domain coverage —
   authorized/settled/declined/voided lifecycle on sales, post-sale adjustments
   (NULL order_id, the documented warn-path), and card-only chargebacks; rates
